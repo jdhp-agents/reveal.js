@@ -2325,7 +2325,8 @@ $notesWidthPercent: 25%;
 	}
 
 	.reveal .r-overlay-button {
-		font-size: clamp(0.4em, 5vmin, 60px);
+		font-size: clamp(0.4em, 3vmin, 1em);
+		padding: clamp(0.2em, 2vmin, 1em);
 	}
 }
 
