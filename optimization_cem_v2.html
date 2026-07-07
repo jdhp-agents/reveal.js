@@ -105,6 +105,37 @@ Common choice : multivariate Normal distributions parameterized by a mean vector
 					<p style="margin: 0;">
 						At each iteration:
 					</p>
+					<!-- Pourquoi ce bloc répète 6 fois les 3 mêmes <li> au lieu d'un seul <ol> factorisé :
+
+					     reveal.js ne permet pas d'attribuer plusieurs indices non contigus à un fragment.
+					     Dans le cœur du framework (js/controllers/fragments.js, ~ligne 110), l'attribut est lu
+					     par parseInt(attr, 10) : une valeur comme data-fragment-index="0,3,6,9,12,15" serait
+					     silencieusement interprétée comme 0 et le reste ignoré. Le modèle de fragments est
+					     fondamentalement "un élément DOM = une seule apparition dans la séquence" : le
+					     contrôleur pose les classes visible/current-fragment sur l'élément lui-même, il ne
+					     peut donc pas représenter un élément actif à plusieurs étapes disjointes.
+
+					     Les astuces natives ne couvrent pas ce cas :
+					     1. les fragments imbriqués (<span class="fragment fade-in"><span class="fragment
+					        highlight-red">...) permettent plusieurs EFFETS sur un même contenu à des indices
+					        différents, mais chaque effet ne se produit qu'une fois, pas de répétition cyclique ;
+					     2. il n'existe aucun mécanisme de boucle ou de template de fragments dans le cœur ni
+					        dans les plugins fournis.
+
+					     Alternatives possibles si cette duplication devient pénible :
+					     1. générer les 6 blocs en JavaScript (indice = 3 x itération + étape) via un <script>
+					        classique (non-module) placé dans la <section> : il s'exécute pendant le parsing,
+					        donc avant le Reveal.initialize() du bas de page, ce qui évite tout Reveal.sync()
+					        et tout souci de timing (un script type="module" est différé et s'exécuterait
+					        APRÈS Reveal.initialize(), il faudrait alors appeler Reveal.sync()). Piège : dans
+					        les chaînes JS, doubler les backslashes du LaTeX (\\boldsymbol{\\theta}) ;
+					     2. garder un seul <ol> permanent et piloter la mise en valeur via
+					        Reveal.on('fragmentshown'/'fragmenthidden') en calculant index % 3, avec 18
+					        fragments invisibles servant de compteur. Plus fragile (navigation arrière, saut
+					        direct via l'URL), donc déconseillé.
+
+					     Choix retenu : conserver le HTML explicite ci-dessous, qui reproduit exactement le
+					     comportement voulu sans dépendance à du JS de génération. -->
 					<div class="r-stack">
 						<div class="fragment fade-out" data-fragment-index="3" style="margin: 0px; padding: 0px;">
 							<ol style="padding-left: 1em; display: block;">
