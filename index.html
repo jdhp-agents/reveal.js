@@ -4,40 +4,95 @@
 		<meta charset="utf-8" />
 		<meta
 			name="viewport"
-			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+			content="width=device-width, initial-scale=1.0"
 		/>
 
-		<title>reveal.js</title>
+		<title>Jérémie Decock — Presentations</title>
 
-		<link rel="stylesheet" href="dist/reset.css" />
-		<link rel="stylesheet" href="dist/reveal.css" />
-		<link rel="stylesheet" href="dist/theme/black.css" />
-
-		<!-- Theme used for syntax highlighted code -->
-		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" />
+		<style>
+			body {
+				margin: 0;
+				padding: 3rem 1.5rem;
+				background: #191919;
+				color: #eee;
+				font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+			}
+			main {
+				max-width: 40rem;
+				margin: 0 auto;
+			}
+			h1 {
+				font-size: 1.6rem;
+				font-weight: 600;
+				margin-bottom: 2rem;
+			}
+			ul {
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			li + li {
+				margin-top: 0.75rem;
+			}
+			a {
+				display: block;
+				padding: 0.9rem 1.1rem;
+				border-radius: 0.4rem;
+				background: #242424;
+				color: #eee;
+				text-decoration: none;
+				transition: background 0.15s ease;
+			}
+			a:hover {
+				background: #333;
+			}
+			a .subtitle {
+				display: block;
+				margin-top: 0.2rem;
+				font-size: 0.85rem;
+				color: #999;
+			}
+		</style>
 	</head>
 	<body>
-		<div class="reveal">
-			<div class="slides">
-				<section>Slide 1</section>
-				<section>Slide 2</section>
-			</div>
-		</div>
-
-		<script src="dist/reveal.js"></script>
-		<script src="dist/plugin/notes.js"></script>
-		<script src="dist/plugin/markdown.js"></script>
-		<script src="dist/plugin/highlight.js"></script>
-		<script>
-			// More info about initialization & config:
-			// - https://revealjs.com/initialization/
-			// - https://revealjs.com/config/
-			Reveal.initialize({
-				hash: true,
-
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [RevealMarkdown, RevealHighlight, RevealNotes],
-			});
-		</script>
+		<main>
+			<h1>Presentations</h1>
+			<ul>
+				<li>
+					<a href="csc-53439-ep_lecture-2_2025.html">
+						CSC 53439 EP — Lecture 2 (2025)
+						<span class="subtitle">Exploration and Distributional Methods in RL</span>
+					</a>
+				</li>
+				<li>
+					<a href="csc-53439-ep_lecture-2_2026.html">
+						CSC 53439 EP — Lecture 2 (2026)
+						<span class="subtitle">Advanced RL Topics</span>
+					</a>
+				</li>
+				<li>
+					<a href="csc-53439-ep_lecture-3_2025.html">
+						CSC 53439 EP — Lecture 3 (2025)
+						<span class="subtitle">Advanced RL Topics</span>
+					</a>
+				</li>
+				<li>
+					<a href="inf581_optimization.html">
+						INF581 — Optimization
+					</a>
+				</li>
+				<li>
+					<a href="optimization_cem.html">
+						Cross-Entropy Method
+					</a>
+				</li>
+				<li>
+					<a href="optimization_cem_v2.html">
+						Cross-Entropy Method (v2)
+						<span class="subtitle">d3.js-generated figures</span>
+					</a>
+				</li>
+			</ul>
+		</main>
 	</body>
 </html>

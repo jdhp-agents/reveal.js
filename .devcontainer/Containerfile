@@ -1,0 +1,46 @@
+FROM debian:trixie-slim
+# FROM node:trixie-slim
+
+ARG CONTAINER_UID=1000
+ARG CONTAINER_GID=1000
+
+# Install git, make, npm (which installs nodejs) and the PostgreSQL server; clean up the
+# apt cache to reduce image size.
+# postgresql-common is installed first so the automatic "main" cluster creation can be
+# disabled before the PostgreSQL server is installed: this project initializes and owns
+# its own cluster at runtime (see .devcontainer/postgres-start.sh) instead of using the
+# Debian-managed one, which would require root or the "postgres" account to administer.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    make \
+    npm \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user.
+RUN groupadd --gid ${CONTAINER_GID} user \
+  && useradd --uid ${CONTAINER_UID} --gid ${CONTAINER_GID} --no-log-init --shell /bin/bash --create-home user
+
+# Headless Chromium for the Playwright MCP server (see .mcp.json), so the AI agent can
+# actually drive and screenshot the frontend instead of only fetching raw HTML. The MCP
+# package is pinned (matching the version-pinning convention used elsewhere in this project,
+# e.g. requirements.txt, POSTGRES_IMAGE) so that the browser installed below always matches
+# the version the server will actually load at runtime -- installing it by any other means
+# (e.g. `npx playwright@latest install`) could resolve a different version and download a
+# browser revision the pinned MCP server doesn't expect.
+# The browser is cached outside the persistent /home/user volume (see devcontainer.json):
+# anything baked under /home/user at build time would be shadowed and lost the first time
+# that volume is mounted, so it would have to be re-downloaded via postCreateCommand on
+# every fresh volume instead of surviving image rebuilds.
+ENV PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers
+RUN npm install -g @playwright/mcp@0.0.77 \
+  && "$(npm root -g)/@playwright/mcp/node_modules/.bin/playwright" install --with-deps chromium \
+  && mkdir -p "$PLAYWRIGHT_BROWSERS_PATH" \
+  && chown -R user:user "$PLAYWRIGHT_BROWSERS_PATH"
+
+# Switch to the non-root user.
+# Sets the default container user (containerUser). Even when remoteUser is defined in devcontainer.json,
+# this ensures the container runs as non-root in all contexts (e.g. direct docker run, CI/CD pipelines).
+USER user

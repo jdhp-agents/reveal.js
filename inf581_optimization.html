@@ -1,0 +1,4241 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>INF581 - Optimization</title>
+
+		<meta name="description" content="INF581 - Optimization">
+		<meta name="author" content="Jérémie Decock">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+		
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+
+		<link rel="stylesheet" href="jdhp.css">
+	</head>
+	
+	<body>
+
+		<div class="reveal">
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+				<!-- TITLE AND OUTLINE ---------------------------------------------------------------------------------------------------------- -->
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+
+				<!-- #region -->
+
+				<section>
+					<h3 style="font-size: 0.75em; font-weight: bold;">INF 581 Advanced Machine Learning and Autonomous Agents</h3>
+					<h4 style="font-size: 0.65em;">Topics in Optimization</h4>
+					<br><br><br><br>
+					<p style="color:darkgray; font-size: 0.5em;">February 2026</p>
+
+					<!-- Macros definition -->
+					$$
+					\newcommand{\vs}[1]{\boldsymbol{#1}} % vector symbol (\boldsymbol, \textbf or \vec)
+					\newcommand{\ms}[1]{\boldsymbol{#1}} % matrix symbol (\boldsymbol, \textbf)
+					$$
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Hello everyone,
+
+welcome to this lecture dedicated to mathematical optimization.
+
+So far Jessi has introduced you to machine learning topics.
+Today I’ll introduce topics in optimization ;
+and well... optimization is not machine learning
+but we will see it has very strong links with it.
+
+<!-- Actually Machine Learning and optimization are the two main topics nowadays in modern IA and these two subjects are totally interconnected and interdependent.
+For instance the learning procedure in supervised learning is an optimization problem, where we try to find the neuron weights that minimize an error function.
+Training an agent in reinforcement learning is an optimization problem too where we try to find the policy’s parameters that maximize the expected reward.
+So optimization can be seen as a required tool in machine learning.
+
+And optimization is often an iterative procedure where we try to find a vector that minimize (or maximize) a function, using solutions what have been seen in the past ;
+so optimization itself can also be seen as a learning problem!
+
+So again, Machine Learning and Optimization are totally interconnected and interdependent and that’s why mathematical optimization is presented here today. -->
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section style="font-size: 50%;">
+					<h3>Outline</h3>
+			
+					<!-- <ul>
+						<li>Optimization in general</li>
+						<li>Mainly with gradient free methods</li>
+						<li>Zoom on an application linked to RL : Direct Policy Search</li>
+					</ul> -->
+
+					<br>
+
+					<ul style="list-style: none;">
+						<li><b><a href="#/part1-introduction">Part 1. Introduction</a></b></li>
+						<!-- <ul style="list-style: none;"> -->
+							<!-- <li>Optimization in general</li> -->
+							<!-- <li></li>
+							<li></li> -->
+						<!-- </ul> -->
+						<li style="margin-top: 0.5em;"><b><a href="#/part2-stochastic-and-population-methods">Part 2. Stochastic and Population Methods</a></b></li>
+						<ul style="list-style: none;">
+							<!-- <li><a href="#/"></a>Gradient free methods</li> -->
+							<li><a href="#/2.1-population-methods-intro">Population methods</a></li>
+							<li><a href="#/2.2-generic-evolutionary-algorithm">Generic Evolutionary Algorithm</a></li>
+							<li><a href="#/2.3-solution-encoding">Solution encoding</a></li>
+							<li>
+								<a href="#/2.4-operators-selection">Operators</a>
+								<ul style="list-style: none;">
+									<li>
+										<a href="#/2.4-operators-selection">Selection</a>,
+										<a href="#/2.4-operators-crossover">Crossover</a>,
+										<a href="#/2.4-operators-mutation">Mutation</a>,
+										<a href="#/2.4-operators-termination">Termination</a>
+									</li>
+								</ul>
+							</li>
+							<li>
+								<a href="#/2.5-examples-es">Evolution Strategies Examples</a>
+								<ul style="list-style: none;">
+									<li>
+										<a href="#/2.5-examples-es">$(1 + 1)\text{-ES}$</a>,
+										<a href="#/2.5-examples-saes1">$(1 + 1)\text{-SA-ES}$</a>,
+										<a href="#/2.5-examples-saes2">$(\mu/\rho + \lambda)\text{-SA-ES}$</a>
+									</li>
+								</ul>
+							</li>
+							<li>
+								<a href="#/2.5-examples-de">Other Popular Stochastic and Population Methods</a>
+								<ul style="list-style: none;">
+									<li>
+										<a href="#/2.5-examples-de">Differential Evolution</a>,
+										<a href="#/2.5-examples-cem">Cross-Entropy Method</a>,
+										<a href="#/2.5-examples-cma">CMA-ES</a>,
+										<a href="#/2.5-examples-pso">Particle Swarm Optimization</a>
+									</li>
+								</ul>
+							</li>
+						</ul>
+						<li style="margin-top: 0.5em;"><b><a href="#/part3-application-to-rl">Part 3. Applications Linked to Reinforcement Learning</a></b></li>
+						<!-- <ul style="list-style: none;"> -->
+							<!-- <li>Direct Policy Search</li> -->
+							<!-- <li></li>
+							<li></li> -->
+						<!-- </ul> -->
+						<li style="margin-top: 0.5em;"><b><a href="#/conclusion">Conclusion</a></b></li>
+					</ul>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Today I’ll talk about...
+
+- optimization in general,
+
+- then I will focus on some popular <b style="color:red">stochastic</b> and <b style="color:red">population methods</b>,
+  like genetic algorithms and evolutionary strategies.
+
+- And finally I'll discuss applications to Reinforcement Learning ;
+  and for that I’ll introduce <b style="color:red">Direct Policy Search</b> methods.
+  Actually, today’s lab will focus on this:
+  we will continue to solve Reinforcement Learning problems
+  in the Gymnasium framework
+  but using Direct Policy Search methods this time.
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+				
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+				<!-- PART 1: INTRODUCTION ------------------------------------------------------------------------------------------------------- -->
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+
+				<!-- #region -->
+
+				<section id="part1-introduction">
+					<h3>Part 1</h3>
+					<h4>Introduction</h4>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+
+				<section style="font-size: 90%;">
+					<h3>Mathematical optimization</h3>
+
+					<p>
+						Find the minimum (or the maximum) of a function $f$
+
+						$$\boldsymbol{x}^* = \arg\min_{\boldsymbol{x} \in \mathcal{X}} f(\boldsymbol{x})$$
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/toy_objective_func_1.png" />
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+Ok so… to begin with…
+the basic definition
+
+The aim of today's lecture is to study algorithms
+designed to find
+either the minimum
+or the maximum of a function
+
+So using this notation <b style="color:blue">[...]</b>, the subject here is to find x star.
+
+<!-- So of course, it has nothing to do with computer science optimisation, where the aim is to tune implementation of algorithms to improve their speedup (with for instance with parallelization, specialized hardware or compilation tips). -->
+
+<!-- So it’s not this.
+	In *mathematical* optimization, we design algorithms to find either the minimum or the maximum of a function, putting aside technical computer science considerations.
+-->
+<!-- , putting aside technical computer science considerations. -->
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<!-- <section>
+					<h3>Mathematical optimization</h3>
+					<h4>What is it used for?</h4>
+
+					<br>
+
+					<p style="text-align: left; font-size: 0.7em;">
+						Mathematical optimization can be applied everywhere...
+					</p>
+					<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+						<li>Industry : optimize Power Grid, air traffic, planning, logistics, …</li>
+						<li>Robotics : optimize actuators control, trajectory / energy consumption, ...</li>
+						<li>Finance : maximise long term profits, minimize risks, ...</li>
+						<li>Almost everything can be optimized…</li>
+					</ul>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+As you certainly know, mathematical optimisation is not only useful for AI
+but it has a huge list of possible applications.
+
+Actually it can be applied everywhere and it is valuable almost everywhere :
+for instance in the industry where it can be used to [...]
+in robotics to optimize [...] and so forth
+to maximise long term profits, minimize risks, …
+and well, actually almost everything can be optimized
+and life itself is the result of an optimization procedure with the theory of biological evolution explained by the simple rule of natural selection
+and as we will see, some optimization algorithms are highly inspired by Neo-Darwinism therories
+
+Well there are many other applications, some are listed in this link [...].
+						</div>
+					</aside>
+				</section> -->
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Minimize or maximize ?</h3>
+					
+					<br>
+			
+					<p class="fragment" data-fragment-index="1" style="text-align: left; font-size: 0.8em;">In optimization literature, usually by “optimize” one mean “minimize”</p>
+
+					<p class="fragment" data-fragment-index="2" style="text-align: left; font-size: 0.8em;">In reinforcement learning by “optimize” one mean “maximize”</p>
+
+					<p class="fragment" data-fragment-index="3" style="text-align: left; font-size: 0.8em;">Same algorithms in both cases</p>
+
+					<p class="fragment" data-fragment-index="3" style="text-align: left; font-size: 0.8em;">
+						$$
+						\arg\min f(x) \Leftrightarrow \arg\max -f(x)
+						$$
+					</p>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+The choice between minimization and maximization depends on the problem we try to solve.
+
+But, there are some conventions, and...
+<b style="color:blue">[...]</b>
+<b style="color:blue">[...]</b>
+
+<b style="color:blue">[...]</b>
+This is not an issue actually, we can use the same algorithms in both cases.
+We can switch from one convention to the other
+simply taking the opposite
+of the function to optimize.
+
+So no big news so far
+but as you will see in the lab,
+you have to remember this difference of conventions
+between the optimization
+and the reinforcement learning communities.
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Optimization in AI</h3>
+
+					<br>
+
+					<p style="text-align: left; font-size: 0.7em;">Optimization is a main component of modern AI (the other one is Learning)</p>
+
+					<p style="text-align: left; font-size: 0.7em;">Optimization and Learning are highly connected</p>
+
+					<p style="text-align: left; font-size: 0.7em;">
+						E.g. optimization is used to:
+						<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+							<li>set a model in supervised learning (e.g. weights of neural networks)</li>
+							<li>optimize a policy in Reinforcement Learning (Direct Policy Search)</li>
+						</ul>
+					</p>
+
+					<p style="text-align: left; font-size: 0.7em;">Some optimization algorithms use learning techniques (especially surrogate models)</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+So you may wonder why I’m talking about optimization in a machine learning course...
+
+Well, actually Machine Learning and optimization are the two main topics nowadays in modern IA
+and these two subjects are totally interconnected and interdependent.
+
+For instance the learning procedure in supervised learning is an optimization problem, where we try to find the neuron weights that minimize an error function.
+Training an agent in reinforcement learning is an optimization problem too, where we try to find the policy’s parameters that maximize the expected reward.
+So optimization can be seen as a required tool in machine learning.
+
+And optimization is often an iterative procedure where we try to find a vector that minimize (or maximize) a function, using solutions what have been seen in the past ;
+so optimization itself can also be seen as a learning problem!
+
+So again, Machine Learning and Optimization are totally interconnected and interdependent and that’s why mathematical optimization is presented here today.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Applications beyond AI</h3>
+
+					<p style="text-align: left; font-size: 0.6em;">
+						Mathematical optimization can be applied everywhere...
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>Industry : optimize Power Grid, air traffic, planning, logistics, …</li>
+							<li>Robotics : optimize actuators control, trajectory / energy consumption, ...</li>
+							<li>Finance : maximize long term profits, minimize risks, ...</li>
+							<li>Almost everything can be optimized…</li>
+							<li>Life itself is the result of an optimization process (natural selection)</li>
+						</ul>
+					</p>
+
+					<!-- <p style="text-align: left; font-size: 0.5em;">
+						Many examples of applications: <a href="https://en.wikipedia.org/wiki/List_of_genetic_algorithm_applications">https://en.wikipedia.org/wiki/List_of_genetic_algorithm_applications</a>
+					</p> -->
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+As you certainly know, mathematical optimisation is not only useful for AI
+but it has a huge list of possible applications.
+
+Actually it can be applied everywhere and it is valuable almost everywhere :
+- for instance <b style="color:red">in the industry</b> where it can be used to <b style="color:blue">[...]</b>
+- in <b style="color:red">robotics</b> to optimize <b style="color:blue">[...]</b> and so forth
+- In <b style="color:red">finance</b> it is used to maximise long term profits or minimize risks
+and well, actually almost everything can be optimized
+and life itself is the result of an optimization procedure
+with the <b style="color:red">theory of biological evolution</b>
+explained by the <b style="color:red">simple rule of natural selection</b>.
+
+And as we will see later,
+some optimization algorithms are highly inspired by <b style="color:red">Neo-Darwinism therories</b>.
+
+<!-- Well there are many other applications, some are listed in this link [...]. -->
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Mathematical optimization</h3>
+					<h4>Few applications examples among thousands</h4>
+
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/antena_1.jpg" width="80%" />
+						</div>
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/antena_2.png" width="100%" />
+							<p style="text-align: left; font-size: 0.6em;">
+								The 2006 <b>NASA ST5 spacecraft antenna</b>.
+							</p>
+							<p style="text-align: left; font-size: 0.6em;">
+								This complicated shape was found by an evolutionary computer design program to <b>create the best radiation pattern</b>.
+							</p>
+							<p style="text-align: left; font-size: 0.6em;">
+								It is known as an <a href="https://en.wikipedia.org/wiki/Evolved_antenna">evolved antenna</a>.
+							</p>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+So, some examples among others...
+
+Here we have an example in engineering
+
+where an optimization algorithm
+has been used to design the antenna of a spacecraft.
+
+It's objective was to find the best radiation pattern.
+
+As you can see, the optimal solution has a shape that is not very intuitive <b style="color:blue">[...]</b>
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Mathematical optimization</h3>
+					<h4>Few applications examples among thousands</h4>
+
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/optim_plane.png" width="100%" />
+						</div>
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/optim_plane_2.jpg" width="100%" />
+						</div>
+					</div>
+					<p style="clear: both; font-size: 0.6em;"><br><a href="https://www.sciencedirect.com/science/article/pii/S1568494617305690">https://www.sciencedirect.com/science/article/pii/S1568494617305690</a></p> 
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+This kind of algorithms can also be used
+to improve cars or aircraft aerodynamism…
+
+On the right side, we can see some of the solution that have been compared by the algorithm.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Mathematical optimization</h3>
+					<h4>Few applications examples among thousands</h4>
+
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<br><br><br>
+							<p style="text-align: left; font-size: 0.6em;">Production planning in electric power grid</p>
+							<p style="text-align: left; font-size: 0.6em;">Huge optimization problem with <b>millions of dimensions</b>!</p>
+						</div>
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/optim_rte.gif" width="70%" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+It can also be used to minimise
+the long term cost of electricity production,
+and the risk of power failure
+at the same time.
+
+This is a huge optimization problem,
+with millions of dimensions
+and constraints.
+
+So that’s a very difficult and very important problem
+as the financial or industrial consequences of a bad planning can be very serious.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Many different problems and algorithms</h3>
+			
+					<div class="row">
+						<div style=" float: left; width: 50%; font-size: 0.5em;">
+							<h5 style="text-align: left;" class="fragment" data-fragment-index="1">Problems</h5>
+							<ul>
+								<li class="fragment" data-fragment-index="1">Objective function shape:</li>
+								<ul class="fragment" data-fragment-index="1">
+									<li>Linear / <span class="fragment highlight-current-red" data-fragment-index="11">non-linear</span></li>
+									<li>Convex / <span class="fragment highlight-current-red" data-fragment-index="11">non-convex</span>, …</li>
+								</ul>
+								<li class="fragment" data-fragment-index="2"><span class="fragment highlight-current-red" data-fragment-index="11">Continuous</span> / <span class="fragment highlight-current-red" data-fragment-index="11">discrete (combinatorial)</span> / <span class="fragment highlight-current-red" data-fragment-index="11">mixte</span> </li>
+								<li class="fragment" data-fragment-index="3"><span class="fragment highlight-current-red" data-fragment-index="11">Uni-modal</span> / <span class="fragment highlight-current-red" data-fragment-index="11">multi-modal</span></li>
+								<li class="fragment" data-fragment-index="4">Multi-valued objective function:</li>
+								<ul class="fragment" data-fragment-index="4">
+									<li>Multi objective VS mono objective</li>
+								</ul>
+								<li class="fragment" data-fragment-index="5">With / <span class="fragment highlight-current-red" data-fragment-index="11">without gradient formulation</span></li>
+								<li class="fragment" data-fragment-index="6"><span class="fragment highlight-current-red" data-fragment-index="11">Stochastic objective function</span></li>
+								<li class="fragment" data-fragment-index="7">Constrained or <span class="fragment highlight-current-red" data-fragment-index="11">not</span></li>
+								<li class="fragment" data-fragment-index="8"><span class="fragment highlight-current-red" data-fragment-index="11">Dynamical (multi-stage optimization)</span></li>
+								<li class="fragment" data-fragment-index="9"><span class="fragment highlight-current-red" data-fragment-index="11">Optimize vectors</span> VS optimize functions (using Hamiltonian)</li>
+							</ul>
+						</div>
+						<div style=" float: left; width: 50%; font-size: 0.5em;">
+							<div class="r-stack">
+								<div class="fragment current-visible" data-fragment-index="1">
+									<img src="assets/inf581_optimization/image25.jpg" style="margin: 0; padding: 0;" width="80%" />
+									<img src="assets/inf581_optimization/image13.png" style="margin: 0; padding: 0;" width="80%" />
+								</div>
+								<img src="assets/inf581_optimization/image21.gif" class="fragment current-visible" data-fragment-index="2" />
+								<div class="fragment current-visible" data-fragment-index="3">
+									<img src="assets/inf581_optimization/image25.jpg" style="margin: 0; padding: 0;" width="80%" />
+									<img src="assets/inf581_optimization/toy_objective_func_2.png" style="margin: 0; padding: 0;" width="80%" />
+								</div>
+								<img src="assets/inf581_optimization/image11.png" class="fragment current-visible" data-fragment-index="4" />
+								<img src="assets/inf581_optimization/toy_objective_func_3.png" class="fragment current-visible" data-fragment-index="5" />
+								<img src="assets/inf581_optimization/toy_objective_func_4.png" class="fragment current-visible" data-fragment-index="6" />
+								<div class="fragment current-visible" data-fragment-index="7">
+									<img src="assets/inf581_optimization/image10.png" style="margin: 0; padding: 0;" width="80%" />
+									<img src="assets/inf581_optimization/image30.png" style="margin: 0; padding: 0;" width="80%" />
+								</div>
+								<div>
+									<h5 style="text-align: left;" class="fragment" data-fragment-index="10">Algorithms</h5>
+									<ul class="fragment" data-fragment-index="10">
+										<li><span class="fragment highlight-current-red" data-fragment-index="11">Global</span> VS Local</li>
+										<li>Gradient based / <span class="fragment highlight-current-red" data-fragment-index="11">gradient free (black box)</span></li>
+										<ul>
+											<li>Gradient based -> first order methods : gradient descent, conjugate gradient, nesterov momentum, adagrad, adam, …</li>
+											<li>Gradient based -> 2nd order methods : newton’s methods, quasi newton methods</li>
+										</ul>
+										<li><span class="fragment highlight-current-red" data-fragment-index="11">Population methods: genetic algorithms, differential evolution, particle swarm optimization, …</span></li>
+										<li><span class="fragment highlight-current-red" data-fragment-index="11">Stochastic algorithm (random sampling)</span></li>
+										<li>Multiobjective optimization</li>
+										<li>Surrogate models</li>
+										<li>Expression optimization: genetic programming,...</li>
+									</ul>
+									<br>
+									<br>
+									<br>
+									<br>
+									<br>
+									<br>
+								</div>
+							</div>
+						</div>
+					</div>
+					<p style="clear: both;"></p>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes" style="font-size: 65%;">
+There are many families of optimization problems with differents difficulties…
+for instance, the objective function can be 
+- <b style="color:blue">[...]</b>
+  - linear or non linear,
+  - convex or non convex
+- The <b style="color:red">solution space</b> can be
+  - <b style="color:red">continuous</b>, when we try to optimize a vector of real values
+  - it can be <b style="color:red">discrete</b>, when we try to optimize a vector of discrete values (for instance a binary vector)
+  - it can be <b style="color:red">mixte</b>, when we try to optimize a vector having continuous values on some dimensions and discrete values on others
+- The objective function can be <b style="color:red">Unimodal</b> (when only one global optimum to finds
+  or <b style="color:red">multi-modal</b> (when there are many optima to find)
+- The problem can be <b style="color:red">multi-objective</b> (when we try to optimize several objectives at the same time)
+  For instance a robot that tries to reach a target will search a trajectory that
+    minimizes its final distance to the target
+    and minimizes the time to reach the target
+    and minimizes the energy spent for that task
+  In this case, there is a large number of “good” solution with different compromises on each objectives (solutions that are on the “pareto front”)
+- An analytical formulation of the <b style="color:red">gradient</b> may be provided or not
+- The objective function may be <b style="color:red">stochastic</b>,
+  in this case, it returns different values when it is called several times on the same solution vector.
+  In other words the objective function is noised
+- The solution space can be <b style="color:red">constrained</b> or not
+- And finaly, the objective function may also <b style="color:red">change</b> in time
+
+---
+
+So there are <b style="color:red">many families of optimization problems</b>,
+but there are also <b style="color:red">many families of optimization algorithms</b>
+more or less adapted for these different problems.
+
+Some algorithms search for the global optimum when others search for a local optimum.
+Some require the gradient of the objective function when others don’t.
+Some are stochastic, some are not.
+And so forth.
+
+Today, <b style="color:red">we will focus on the problems and algorithms in red</b> in this list <b style="color:blue">[...]</b>
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Gradient descent</h3>
+
+					<div class="row">
+						<div style=" float: left; width: 60%;">
+							<p style="text-align: left; font-size: 0.6em; margin-bottom: 2em;">
+								Iteratively update $\boldsymbol{x}$ toward the steepest slope
+								$$\boldsymbol{x} \leftarrow \boldsymbol{x} - \alpha \nabla_{\boldsymbol{x}}f(\boldsymbol{x})$$
+							</p>
+
+							<p style="text-align: left; font-size: 0.6em;">
+								Requires gradient of the objective function
+								<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+									<li>$\alpha$ is the step size which influence the convergence rate</li>
+									<li>How to adapt it to converge faster ?</li>
+								</ul>
+							</p>
+						</div>
+						<div style=" float: left; width: 40%;">
+							<img src="assets/inf581_optimization/gradient_descent.gif" width="100%" />
+						</div>
+					</div>
+
+					<p style="clear: both; text-align: left; font-size: 0.6em;">
+						Popular variants of SGD in machine learning:
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li><b>Momentum optimization</b>: Nesterov Momentum / Nesterov Accelerated Gradient (NAG)</li>
+							<li><b>Adaptive methods</b>: AdaGrad, RMSProp, Adam</li>
+						</ul>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes" style="font-size: 90%;">
+Before talking about <b style="color:red">gradient free methods</b>, let's quickly recall gradient descent.
+
+You already know this optimisation procedure <b style="color:blue">[...]</b>, the gradient descent (or gradient ascent).
+You already used it to optimize weights in neural networks
+and you also used it in previous labs with Policy Gradient to optimize the policy of an agent.
+
+So very quickly, in gradient descent we <b style="color:red">iteratively update</b> the current solution vector x
+<b style="color:red">toward the steepest slope</b>.
+
+This requires to know the gradient on x of the objective function f.
+Here <b style="color:blue">[...]</b> alpha <b style="color:blue">is the step size which influence the convergence rate</b>
+And the classical question with these algorithms is “what is the best way to adapt the learning rate alpha in order to fasten the convergence”
+
+If the learning rate is to small, explored solutions from one iteration to the other will be very close and the convergence will be very slow ;
+and if it is too large, there may be no convergence at all.
+And to be efficient, the algorithm should adapt this rate along iterations, depending on the local shape of the objective function.
+
+So there are many variants of stochastic gradient descent, you probably saw some of them as they are very popular in Machine Learning
+
+There are two main families of variants of SGD to adapt the learning rate along iterations:
+- <b style="color:red">momentum methods</b> with for instance the nesterov momentum algorithm
+- and the <b style="color:red">adaptive methods</b> like adagrad or adam
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Momentum methods</h3>
+				
+					<p style="text-align: left; font-size: 0.7em;">
+						"Classic" Gradient Descent:
+						$$\boldsymbol{x} \leftarrow \underbrace{\boldsymbol{x}}_{\text{position}} - \underbrace{\alpha ~ \nabla_{\boldsymbol{x}}f(\boldsymbol{x})}_{\text{momentum}}$$
+					</p>
+
+					<p style="text-align: left; font-size: 0.7em;">
+						Gradient Descent with momentum:
+						$$\boldsymbol{m} \leftarrow \underbrace{\beta \boldsymbol{m}}_{\text{momentum}} - \underbrace{\alpha ~ \nabla_{\boldsymbol{x}}f(\boldsymbol{x})}_{\text{acceleration}}$$
+						$$\boldsymbol{x} \leftarrow \underbrace{\boldsymbol{x}}_{\text{position}} + \underbrace{\boldsymbol{m}}_{\text{momentum}}$$
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+This is just a recall,
+in momentum methods we introduce a momentum term to adapt the learning rate
+and fasten the convergence.
+
+The momentum term is a moving average of the past gradients
+- it is used to accelerate the convergence in directions where the gradient is consistent along iterations
+- and to slow down the convergence in directions where the gradient is not consistent along iterations.
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Gradient free methods</h3>
+					<h4>(“black box optimization”)</h4>
+
+					<br>
+
+					<p style="text-align: left;">
+						Why gradient free methods ?
+						<ul style="padding-left: 1em; display: block;">
+							<li>gradient of objective function not always known</li>
+							<li>or difficult to compute</li>
+							<li>convergence can be slow</li>
+							<li>gradient based methods search for local optima (doesn’t help for multimodal functions)</li>
+						</ul>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+So gradient descent are useful but in the rest of the lecture I’ll talk about gradient free methods.
+
+There are several motivations for that :
+<b style="color:blue">[...]</b>
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+				<!-- PART 2: POPULATION METHODS ------------------------------------------------------------------------------------------------- -->
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+
+				<!-- #region -->
+
+				<section id="part2-stochastic-and-population-methods">
+					<h3>Part 2</h3>
+					<h4>Population methods</h4>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.1: INTRODUCTION ------------------------------------ -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+
+				<section id="2.1-population-methods-intro">
+					<h3>Population methods</h3>
+				
+					<p style="text-align: left; font-size: 0.8em;">
+						Descent methods:
+						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+							<li>A single solution is updated incrementally toward a local minimum</li>
+						</ul>
+					</p>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Population methods:
+						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+							<li>Iterative methods where several solutions (called individuals) are tested at each iteration</li>
+							<li>Information at different points in the solution space can be shared between individuals</li>
+							<li>Help the algorithm to avoid being stuck in a local optimum</li>
+							<li>Easy to parallelize</li>
+						</ul>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+As we just saw, in descent methods,
+- <b style="color:blue">[...]</b>
+
+But now I'll talk about population methods, that are quite different.
+- Population methods are <b style="color:blue">iterative methods where [...]</b>
+- <b style="color:blue">[...]</b>
+- <b style="color:blue">[...]</b>.
+- One advantage of these methods is that <b style="color:blue">they are often easy to parallelize</b>
+
+So population methods a random search
+where we progressively bias the search
+toward interesting areas
+of the solution space
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Evolutionary Algorithms</h3>
+					<h4>(a.k.a. Evolutionary Computing)</h4>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Let's start with Evolutionary Algorithms.
+
+This is one of the main family of population methods.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Evolutionary Algorithms</h3>
+					<h4 style="font-size: 0.65em;">Biomimetic algorithms, inspired by natural selection and evolution</h4>
+				
+					<div class="row">
+						<div style="float: left; width: 30%;">
+							<br>
+							<p style="text-align: left; font-size: 0.6em;">
+								Fitter individuals are more likely to pass on their <b>genes</b> to the next generation.
+							</p>
+							<p style="text-align: left; font-size: 0.6em;">
+								Chromosomes of the fitter individuals are passed on to the next generation after undergoing the genetic operations of <b>crossover</b> and <b>mutation</b>
+							</p>
+						</div>
+						<div style="float: left; width: 70%;">
+							<br>
+							<img width="100%" src="assets/inf581_optimization/mice.png" />
+							<p style="font-size: 0.25em;">Evolution by Natural Selection Source: <a href="https://www.khanacademy.org/science/biology/her/evolution-and-natural-selection/a/darwin-evolution-natural-selection">Khan Academy</a></p>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Evolutionary algorithms are <b style="color:blue">biomimetic algorithms, inspired by natural selection and evolution</b>
+
+It reproduces the natural selection in silico.
+
+The main idea is the following :
+“Good” individuals (for a given problem : here survive and reproduce)
+are more likely to pass on their genes to the next generation.
+
+Chromosomes of these “good” individuals are passed on to the next generation
+after undergoing the genetic operations of crossover and mutation
+to give a chance for next generations individuals to be even better.
+
+In this illustration <b style="color:blue">[...]</b>, we have mice of different colors.
+In this environment where rocks are dark, the dark mice are more likely to survive and reproduce
+as predators have more difficulties to see them.
+The color of the mice is a kind of “gene” that is passed on to the next generation.
+So the population of mice will evolve to be darker and darker to adapt to the environment.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Families of Evolutionary Algorithms (1/3)</h3>
+				
+					<p style="text-align: left; font-size: 0.7em;">
+						Evolution Strategies (ES)
+						<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+							<li>Ingo Rechenberg & Hans-Paul Schwefel [1965]</li>
+							<li>Made for continuous solution spaces</li>
+						</ul>
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/func_himmelblau.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+There are 3 main families of Evolutionary Algorithms.
+
+The first one is <b style="color:blue">[...]</b>
+- by <b style="color:blue">[...]</b>
+- It’s very well adapted for objective functions with a continuous solution spaces
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Families of Evolutionary Algorithms (2/3)</h3>
+				
+					<p style="text-align: left; font-size: 0.7em;">
+						Genetic Algorithms (GA)
+						<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+							<li>J.H. Holland [1975]</li>
+							<li>Dissociate genotype and phenotype</li>
+						</ul>
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/ga_spaces.jpg" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+The second family is probably the most famous, it’s genetic algorithms.
+
+Here the bio inspiration is even stronger as not only a kind of natural selection is reproduced but also genetic consideration.
+In ES we only have a phenotype.
+Here we also have a genotype and solutions are coded with genes.
+
+This has impacts on crossover and mutation operators, we will discuss that later.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Families of Evolutionary Algorithms (3/3)</h3>
+				
+					<p style="text-align: left; font-size: 0.7em;">
+						Genetic Programming (GP)
+						<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+							<li>J. Koza [1988]</li>
+							<li>Based on Genetic Algorithms, but individuals are programs</li>
+						</ul>
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/gp_example.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+The third family of EA is less known ;
+it’s genetic programming
+and here solutions are coded as programs (with a tree of operators).
+
+We won’t discuss this family in details here but it can be interesting for some applications.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<!--
+				<section style="text-align: left; font-size: 70%;">
+					<h3 style="text-align: center;">Past, present, future</h3>
+				
+					<ul>
+						<li>Old methods (60’s)</li>
+						<li>Genetic Algorithms (and EAs) became very popular after the publication of Goldberg’s book in 1989</li>
+					</ul>
+					<div class="r-stack">
+						<div class="fragment current-visible" data-fragment-index="1">
+							<img class="r-stretch" src="assets/inf581_optimization/book_goldberg.png" />
+						</div>
+						<div class="fragment current-visible" data-fragment-index="2" style="width: 100%; background-color: #c53030;">
+							<ul>
+								<li>Evolution Strategies are very popular thanks CMA-ES</li>
+								<ul>
+									<li>The state of the art nowadays</li>
+									<li>Works up to few hundreds of dimensions (solution space)</li>
+								</ul>
+							</ul>
+						</div>
+					</div>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				-->
+
+				<section style="text-align: left; font-size: 65%;">
+					<h3 style="text-align: center;">Past, present, future</h3>
+
+					<br>
+				
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<ul>
+								<li>Old methods (60’s)</li>
+								<li class="fragment" data-fragment-index="1">Genetic Algorithms (and EAs) became very popular after the publication of Goldberg’s book in 1989</li>
+								<li class="fragment" data-fragment-index="2">Evolution Strategies are very popular thanks CMA-ES</li>
+								<ul class="fragment" data-fragment-index="2">
+									<li>The state of the art nowadays</li>
+									<li>Works up to few hundreds of dimensions (solution space)</li>
+								</ul>
+								<li class="fragment" data-fragment-index="3">Recently regains attention in RL community<br>e.g. [<a href="https://arxiv.org/pdf/1703.03864]">arxiv.org/pdf/1703.03864</a>]</li>
+							</ul>
+						</div>
+						<div style="float: left; width: 50%;">
+							<div class="r-stack">
+								<div class="fragment current-visible" data-fragment-index="1">
+									<img width="100%" src="assets/inf581_optimization/book_goldberg.png" />
+								</div>
+								<div class="fragment current-visible" data-fragment-index="3">
+									<img width="100%" src="assets/inf581_optimization/mujoco.gif" />
+									<img width="100%" src="assets/inf581_optimization/mujoco_ea_tight.png" />
+								</div>
+								<div class="fragment current-visible" data-fragment-index="4">
+									<img width="100%" src="assets/inf581_optimization/rl_mario.gif" />
+								</div>
+							</div>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+- Evolutionary Algorithms are quite <b style="color:blue">old methods</b>, the first publications have been made in the sixties.
+- <b style="color:blue">[... in ninteen eighty nine]</b>
+- <b style="color:blue">[...]</b>
+- <b style="color:blue">[...]</b> Evolutionary algorithms can compete with modern Reinforcement Learning algorithms on some problems
+  (like some “atari” or “Mujoco” problems in the Gymnasium benchmark)
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.2: Generic Evolutionary Algorithm ------------------ -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+				
+				<section id="2.2-generic-evolutionary-algorithm">
+					<h3>Generic Evolutionary Algorithm</h3>
+					<h4>Illustration on the Rosenbrock function</h4>
+				
+					<div class="r-stack">
+						<p class="fragment fade-out" data-fragment-index="1" style="font-size: 65%;">
+							$$f(\boldsymbol{x}) = \sum_{i=1}^{n-1} \left[ 100(x_{i+1} - x_i^2)^2 + (x_i - 1)^2 \right]$$
+						</p>
+						<p class="fragment" data-fragment-index="1" style="font-size: 65%;">
+							$$f(\boldsymbol{x}) = (1 - x_1)^2 + 100 (x_2 - x_1^2)^2$$
+						</p>
+					</div>
+
+					<img class="fragment" data-fragment-index="1" class="r-stretch" src="assets/inf581_optimization/func_rosenbrock.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Most Evolutionary algorithms can be defined with a “common generic framework”
+
+I’ll present it in the next slides.
+
+I’ll illustrate it on <b style="color:blue">this</b> optimisation function: the Rosenbrock function
+
+In this case, the objective function has only 2 dimensions (x1 and x2).
+
+The goal is to find the global minimum of this function, which is at (1, 1).
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Generic Evolutionary Algorithm</h3>
+				
+					<!--
+						<div style="background-color: #;" class="r-stretch">
+							<img class="r-stretch" src="assets/inf581_optimization/image28.png" />
+							<span style="color:#c53030;">●</span>
+						</div>
+						<object data="assets/inf581_optimization/func.svg" type="image/svg+xml"></object>
+	
+						<svg width="256" height="256" viewBox="0 0 256 256">
+							<circle class="fragment current-visible" data-fragment-index="0" fill="orange" cx="100" cy="100" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="1" fill="orange" cx="200" cy="100" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="2" fill="orange" cx="100" cy="200" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="3" fill="orange" cx="200" cy="200" r="7" />
+						</svg>
+						<object data="assets/inf581_optimization/func.svg" type="image/svg+xml" style="width: 512px; height: 512px; position: absolute; top: 0; left: 0;"></object>
+	
+						<svg width="512" height="512" viewBox="0 0 512 512" style="position: absolute; top: 0; left: 0;">
+							<circle class="fragment current-visible" data-fragment-index="0" fill="orange" cx="0" cy="0" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="0" fill="orange" cx="100" cy="100" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="1" fill="orange" cx="200" cy="100" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="2" fill="orange" cx="100" cy="200" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="3" fill="orange" cx="200" cy="200" r="7" />
+						</svg>
+					-->
+
+					<div class="row">
+						<div style="float: left; width: 55%;">
+							<div style="text-align: left; font-size: 0.45em;">
+								<div class="fragment highlight-current-red" data-fragment-index="1">
+									<b>Input</b>:<br>
+									$\quad\quad$ $f$: the objective function<br>
+		
+									<b>Algorithm parameter</b>:<br>
+									$\quad\quad$ $\mu$: number of parents per generation<br>
+									$\quad\quad$ $\rho$: number of parents used to make each child<br>
+									$\quad\quad$ $\lambda$: number of children per generation<br>
+									$\quad\quad$ mutation operator<br>
+									$\quad\quad$ mating selection operator<br>
+									$\quad\quad$ survivor selection operator<br>
+									$\quad\quad$ termination criterion<br>
+									$\quad\quad$ an initialization procedure<br><br>
+								</div>
+	
+								<span class="fragment highlight-current-red" data-fragment-index="2">Initialize a population of $\mu$ individuals</span><br>
+								<span class="fragment highlight-current-red" data-fragment-index="3">Evaluate each individual $\boldsymbol{x}$: $f(\boldsymbol{x})$</span><br><br>
+	
+								<b>FOR EACH</b> generation (until termination criterion)<br>
+								$\quad$ <span class="fragment highlight-current-red" data-fragment-index="8"><b>FOR EACH</b> child $\boldsymbol{x}$</span><br>
+								$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="4">1. select $\rho$ parents</span><br>
+								$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="5">2. $\boldsymbol{x} \leftarrow$ recombinate selected parents (crossover)</span><br>
+								$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="6">3. mutate $\boldsymbol{x}$</span><br>
+								$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="7">4. evaluate $f(\boldsymbol{x})$</span><br>
+								$\quad$ <span class="fragment highlight-current-red" data-fragment-index="9">Select the next generation of $\mu$ individuals</span><br>
+	
+								<b>RETURN</b> the best individual
+							</div>
+						</div>
+						<div style="float: left; width: 45%;">
+							<div style="position: relative; width: 512px; height: 512px;">
+								<object data="assets/inf581_optimization/rosenbrock_contour.svg" type="image/svg+xml" style="width: 100%; height: 100%;"></object>
+								<svg width="100%" height="100%" viewBox="0 0 512 512" style="position: absolute; top: 0; left: 0;">
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="380" cy="420" r="7" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="380" cy="420" r="7" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="red"  cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="red"  cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="380" cy="420" r="7" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="red"  cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="red"  cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="380" cy="420" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="red"  cx="270" cy="250" r="7" />
+									<!-- arrow -->
+									<defs>
+										<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+											<polygon points="0 0, 7 3.5, 0 7" fill="red" />
+										</marker>
+									</defs>
+									<line class="fragment current-visible" data-fragment-index="5" x1="195" y1="212" x2="251" y2="241" stroke="red" stroke-width="2" marker-end="url(#arrowhead)" />
+									<line class="fragment current-visible" data-fragment-index="5" x1="344" y1="287" x2="288" y2="260" stroke="red" stroke-width="2" marker-end="url(#arrowhead)" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray"  cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray"  cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="380" cy="420" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="red"  cx="260" cy="280" r="7" />
+									<line   class="fragment current-visible" data-fragment-index="6" x1="270" y1="250" x2="266" y2="260" stroke="red" stroke-width="2" marker-end="url(#arrowhead)" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray"  cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray"  cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="380" cy="420" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="red"  cx="260" cy="280" r="7" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="380" cy="420" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="190" cy="080" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="210" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="130" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="430" cy="240" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="360" cy="250" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="260" cy="280" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="360" cy="380" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="160" cy="380" r="7" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="300" cy="140" r="7" />
+									<!-- <circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="480" cy="160" r="7" /> -->
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="190" cy="210" r="7" />
+									<!-- <circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="150" cy="300" r="7" /> -->
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="270" cy="350" r="7" />
+									<!-- <circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="380" cy="420" r="7" /> -->
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="190" cy="080" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="210" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="130" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="430" cy="240" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="360" cy="250" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="260" cy="280" r="7" />
+									<!-- <circle class="fragment current-visible" data-fragment-index="9" fill="green"  cx="360" cy="380" r="7" /> -->
+									<!-- <circle class="fragment current-visible" data-fragment-index="9" fill="green"  cx="160" cy="380" r="7" /> -->
+								</svg>
+							</div>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes" style="font-size: 65%;">
+In this generic framework, the algorithme takes as input the objective function to optimize.
+
+It also requires meta parameters like :
+- <b style="color:blue">the number of parents per “generation” “mu”</b> (a “generation” is an “iteration” in evolutionary algorithms)
+- <b style="color:blue">the number of parents used to make each child “rho”</b> (which is not necessarily equals to 2)
+- <b style="color:blue">the number of “children”</b> (that is to say “new solutions”) to generate per iteration
+- <b style="color:blue">a “mutation operator”</b> which is used to explore near good solutions
+- <b style="color:blue">a “mating operator”</b> which is used to make new solutions (or “children”) using properties of already good known solutions
+- <b style="color:blue">a “survivor operator”</b> that bias the algorithm exploration of solutions toward good known solutions
+<b style="color:blue">[...]</b>
+
+---
+
+The optimization procedure usually looks like this:
+
+- we start by initialize a population of “mu” “individuals” (that is to say “mu” initial solution vectors “x”) ;
+  We use the initialization procedure for that.
+  Usually the initialization procedure is just a random sampling.
+
+<b style="color:blue">[... show indiv on the right side ...]</b>
+
+---
+
+then <b style="color:blue">[...]</b>
+
+---
+
+then we repeat these two loops <b style="color:blue">[...]</b>
+
+---
+
+<b style="color:blue">[... explain what is recobination … -> two or more parents are mixed to create a new “child” solution ...]</b>
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Generic Evolutionary Algorithm</h3>
+
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<div style="text-align: left; font-size: 0.45em;">
+								<b>Input</b>:<br>
+								$\quad\quad$ $f$: the objective function<br>
+	
+								<b>Algorithm parameter</b>:<br>
+								$\quad\quad$ $\mu$: number of parents per generation<br>
+								$\quad\quad$ $\rho$: number of parents used to make each child<br>
+								$\quad\quad$ $\lambda$: number of children per generation<br>
+								$\quad\quad$ mutation operator<br>
+								$\quad\quad$ mating selection operator<br>
+								$\quad\quad$ survivor selection operator<br>
+								$\quad\quad$ termination criterion<br>
+								$\quad\quad$ an initialization procedure<br><br>
+	
+								Initialize a population of $\mu$ individuals<br>
+								Evaluate each individual $\boldsymbol{x}$: $f(\boldsymbol{x})$<br><br>
+	
+								<b>FOR EACH</b> generation (until termination criterion)<br>
+								$\quad$ <b>FOR EACH</b> child $\boldsymbol{x}$<br>
+								$\quad\quad$ 1. select $\rho$ parents<br>
+								$\quad\quad$ 2. $\boldsymbol{x} \leftarrow$ recombinate selected parents (crossover)<br>
+								$\quad\quad$ 3. mutate $\boldsymbol{x}$<br>
+								$\quad\quad$ 4. evaluate $f(\boldsymbol{x})$<br>
+								$\quad$ Select the next generation of $\mu$ individuals<br>
+	
+								<b>RETURN</b> the best individual
+							</div>
+						</div>
+						<div style="float: left; width: 50%;">
+							<br><br>
+							<img width="100%" src="assets/inf581_optimization/generic_ea.png" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+So it can be depicted like this <b style="color:blue">[...]</b>
+
+we find here the 3 main operators applied at each generation:
+- the mating or crossover operator in yellow
+- the mutation operator in yellow too
+- selection operator in blue
+
+In red we have the evaluation of individuals
+in green the initialization procedure
+and in gray the stopping criteria
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<br>
+							<img width="100%" src="assets/inf581_optimization/design_1.gif" />
+						</div>
+						<div style="float: left; width: 50%;">
+							<br>
+							<img width="100%" src="assets/inf581_optimization/design_2.png" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Here we have two examples of how the algorithm converges,
+in the solution space.
+
+On these two examples,
+we have a solution space of 4 dimensions in on the left
+and 6 dimensions on the right.
+
+Here we display the projection of visited solutions on all pairs of axes
+
+And on the right plot, color is used to depict iterations:
+black is the points visited at the beginning of the exploration
+and yellow are points visited at the end, where the algorithm converged
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.3: SOLUTION ENCODING ------------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+
+				<section id="2.3-solution-encoding">
+					<h3>Solution encoding</h3>
+
+					<div>
+						The problem we want to solve is defined as a function to minimize (e.g. error, cost, ...)
+					</div>
+				
+					$$\boldsymbol{x}^* = \arg\min_{\boldsymbol{x} \in \mathcal{X}} f(\boldsymbol{x})$$
+
+					<div>
+						But how do we define the solution space in EA?
+					</div>
+
+					<p>
+						The efficiency of mutation and recombination operators (a.k.a. search operators) greatly depends on this definition !
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Ok, now let’s talk about the main distinction between Evolution Algorithms main branches: <b style="color:blue">solution encoding</b>
+
+The question is: how do we define the solution space $\mathcal{X}$ in EA?
+
+<b style="color:blue">[...]</b>
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section style="text-align: left; font-size: 75%;">
+					<h3 style="text-align: center;">Solution encoding</h3>
+				
+					<p>
+						In some evolutionary algorithms, the solution space is tailored for specific needs of <b>search operators</b>
+					</p>
+
+					<p>
+						Then a distinction has to be made between:
+						<ul style="padding-left: 1em; display: block;">
+							<li>The solution space used by the objective function f : the <b>phenotype</b></li>
+							<li>The solution space used by the algorithm : the <b>genotype</b></li>
+						</ul>
+					</p>
+
+					<p>
+						The data structure used to store the genotype is a <b>chromosome</b>
+					</p>
+
+					<p>
+						<b>Evolution Strategies</b> like classical optimization techniques don’t make this distinction and simply use vectors of real numbers
+					</p>
+
+					<p>
+						But <b>Genetic Algorithms</b> and <b>Genetic Programming</b> does !
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+In some evolutionary algorithms, the solution space is tailored for specific needs of search operators
+
+Then a distinction has to be made between:
+- <b style="color:blue">The solution space used by the objective function f : the phenotype</b>
+- <b style="color:blue">The solution space used by the algorithm : the genotype</b>
+
+In the latter, <b style="color:blue">the data structure used to store the genotype is a chromosome</b>.
+
+<b style="color:blue">Evolution Strategies like classical optimization techniques don’t make this distinction.
+They simply use vectors of real numbers.
+
+But Genetic Algorithms and Genetic Programming does !
+</b>
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Solution encoding</h3>
+
+					<br>
+				
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<img width="78%" src="assets/inf581_optimization/phenotype.png" />
+						</div>
+						<div style="float: left; width: 50%;">
+							<img width="100%" src="assets/inf581_optimization/genotype.png" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Here are some examples of solution encoding
+
+the result of the objective function is defined in the phenotype space
+
+genetic algorithms convert it in the genotype space
+either in the form of a bit string
+or a tuple of integer
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section style="text-align: left; font-size: 75%;">
+					<h3 style="text-align: center;">Genotype-Phenotype Mapping</h3>
+				
+					<p>
+						Can be convenient for combinatorial problems: Travelling salesman problem, Knapsack problem, …
+					</p>
+
+					<p>
+						Be careful
+						<ul style="padding-left: 1em; display: block;">
+							<li>A point in the genotype space might not represent a valid point in the phenotype space</li>
+							<li>The genotype-phenotype mapping should avoid bias:</li>
+							<ul>
+								<li>Two individuals close in the genome space should be close in the phenotype space and vice versa</li>
+								<li>Another example of bias is when the mapping could map most of the genotype space to a small set of phenotypes</li>
+							</ul>
+						</ul>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+The Genotype-Phenotype Mapping
+Can be convenient for combinatorial problems like the Travelling salesman problem, Knapsack problem, …
+
+But be careful
+A point in the genotype space might not represent a valid point in the phenotype space
+Also the genotype-phenotype mapping should avoid bias:
+Two individuals close in the genome space should be close in the phenotype space and vice versa
+Another example of bias is when the mapping could map most of the genotype space to a small set of phenotypes
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section style="text-align: left; font-size: 75%;">
+					<h3 style="text-align: center;">Hamming cliff</h3>
+				
+					<p>
+						Example of bias with the “classic” integer to binary mapping:
+					</p>
+					
+					<table style="font-size: 0.8em;">
+						<tbody>
+							<tr>
+								<td style="border-bottom: 0px; vertical-align: middle; color: #c53030;" rowspan="2">phenotype</td>
+								<td style="border-bottom: 0px;"><span style="color: #c53030;">7</span> = <span style="color: #3a853a;">0111</span></td>
+								<td style="border-bottom: 0px; vertical-align: middle; color: #3a853a;" rowspan="2">genotype</td>
+							</tr>
+							<tr>
+								<td style="border-bottom: 0px;"><span style="color: #c53030;">8</span> = <span style="color: #3a853a;">1000</span></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<p>
+						Individuals close in the phenotype space but “far” (according to the <b>Hamming distance</b>) in the genotype space
+						<ul style="padding-left: 1em; display: block;">
+							<li>To go from one individual to the other, <b>many mutations are required</b> despite their small distance in the phenotype space</li>
+							<li>This disturb <em>variation operators</em> (<em>crossover</em> and <em>mutation</em>)</li>
+							<li>Individuals are trapped by this distortion, that’s the "Hamming cliff"</li>
+						</ul>
+					</p>
+
+					<p>
+						Solution: use the <b>Gray code</b>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Here is an example of such a bias to avoid [...]
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section style="text-align: left; font-size: 75%;">
+					<h3 style="text-align: center;">Gray code</h3>
+					<h4 style="text-align: center;">decimal values (phenotype) ↔ bit strings (genotype)</h4>
+				
+					<div class="row">
+						<div style="float: left; width: 70%;">
+							<p style="font-size: 75%;">
+								A binary encoding such that
+								the binary representation of adjacent decimal numbers
+								only differ by one bit flip (Hamming distance = 1)
+							</p>
+							<br>
+							<pre style="font-size: 0.5em;"><code data-trim data-noescape>
+								def bin_to_gray(n):
+									return n ^ (n >> 1)   # N  XOR  (N  BITWISE_SHIFT_RIGHT  1)
+
+								def gray_to_bin(n):
+									mask = n >> 1
+									while (mask != 0):
+										n = n ^ mask
+										mask = mask >> 1
+									return n
+							</code></pre>
+						</div>
+						<div style="float: left; width: 30%;">
+							<!-- <img width="60%" src="assets/inf581_optimization/gray_code.png" /> -->
+							<table style="font-size: 0.5em;">
+								<tr>
+									<th>Decimal</th>
+									<th>Binary</th>
+									<th>Gray</th>
+								</tr>
+								<tr>
+									<td>0</td>
+									<td>0000</td>
+									<td>0000</td>
+								</tr>
+								<tr>
+									<td>1</td>
+									<td>0001</td>
+									<td>0001</td>
+								</tr>
+								<tr>
+									<td>2</td>
+									<td>0010</td>
+									<td>0011</td>
+								</tr>
+								<tr>
+									<td>3</td>
+									<td>0011</td>
+									<td>0010</td>
+								</tr>
+								<tr>
+									<td>4</td>
+									<td>0100</td>
+									<td>0110</td>
+								</tr>
+								<tr>
+									<td>5</td>
+									<td>0101</td>
+									<td>0111</td>
+								</tr>
+								<tr>
+									<td>6</td>
+									<td>0110</td>
+									<td>0101</td>
+								</tr>
+								<tr>
+									<td>7</td>
+									<td>0111</td>
+									<td>0100</td>
+								</tr>
+								<tr>
+									<td>8</td>
+									<td>1000</td>
+									<td>1100</td>
+								</tr>
+								<tr>
+									<td>9</td>
+									<td>1001</td>
+									<td>1101</td>
+								</tr>
+								<tr>
+									<td>10</td>
+									<td>1010</td>
+									<td>1111</td>
+								</tr>
+								<tr>
+									<td>11</td>
+									<td>1011</td>
+									<td>1110</td>
+								</tr>
+								<tr>
+									<td>12</td>
+									<td>1100</td>
+									<td>1010</td>
+								</tr>
+								<tr>
+									<td>13</td>
+									<td>1101</td>
+									<td>1011</td>
+								</tr>
+								<tr>
+									<td>14</td>
+									<td>1110</td>
+									<td>1001</td>
+								</tr>
+								<tr>
+									<td>15</td>
+									<td>1111</td>
+									<td>1000</td>
+								</tr>
+							</table>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3 style="font-size: 75%; margin-bottom: 0.25em; margin-top: 0.25em;">Genotype-Phenotype mapping</h3>
+					<h4 style="font-size: 65%; margin-bottom: 0.25em; margin-top: 0.25em;">Genetic Algorithms</h4>
+				
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<!-- <img width="70%" src="assets/inf581_optimization/algo_ga.png" /> -->
+							<div style="text-align: left; font-size: 0.4em;">
+								<b>Input</b>:<br>
+								$\quad\quad$ $f$: the objective function<br>
+								
+								<b>Algorithm parameter</b>:<br>
+								$\quad\quad$ $\mu$: number of parents per generation<br>
+								$\quad\quad$ $\rho$: number of parents used to make each child<br>
+								$\quad\quad$ $\lambda$: number of children per generation<br>
+								$\quad\quad$ mutation operator<br>
+								$\quad\quad$ mating selection operator<br>
+								$\quad\quad$ survivor selection operator<br>
+								$\quad\quad$ termination criterion<br>
+								$\quad\quad$ an initialization procedure<br><br>
+								
+								Initialize a population of $\mu$ individuals<br>
+								<span class="fragment highlight-current-red" data-fragment-index="1">Genotype-Phenotype mapping</span><br>
+								Evaluate each individual $\boldsymbol{x}$: $f(\boldsymbol{x})$<br><br>
+								
+								<b>FOR EACH</b> generation (until termination criterion)<br>
+								$\quad$ <b>FOR EACH</b> child $\boldsymbol{x}$<br>
+								$\quad\quad$ 1. select $\rho$ parents<br>
+								$\quad\quad$ 2. $\boldsymbol{x} \leftarrow$ recombinate selected parents (crossover)<br>
+								$\quad\quad$ 3. mutate $\boldsymbol{x}$<br>
+								$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="1">4. genotype-phenotype mapping</span><br>
+								$\quad\quad$ 5. evaluate $f(\boldsymbol{x})$<br>
+								$\quad$ Select the next generation of $\mu$ individuals<br><br>
+								
+								<b>RETURN</b> the best individual
+							</div>
+						</div>
+						<div style="float: left; width: 50%;">
+							<br><br>
+							<img width="100%" src="assets/inf581_optimization/ga.png" />
+						</div>
+					</div>
+					<p style="clear: both;"></p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+If we compare the common Genetic Algorithm procedure with the previously described “General” Evolutionary Algorithm framework,
+there are little differences :
+we insert a new “mapping” operator [...here and here…] to map from the genotype space of individuals to the phenotype space (used for evaluation of solutions)
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section style="text-align: left; font-size: 75%;">
+					<h3 style="text-align: center;">Solution encoding</h3>
+					<h4 style="text-align: center;">Genetic Programming: tree structure</h4>
+
+					<br>
+				
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<br>
+							<ul>
+								<li>Symbolic representation</li>
+								<li>An individual</li>
+								<ul style="list-style: none;">
+									<li>= a program</li>
+									<li>= a tree of instructions</li>
+								</ul>
+								<li>Nodes</li>
+								<ul style="list-style: none;">
+									<li>= genes</li>
+									<li>= instructions, operators, ...</li>
+								</ul>
+							</ul>
+						</div>
+						<div style="float: left; width: 50%;">
+							<img width="100%" src="assets/inf581_optimization/gp.png" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+And finally, as I said earlier, with the 3rd family of EA algorithms, “genetic programming”, solutions are coded as a tree structure
+
+[...]
+
+Mutations and corssover occure on nodes and sub trees
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Initial population</h3>
+
+					<br>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Initial population should be spread over the solution space to increase chances that samples are close to best regions
+					</p>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Should define a region of interest to sample the initial population:
+						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+							<li>Hyper rectangle to sample into with a uniform distribution</li>
+							<li>Point to sample around with a multivariate normal distribution</li>
+						</ul>
+					</p>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						For GA using bit string: a random combination of 0 and 1 is reasonable
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+In all cases, the initial population
+
+should be spread over the solution space to increase chances that samples are close to best regions
+
+Should define a region of interest to sample the initial population:
+Hyper rectangle to sample into with a uniform distribution
+Point to sample around with a multivariate normal distribution
+
+For GA using bit string: a random combination of 0 and 1 is reasonable
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.4: SELECTION --------------------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+				
+				<section id="2.4-operators-selection">
+					<h3>Mating selection</h3>
+
+					<br>
+
+					<p style="text-align: left;">
+						Can either:
+						<ul style="padding-left: 1em; display: block;">
+							<li>Randomly select parents</li>
+							<li>Select among an “elite” population (best ones): apply a competition</li>
+						</ul>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Survivor Selection</h3>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Select individuals for the next generation among:
+						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+							<li>Children (“offspring”) only</li>
+							<li>Children + parents (best individuals can live several generations)</li>
+						</ul>
+					</p>
+
+					<br>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Notation for Evolution Strategies:
+					</p>
+					<table style="font-size: 0.8em;">
+						<tbody>
+							<tr>
+								<td style="border-bottom: 0px;">$(\mu \color{\red}{+} \lambda)\text{-ES}$</td>
+								<td style="border-bottom: 0px;">selection in $\{ \text{parents} \} \cup \{ \text{offspring} \}$</td>
+							</tr>
+							<tr>
+								<td style="border-bottom: 0px;">$(\mu \color{\red}{,} \lambda)\text{-ES}$</td>
+								<td style="border-bottom: 0px;">selection in $\{ \text{offspring} \}$</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+offspring = children
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.4: CROSSOVER --------------------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+
+				<section id="2.4-operators-crossover" style="text-align: left; font-size: 65%;">
+					<h3 style="text-align: center;">Crossover (recombination) in GA</h3>
+
+					<!-- <img class="r-stretch" src="assets/inf581_optimization/crossover_in_ga.png" /> -->
+
+					<div>
+						<p>
+							Single-point crossover
+						</p>
+						<table style="font-size: 0.8em; margin-top: 0.25em; margin-bottom: 0.25em;">
+							<tbody>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 1</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="1">|</span><span style="color:#445ed1;">● ● ● ● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 2</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#c53030;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="1">|</span><span style="color:#c53030;">● ● ● ● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr class="fragment fade-down" data-fragment-index="2">
+									<td style="border-bottom: 0px; text-align: right;">Child</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+										<span style="color:#c53030;">● ● ● ● ● ● ● ●</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="fragment" data-fragment-index="3">
+						<p>
+							Two-point / k-point crossover
+						</p>
+						<table style="font-size: 0.8em; margin-top: 0.25em; margin-bottom: 0.25em;">
+							<tbody>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 1</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="4">|</span><span style="color:#445ed1;">● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="4">|</span><span style="color:#445ed1;">● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 2</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#c53030;">● ● ● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="4">|</span><span style="color:#c53030;">● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="4">|</span><span style="color:#c53030;">● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr class="fragment fade-down" data-fragment-index="5">
+									<td style="border-bottom: 0px; text-align: right;">Child</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ●</span>
+										<span style="color:#c53030;">● ● ● ● ● ● ● ●</span>
+										<span style="color:#445ed1;">● ● ● ● ●</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="fragment" data-fragment-index="6">
+						<p>
+							Uniform crossover
+						</p>
+						<table style="font-size: 0.8em; margin-top: 0.25em; margin-bottom: 0.25em;">
+							<tbody>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 1</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 2</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#c53030;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr class="fragment fade-down" data-fragment-index="7">
+									<td style="border-bottom: 0px; text-align: right;">Child</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ●</span>
+										<span style="color:#c53030;">●</span>
+										<span style="color:#445ed1;">●</span>
+										<span style="color:#c53030;">● ● ●</span>
+										<span style="color:#445ed1;">● ●</span>
+										<span style="color:#c53030;">●</span>
+										<span style="color:#445ed1;">●</span>
+										<span style="color:#c53030;">● ●</span>
+										<span style="color:#445ed1;">●</span>
+										<span style="color:#c53030;">● ●</span>
+										<span style="color:#445ed1;">● ● ●</span>
+										<span style="color:#c53030;">● ●</span>
+										<span style="color:#445ed1;">● ●</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<p class="fragment" data-fragment-index="7" style="text-align: center; font-size: 80%;">
+							Each gene or bit is chosen from either parent with equal probability
+						</p>
+					</div>
+
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section style="text-align: left; font-size: 85%;">
+					<h3 style="text-align: center;">Crossover (recombination) in ES</h3>
+
+					<h4 style="margin-top: 1em;">Global intermediate recombination</h4>
+					<ul style="list-style: none;">
+						<li>Each component of the child solution vector $x$ is the arithmetic mean of its parents' components</li>
+					</ul>
+
+					<h4 style="margin-top: 1em;">Discrete recombination</h4>
+					<ul style="list-style: none;">
+						<li>Each component of the child solution vector $x$ is chosen from either parent with equal probability</li>
+					</ul>
+
+					<!-- <img class="r-stretch" src="assets/inf581_optimization/es_discrete_recombination.png" /> -->
+
+					<table style="font-size: 0.8em; margin-top: 0.25em; margin-bottom: 0.25em;">
+						<tbody>
+							<tr>
+								<td style="border-bottom: 0px; text-align: right;">Parent 1</td>
+								<td style="border-bottom: 0px;">
+									<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+								</td>
+							</tr>
+							<tr>
+								<td style="border-bottom: 0px; text-align: right;">Parent 2</td>
+								<td style="border-bottom: 0px;">
+									<span style="color:#c53030;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+								</td>
+							</tr>
+							<tr class="fragment fade-down" data-fragment-index="1">
+								<td style="border-bottom: 0px; text-align: right;">Child</td>
+								<td style="border-bottom: 0px;">
+									<span style="color:#445ed1;">● ●</span>
+									<span style="color:#c53030;">●</span>
+									<span style="color:#445ed1;">●</span>
+									<span style="color:#c53030;">● ● ●</span>
+									<span style="color:#445ed1;">● ●</span>
+									<span style="color:#c53030;">●</span>
+									<span style="color:#445ed1;">●</span>
+									<span style="color:#c53030;">● ●</span>
+									<span style="color:#445ed1;">●</span>
+									<span style="color:#c53030;">● ●</span>
+									<span style="color:#445ed1;">● ● ●</span>
+									<span style="color:#c53030;">● ●</span>
+									<span style="color:#445ed1;">● ●</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.4: Mutation ---------------------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+
+				<section id="2.4-operators-mutation" style="text-align: left; font-size: 75%;">
+					<h3 style="text-align: center;">Mutation</h3>
+
+					<p>To <b>explore</b> more of the state space</p>
+    
+					<p style="margin-bottom: 0.25em;">Can be:</p>
+					<ul>
+						<li>
+							Each bit in a <b>binary-valued</b> chromosome typically has a small probability of being flipped:
+							for a chromosome with $m$ bits,
+							this mutation rate is typically set to $1/m$ ⇒ one mutation per child chromosome in average
+						</li>
+					</ul>
+
+					<table style="font-size: 0.8em; margin-top: 0.25em; margin-bottom: 0.25em;">
+						<tbody>
+							<tr>
+								<td style="border-bottom: 0px; text-align: right;">Before mutation</td>
+								<td style="border-bottom: 0px;">
+									<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+								</td>
+							</tr>
+							<tr>
+								<td style="border-bottom: 0px; text-align: right;">After mutation</td>
+								<td style="border-bottom: 0px;">
+									<span style="color:#445ed1;">● ● ● ● ● ●</span>
+									<span style="color:#c53030;">●</span>
+									<span style="color:#445ed1;">●</span>
+									<span style="color:#c53030;">●</span>
+									<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<ul>
+						<li>Common mutation for <b>real-valued</b> chromosomes is to add zero-mean Gaussian noise</li>
+					</ul>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Controlling mutation strength</h3>
+					<h4>In real-valued chromosomes (ES)</h4>
+
+					<p style="text-align: left; font-size: 0.6em;">
+						How to set the standard deviation $\sigma$ of the Gaussian noise ?
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li class="fragment highlight-current-red" data-fragment-index="1">By deterministic rule: <b>Rechenberg’s 1/5th rule</b></li>
+							<li class="fragment highlight-current-red" data-fragment-index="2">By evolutive rules (Schwefel): <b>Self-Adaptation</b> Evolution Strategies</li>
+						</ul>
+					</p>
+
+					<div class="r-stack">   <!-- c.f. https://revealjs.com/layout/ -->
+						<div class="fragment current-visible" data-fragment-index="1" style="width: 100%;">
+							<p style="text-align: left; font-size: 0.6em;">
+								<b>Rechenberg’s 1/5th rule</b>:
+								<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+									<!-- <li>When $\mu = 1$</li>  TODO: THIS IS WRONG -->
+									<li>Increase step-size $\sigma$ if more than 20% of the new solutions (individuals) are “successful” (i.e. better than previous generations)</li>
+									<li>Decrease otherwise</li>
+								</ul>
+							</p>
+						</div>
+						<div class="fragment current-visible" data-fragment-index="2" style="width: 100%;">
+							<p style="text-align: left; font-size: 0.6em;">
+								<b>Self-Adaptation</b>:
+								<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+									<li>$\sigma$ become a part of individuals genes</li>
+									<li>Each individual has a different $\sigma$</li>
+									<li>It’s subject to mutations too</li>
+									<li>An individual with an inappropriate $\sigma$ simply disappear !</li>
+								</ul>
+							</p>
+						</div>
+					</div>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.4: TERMINATION CRITERIA ---------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+
+				<section id="2.4-operators-termination">
+					<h3>Termination criteria</h3>
+
+					<br>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Can be:
+						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+							<li>A fixed number of generation</li>
+							<li>A minimal rate of improvement in the average fitness (score)</li>
+							<li>A minimal rate of change in the solution space</li>
+						</ul>
+					</p>
+
+					<br>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.5: SAES -------------------------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+				
+				<section id="2.5-examples-es">
+					<h3>Example: $(1 + 1)\text{-ES}$</h3>
+
+					<br>
+				
+					<!-- <img class="r-stretch" src="assets/inf581_optimization/algo_one_plus_one_es.png" /> -->
+
+					<div style="text-align: left; font-size: 0.65em;">
+						<b>Input</b>:<br>
+						$\quad\quad$ $f$: the objective function<br>
+						$\quad\quad$ $\boldsymbol{x}$: initial solution<br><br>
+	
+						<b>FOR EACH</b> generation<br>
+						$\quad\quad$ 1. mutation of $\sigma$ (individual strategy) : $\sigma' \leftarrow $ <span class="fragment highlight-current-red" data-fragment-index="1">Rechenberg's 1/5th rule</span><br>
+						$\quad\quad$ 2. mutation of $\boldsymbol{x}$ (current solution) : $\boldsymbol{x}' \leftarrow \boldsymbol{x} + \sigma' ~ \mathcal{N}(0,1)$<br>
+						$\quad\quad$ 3. eval $f(\boldsymbol{x}')$<br>
+						$\quad\quad$ 4. survivor selection $\boldsymbol{x} \leftarrow \boldsymbol{x}'$ and $\sigma \leftarrow \sigma'$ if $f(\boldsymbol{x}') \leq f(\boldsymbol{x})$<br><br>
+	
+						<b>RETURN</b> $\boldsymbol{x}$
+					</div>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section id="2.5-examples-saes1">
+					<h3>Example: $(1 + 1)\text{-SA-ES}$</h3>
+				
+					<!-- <img class="r-stretch" src="assets/inf581_optimization/algo_one_plus_one_sa_es.png" /> -->
+
+					<div style="text-align: left; font-size: 0.65em;">
+						<b>Input</b>:<br>
+						$\quad\quad$ $f$: the objective function<br>
+						$\quad\quad$ $\boldsymbol{x}$: initial solution<br>
+
+						<b>Algorithm parameter</b>:<br>
+						$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="1">$\tau$: self-adaptation learning rate</span><br><br>
+
+						<b>FOR EACH</b> generation<br>
+						$\quad\quad$ 1. mutation of $\sigma$ (current individual strategy) : $\sigma' \leftarrow $ <span class="fragment highlight-current-red" data-fragment-index="1">$\sigma ~ e^{\tau \mathcal{N}(0,1)}$</span><br>
+						$\quad\quad$ 2. mutation of $\boldsymbol{x}$ (current solution) : $\boldsymbol{x}' \leftarrow \boldsymbol{x} + \sigma' ~ \mathcal{N}(0,1)$<br>
+						$\quad\quad$ 3. eval $f(\boldsymbol{x}')$<br>
+						$\quad\quad$ 4. survivor selection $\boldsymbol{x} \leftarrow \boldsymbol{x}'$ and $\sigma \leftarrow \sigma'$ if $f(\boldsymbol{x}') \leq f(\boldsymbol{x})$<br><br>
+
+						<b>RETURN</b> $\boldsymbol{x}$
+					</div>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section id="2.5-examples-saes2">
+					<h3>Example: $(\mu/\rho + \lambda)\text{-SA-ES}$</h3>
+				
+					<!-- <img class="r-stretch" src="assets/inf581_optimization/algo_saes.png" /> -->
+
+					<div style="text-align: left; font-size: 0.45em;">
+						<b>Input</b>:<br>
+						$\quad\quad$ $f$: the objective function<br>
+
+						<b>Algorithm parameter</b>:<br>
+						$\quad\quad$ $\tau$: self-adaptation learning rate<br>
+						<div class="fragment highlight-current-red" data-fragment-index="1">
+							$\quad\quad$ $\mu$: number of parents per generation<br>
+							$\quad\quad$ $\rho$: number of parents used to make each child<br>
+							$\quad\quad$ $\lambda$: number of children per generation<br>
+							$\quad\quad$ mating selection operator<br>
+							$\quad\quad$ survivor selection operator<br><br>
+						</div>
+
+						Initialize arbitrarily the population<br>
+
+						<b>FOR EACH</b> generation<br>
+						<div class="fragment highlight-current-red" data-fragment-index="1">
+							$\quad$ <b>FOR EACH</b> children<br>
+							$\quad\quad$ 1. randomly select $\rho$ parents<br>
+							$\quad\quad$ 2. $(\boldsymbol{x}, \sigma) \leftarrow$ recombination of selected parents (if $\rho > 1$)<br>
+						</div>
+						$\quad\quad$ 3. mutation of $\sigma$ (individual strategy) : $\sigma \leftarrow \sigma ~ e^{\tau \mathcal{N}(0,1)}$<br>
+						$\quad\quad$ 4. mutation of $\boldsymbol{x}$ (objective param) : $\boldsymbol{x} \leftarrow \boldsymbol{x} + \sigma ~ \mathcal{N}(0,1)$<br>
+						$\quad\quad$ 5. evaluate $f(\boldsymbol{x})$<br>
+						<div class="fragment highlight-current-red" data-fragment-index="1">
+							$\quad$ Select the next generation of individuals<br><br>
+						</div>
+
+						<b>RETURN</b> <span class="fragment highlight-current-red" data-fragment-index="1">the best individual</span>
+					</div>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.5: DIFFERENTIAL EVOLUTION -------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+
+				<section id="2.5-examples-de">
+					<h3>Differential Evolution</h3>
+					
+					<p style="font-size: 0.5em; color: dimgray;">
+						Storn, R and Price, K, Differential Evolution - a Simple and Efficient Heuristic for Global Optimization over Continuous Spaces, Journal of Global Optimization, 1997, 11, 341 - 359
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<!-- <h3>TODO</h3> -->
+
+					<!-- <img class="r-stretch" src="assets/inf581_optimization/de_algo.png" /> -->
+
+					<div style="text-align: left; font-size: 0.55em;">
+						<!-- <b>Input</b>:<br>
+						$\quad\quad$ $f$: the objective function<br>
+
+						<b>Algorithm parameter</b>:<br>
+						$\quad\quad$ ... -->
+
+						<div class="fragment highlight-current-red" data-fragment-index="0">
+							Arbitrarily initialize the population<br><br>
+						</div>
+
+						<div class="fragment highlight-current-red" data-fragment-index="7">
+							<b>FOR EACH</b> generation<br>
+						</div>
+						<div class="fragment highlight-current-red" data-fragment-index="6">
+							$\quad$ <b>FOR EACH</b> children<br>
+						</div>
+						$\quad\quad$ 1. <em>MUTATION</em><br>
+						$\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="1">Choose 3 random distinct individuals $\boldsymbol{a}$, $\boldsymbol{b}$ et $\boldsymbol{c}$</span><br>
+						$\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="2">$\boldsymbol{b}$ and $\boldsymbol{c}$ define the direction and the amplitude of the mutation (i.e. the search vector)</span><br>
+						<br>
+						<div class="fragment highlight-current-red" data-fragment-index="3">
+							$\quad\quad\quad$ Combine them to make an interim individual $\boldsymbol{z} \leftarrow \boldsymbol{a} + \omega ~ (\boldsymbol{b} - \boldsymbol{c})$<br>
+							$\quad\quad\quad$ where $\omega$ is a mutation amplification factor (a scalar)<br>
+						</div>
+						<br>
+						$\quad\quad$ 2. <em>CROSSOVER</em><br>
+						<div class="fragment highlight-current-red" data-fragment-index="4">
+							$\quad\quad\quad$ Choose a random dimension $j \in [1,\dots,n]$ for optimization in $n$ dimensions<br>
+							$\quad\quad\quad$ Make the candidate individual $\boldsymbol{a}'$ using the binary crossover
+							$$
+								a'_i = 
+								\begin{cases} 
+									z_i & \text{if } i = j \text{ or with probability } p \\
+									x_i & \text{otherwise} 
+								\end{cases}
+							$$
+						</div>
+						$\quad\quad$ 3. <em>SELECTION</em><br>
+						<div class="fragment highlight-current-red" data-fragment-index="5">
+							$\quad\quad\quad$ Insert the best individual between $\boldsymbol{a}'$ and $\boldsymbol{a}$ into the next generation<br><br>
+						</div>
+
+						<div class="fragment highlight-current-red" data-fragment-index="8">
+							<b>RETURN</b> the best individual in the last generation
+						</div>
+					</div>
+
+
+					<div class="fragment" data-fragment-index="0" style="position: absolute; top: 0; right: 0;">
+						<object data="assets/inf581_optimization/rosenbrock_contour2.svg" type="image/svg+xml" style="width: 100%;"></object>
+						<svg width="256px" height="150px" style="position: absolute; top: 0; right: 0;">
+							<!-- Arrowhead definition -->
+							<defs>
+								<marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+									<polygon points="0 0, 7 3.5, 0 7" fill="red" />
+								</marker>
+							</defs>
+
+							<!-- Initial population -->
+							<g class="fragment current-visible" data-fragment-index="6">
+								<circle class="fragment" data-fragment-index="0" cx="20"  cy="50" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="220" cy="90" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="120" cy="230" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="70"  cy="80" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="180" cy="10" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="10"  cy="130" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="150" cy="30" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="200" cy="80" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="4" cx="15" cy="100" r="5" fill="black"/>
+							</g>
+							<g class="fragment fade-out" data-fragment-index="6">
+								<g class="fragment semi-fade-out" data-fragment-index="1">
+									<g class="fragment semi-fade-out" data-fragment-index="1">
+										<g class="fragment semi-fade-out" data-fragment-index="1">
+											<circle class="fragment" data-fragment-index="0" cx="20"  cy="50" r="5" fill="black"/>
+											<circle class="fragment" data-fragment-index="0" cx="220" cy="90" r="5" fill="black"/>
+											<circle class="fragment" data-fragment-index="0" cx="120" cy="230" r="5" fill="black"/>
+											<circle class="fragment" data-fragment-index="0" cx="70"  cy="80" r="5" fill="black"/>
+											<circle class="fragment" data-fragment-index="0" cx="180" cy="10" r="5" fill="black"/>
+											<circle class="fragment" data-fragment-index="0" cx="10"  cy="130" r="5" fill="black"/>
+										</g>
+									</g>
+								</g>
+							</g>
+
+							<!-- A -->
+							<g class="fragment fade-out" data-fragment-index="5">
+								<circle class="fragment" data-fragment-index="0" cx="100" cy="100" r="5" fill="black"/>
+								<text   class="fragment" data-fragment-index="1" x="110" y="100" font-family="sans-serif" font-size="20px" fill="black">a</text>
+							</g>
+
+							<g class="fragment fade-out" data-fragment-index="6">
+								<!-- B -->
+								<circle class="fragment" data-fragment-index="0" cx="150" cy="30" r="5" fill="black"/>
+								<text   class="fragment" data-fragment-index="1" x="160" y="30" font-family="sans-serif" font-size="20px" fill="black">b</text>
+	
+								<!-- C -->
+								<circle class="fragment" data-fragment-index="0" cx="200" cy="80" r="5" fill="black"/>
+								<text   class="fragment" data-fragment-index="1" x="210" y="80" font-family="sans-serif" font-size="20px" fill="black">c</text>
+	
+								<!-- Z -->
+								<circle class="fragment" data-fragment-index="3" cx="15" cy="15" r="5" fill="black"/>
+								<text   class="fragment" data-fragment-index="3" x="25" y="15" font-family="sans-serif" font-size="20px" fill="black">z</text>
+	
+								<!-- A' -->
+								<circle class="fragment" data-fragment-index="4" cx="15" cy="100" r="5" fill="black"/>
+								<text   class="fragment" data-fragment-index="4" x="25" y="100" font-family="sans-serif" font-size="20px" fill="black">a'</text>
+							</g>
+
+							<!-- First arrow CB -->
+							<line class="fragment current-visible" data-fragment-index="2" x1="197" y1="77" x2="163" y2="43" stroke="red" stroke-width="2" marker-end="url(#arrowhead2)" />
+							<text class="fragment current-visible" data-fragment-index="2" x="175" y="55" font-family="sans-serif" font-size="20px" fill="black">&nbsp;b-c</text>
+							
+							<!-- Second arrow AZ -->
+							<line class="fragment current-visible" data-fragment-index="3" x1="97" y1="97" x2="28" y2="28" stroke="red" stroke-width="2" marker-end="url(#arrowhead2)" />
+							<text class="fragment current-visible" data-fragment-index="3" x="55" y="55" font-family="sans-serif" font-size="20px" fill="black">&nbsp;ω(b-c)</text>
+
+							<!-- Initial population -->
+							<g class="fragment semi-fade-out" data-fragment-index="8">
+								<g class="fragment semi-fade-out" data-fragment-index="8">
+									<g class="fragment fade-in" data-fragment-index="7">
+										<!-- Gen1 -->
+										<circle class="fragment" data-fragment-index="0" cx="20"  cy="50"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="220" cy="90"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="120" cy="230" r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="70"  cy="80"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="180" cy="10"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="10"  cy="130" r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="150" cy="30"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="200" cy="80"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="4" cx="15" cy="100"  r="2.5" fill="black"/>
+										<!-- Gen2 -->
+										<circle class="fragment" data-fragment-index="0" cx="120" cy="50"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="200" cy="95"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="125" cy="200" r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="75"  cy="90"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="190" cy="110"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="50"  cy="120" r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="155" cy="60"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="180" cy="85"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="4" cx="55" cy="105"  r="2.5" fill="blue"/>
+										<!-- Gen3 -->
+										<circle class="fragment" data-fragment-index="0" cx="125" cy="60"  r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="180" cy="105" r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="120" cy="160" r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="95"  cy="95"  r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="140" cy="105" r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="80"  cy="100" r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="135" cy="80"  r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="120" cy="95"  r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="4" cx="115" cy="105" r="2.5" fill="darkmagenta"/>
+										<!-- Gen4 -->
+										<circle class="fragment" data-fragment-index="0" cx="120" cy="70"  r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="130" cy="107" r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="115" cy="120" r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="125" cy="105" r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="145" cy="95"  r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="110" cy="105" r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="165" cy="90"  r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="140" cy="105" r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="4" cx="125" cy="95"  r="2.5" fill="darkred"/>
+										<!-- Gen5 -->
+										<circle class="fragment" data-fragment-index="0" cx="135" cy="90"  r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="140" cy="102" r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="155" cy="105" r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="145" cy="100" r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="160" cy="95"  r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="157" cy="97" r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="153" cy="95"  r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="147" cy="102" r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="4" cx="138" cy="98"  r="2.5" fill="darkorange"/>
+									</g>
+								</g>
+							</g>
+
+							<!-- x* -->
+							<circle class="fragment" data-fragment-index="8" cx="150" cy="100"  r="5" fill="red"/>
+							<text   class="fragment" data-fragment-index="8"  x="150"  y="100" font-family="sans-serif" font-size="20px" fill="red">&nbsp;&nbsp;x*</text>
+						</svg>
+					</div>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+								
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Differential Evolution</h3>
+				
+					<img class="r-stretch" src="assets/inf581_optimization/image67.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Differential Evolution</h3>
+
+					<br>
+				
+					<p style="text-align: left; font-size: 0.8em;">
+						Strength: require few meta parameters
+						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+							<li>$p$ : the crossover probability (typically 0.5)</li>
+							<li>$w$ : the differential weight (typically between 0.4 and 1)</li>
+						</ul>
+					</p>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Implemented in `scipy.optimize`
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.5: CROSS-ENTROPY METHOD ---------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+				
+				<section id="2.5-examples-cem">
+					<h3>Cross-Entropy Method</h3>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<section style="text-align: left; font-size: 85%;">
+					<h3 style="text-align: center;">Cross-Entropy Method</h3>
+
+					<br>
+
+					<p>
+						Maintains an explicit <em>probability distribution</em> over the solution space
+					</p>
+					<ul style="display: block; text-align: left; margin: 0 0 0 2em;">
+						<li>Called a <em>proposal distribution</em> $P_{\boldsymbol{\theta}}$</li>
+						<li>Used to propose new samples for the next generation</li>
+						<li>Parametrized by $\boldsymbol{\theta}$</li>
+						<li>The family of probability distribution is chosen according to the objective function landscape</li>
+					</ul>
+
+					<br>
+
+					<p style="text-align: center;">
+						Usually : multivariate Normal distributions $\boldsymbol{\theta} = (\boldsymbol{\mu}, \ms{\Sigma})$
+                    </p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Common choice : multivariate Normal distributions parameterized by a mean vector 𝛍 and a covariance matrix 𝚺
+						</div>
+					</aside>
+				</section>
+
+				<section style="text-align: left; font-size: 65%;">
+					<h3 style="text-align: center;">Cross-Entropy Method</h3>
+
+					<p style="margin: 0;">
+						At each iteration:
+					</p>
+					<div class="r-stack">
+						<div class="fragment fade-out" data-fragment-index="3" style="margin: 0px; padding: 0px;">
+							<ol style="padding-left: 1em; display: block;">
+								<li><span class="fragment highlight-current-red" data-fragment-index="0">Sample from the proposal distribution $P_{\boldsymbol{\theta}}$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="1">Select best samples according to the objective function $f$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="2">Update the proposal distribution to fit the best samples</span></li>
+							</ol>
+						</div>
+						<div class="fragment fade-out" data-fragment-index="6" style="margin: 0px; padding: 0px;">
+							<ol class="fragment" data-fragment-index="3" style="padding-left: 1em; display: block;">
+								<li><span class="fragment highlight-current-red" data-fragment-index="3">Sample from the proposal distribution $P_{\boldsymbol{\theta}}$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="4">Select best samples according to the objective function $f$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="5">Update the proposal distribution to fit the best samples</span></li>
+							</ol>
+						</div>
+						<div class="fragment fade-out" data-fragment-index="9" style="margin: 0px; padding: 0px;">
+							<ol class="fragment" data-fragment-index="6" style="padding-left: 1em; display: block;">
+								<li><span class="fragment highlight-current-red" data-fragment-index="6">Sample from the proposal distribution $P_{\boldsymbol{\theta}}$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="7">Select best samples according to the objective function $f$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="8">Update the proposal distribution to fit the best samples</span></li>
+							</ol>
+						</div>
+						<div class="fragment fade-out" data-fragment-index="12" style="margin: 0px; padding: 0px;">
+							<ol class="fragment" data-fragment-index="9" style="padding-left: 1em; display: block;">
+								<li><span class="fragment highlight-current-red" data-fragment-index="9">Sample from the proposal distribution $P_{\boldsymbol{\theta}}$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="10">Select best samples according to the objective function $f$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="11">Update the proposal distribution to fit the best samples</span></li>
+							</ol>
+						</div>
+						<div class="fragment fade-out" data-fragment-index="15" style="margin: 0px; padding: 0px;">
+							<ol class="fragment" data-fragment-index="12" style="padding-left: 1em; display: block;">
+								<li><span class="fragment highlight-current-red" data-fragment-index="12">Sample from the proposal distribution $P_{\boldsymbol{\theta}}$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="13">Select best samples according to the objective function $f$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="14">Update the proposal distribution to fit the best samples</span></li>
+							</ol>
+						</div>
+						<div style="margin: 0px; padding: 0px;">
+							<ol class="fragment" data-fragment-index="15" style="padding-left: 1em; display: block;">
+								<li><span class="fragment highlight-current-red" data-fragment-index="15">Sample from the proposal distribution $P_{\boldsymbol{\theta}}$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="16">Select best samples according to the objective function $f$</span></li>
+								<li><span class="fragment highlight-current-red" data-fragment-index="17">Update the proposal distribution to fit the best samples</span></li>
+							</ol>
+						</div>
+					</div>
+
+					<div class="r-stack">
+						<img class="fragment fade-out"        data-fragment-index="0"  src="assets/inf581_optimization/cem_rosenbrock_01_p.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="0"  src="assets/inf581_optimization/cem_rosenbrock_01.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="1"  src="assets/inf581_optimization/cem_rosenbrock_01_elite.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="2"  src="assets/inf581_optimization/cem_rosenbrock_02_p.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="3"  src="assets/inf581_optimization/cem_rosenbrock_02.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="4"  src="assets/inf581_optimization/cem_rosenbrock_02_elite.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="5"  src="assets/inf581_optimization/cem_rosenbrock_03_p.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="6"  src="assets/inf581_optimization/cem_rosenbrock_03.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="7"  src="assets/inf581_optimization/cem_rosenbrock_03_elite.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="8"  src="assets/inf581_optimization/cem_rosenbrock_04_p.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="9"  src="assets/inf581_optimization/cem_rosenbrock_04.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="10" src="assets/inf581_optimization/cem_rosenbrock_04_elite.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="11" src="assets/inf581_optimization/cem_rosenbrock_05_p.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="12" src="assets/inf581_optimization/cem_rosenbrock_05.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="13" src="assets/inf581_optimization/cem_rosenbrock_05_elite.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="14" src="assets/inf581_optimization/cem_rosenbrock_06_p.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="15" src="assets/inf581_optimization/cem_rosenbrock_06.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="16" src="assets/inf581_optimization/cem_rosenbrock_06_elite.svg" width="400">
+						<img class="fragment current-visible" data-fragment-index="17" src="assets/inf581_optimization/cem_rosenbrock_07_p.svg" width="400">
+					</div>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<section style="text-align: left; font-size: 55%;">
+					<h3 style="text-align: center;">Cross-Entropy Method</h3>
+
+					<!-- <p>
+						At each iteration:
+					</p>
+					<ol>
+						<li>Sample from the proposal distribution $P_{\boldsymbol{\theta}}$</li>
+						<li>Select best samples according to the objective function $f$</li>
+						<li>Update the proposal distribution to fit the best samples</li>
+					</ol> -->
+
+					<div class="r-vstack" style="padding: 0;">
+						<div class="r-hstack">
+							<img src="assets/inf581_optimization/cem_rosenbrock_01_elite.svg"  width="400">
+							<img src="assets/inf581_optimization/cem_rosenbrock_02_elite.svg"  width="400">
+							<img src="assets/inf581_optimization/cem_rosenbrock_03_elite.svg"  width="400">
+							<img src="assets/inf581_optimization/cem_rosenbrock_04_elite.svg" width="400">
+						</div>
+						<div class="r-hstack">
+							<img src="assets/inf581_optimization/cem_rosenbrock_05_elite.svg"  width="400">
+							<img src="assets/inf581_optimization/cem_rosenbrock_06_elite.svg"  width="400">
+							<img src="assets/inf581_optimization/cem_rosenbrock_07_elite.svg"  width="400">
+							<img src="assets/inf581_optimization/cem_rosenbrock_08_elite.svg" width="400">
+						</div>
+					</div>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<section style="text-align: left; font-size: 65%;">
+					<h3 style="text-align: center;">Cross-Entropy Method</h3>
+
+					<p>
+						<div class="fragment highlight-current-red" data-fragment-index="0">
+							<b>Input:</b><br>
+							&emsp;$f$: the objective function<br>
+							&emsp;$\mathbb{P}$: family of distribution<br>
+							&emsp;$\boldsymbol{\theta}$: initial parameters for the proposal distribution $\mathbb{P}$<br>
+						</div>
+						<br>
+						<b>Algorithm parameters:</b><br>
+						&emsp;$m$: sample size<br>
+						&emsp;$m_{\text{elite}}$: number of samples to use to fit $\boldsymbol{\theta}$<br>
+						<br>
+
+						<b>UNTIL</b> the stop criteria are met<br>
+						<div class="r-stack">
+							<div class="fragment fade-out" data-fragment-index="4" style="margin: 0px; padding: 0px;">
+								&emsp;<span class="fragment highlight-current-red" data-fragment-index="1">$\text{samples} \leftarrow \{x_1, \dots, x_m\}$ with $x_i \sim \mathbb{P}(\boldsymbol{\theta}) ~ \forall i \in 1 \dots m$</span><br>
+								&emsp;<span class="fragment highlight-current-red" data-fragment-index="2">$\text{elite} \leftarrow$ { $m_{\text{elite}}$ best samples } &nbsp;&nbsp;&nbsp; (i.e. select best samples according to $f$)</span> <br>
+								&emsp;<span class="fragment highlight-current-red" data-fragment-index="3">$\boldsymbol{\theta} \leftarrow $ fit $\mathbb{P}(\boldsymbol{\theta})$ to the elite samples</span> <br>
+							</div>
+							<div class="fragment fade-out" data-fragment-index="7" style="margin: 0px; padding: 0px;">
+								<div class="fragment" data-fragment-index="4">
+									&emsp;<span class="fragment highlight-current-red" data-fragment-index="4">$\text{samples} \leftarrow \{x_1, \dots, x_m\}$ with $x_i \sim \mathbb{P}(\boldsymbol{\theta}) ~ \forall i \in 1 \dots m$</span><br>
+									&emsp;<span class="fragment highlight-current-red" data-fragment-index="5">$\text{elite} \leftarrow$ { $m_{\text{elite}}$ best samples } &nbsp;&nbsp;&nbsp; (i.e. select best samples according to $f$)</span> <br>
+									&emsp;<span class="fragment highlight-current-red" data-fragment-index="6">$\boldsymbol{\theta} \leftarrow $ fit $\mathbb{P}(\boldsymbol{\theta})$ to the elite samples</span> <br>
+								</div>
+							</div>
+							<div class="fragment fade-out" data-fragment-index="10" style="margin: 0px; padding: 0px;">
+								<div class="fragment" data-fragment-index="7">
+									&emsp;<span class="fragment highlight-current-red" data-fragment-index="7">$\text{samples} \leftarrow \{x_1, \dots, x_m\}$ with $x_i \sim \mathbb{P}(\boldsymbol{\theta}) ~ \forall i \in 1 \dots m$</span><br>
+									&emsp;<span class="fragment highlight-current-red" data-fragment-index="8">$\text{elite} \leftarrow$ { $m_{\text{elite}}$ best samples } &nbsp;&nbsp;&nbsp; (i.e. select best samples according to $f$)</span> <br>
+									&emsp;<span class="fragment highlight-current-red" data-fragment-index="9">$\boldsymbol{\theta} \leftarrow $ fit $\mathbb{P}(\boldsymbol{\theta})$ to the elite samples</span> <br>
+								</div>
+							</div>
+							<div style="margin: 0px; padding: 0px;">
+								<div class="fragment" data-fragment-index="10">
+									&emsp;<span class="fragment highlight-current-red" data-fragment-index="10">$\text{samples} \leftarrow \{x_1, \dots, x_m\}$ with $x_i \sim \mathbb{P}(\boldsymbol{\theta}) ~ \forall i \in 1 \dots m$</span><br>
+									&emsp;<span class="fragment highlight-current-red" data-fragment-index="11">$\text{elite} \leftarrow$ { $m_{\text{elite}}$ best samples } &nbsp;&nbsp;&nbsp; (i.e. select best samples according to $f$)</span> <br>
+									&emsp;<span class="fragment highlight-current-red" data-fragment-index="12">$\boldsymbol{\theta} \leftarrow $ fit $\mathbb{P}(\boldsymbol{\theta})$ to the elite samples</span> <br>
+								</div>
+							</div>
+						</div>
+						<br>
+						<b>RETURN</b> $\boldsymbol{\theta}$
+					</p>
+
+					<div class="r-stack" style="padding: 0; position: absolute; top: 0; right: 0;">
+						<img class="fragment current-visible" data-fragment-index="0"   src="assets/inf581_optimization/cem_rosenbrock_01_p.svg"         width="275">
+						<img class="fragment current-visible" data-fragment-index="1"   src="assets/inf581_optimization/cem_rosenbrock_01.svg"           width="275">
+						<img class="fragment current-visible" data-fragment-index="2"   src="assets/inf581_optimization/cem_rosenbrock_01_elite_nop.svg" width="275">
+						<img class="fragment current-visible" data-fragment-index="3"   src="assets/inf581_optimization/cem_rosenbrock_01_elite.svg"     width="275">
+						<img class="fragment current-visible" data-fragment-index="4"   src="assets/inf581_optimization/cem_rosenbrock_02.svg"           width="275">
+						<img class="fragment current-visible" data-fragment-index="5"   src="assets/inf581_optimization/cem_rosenbrock_02_elite_nop.svg" width="275">
+						<img class="fragment current-visible" data-fragment-index="6"   src="assets/inf581_optimization/cem_rosenbrock_02_elite.svg"     width="275">
+						<img class="fragment current-visible" data-fragment-index="7"   src="assets/inf581_optimization/cem_rosenbrock_03.svg"           width="275">
+						<img class="fragment current-visible" data-fragment-index="8"   src="assets/inf581_optimization/cem_rosenbrock_03_elite_nop.svg" width="275">
+						<img class="fragment current-visible" data-fragment-index="9"   src="assets/inf581_optimization/cem_rosenbrock_03_elite.svg"     width="275">
+						<img class="fragment current-visible" data-fragment-index="10"  src="assets/inf581_optimization/cem_rosenbrock_04.svg"           width="275">
+						<img class="fragment current-visible" data-fragment-index="11"  src="assets/inf581_optimization/cem_rosenbrock_04_elite_nop.svg" width="275">
+						<img class="fragment current-visible" data-fragment-index="12"  src="assets/inf581_optimization/cem_rosenbrock_04_elite.svg"     width="275">
+					</div>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<section style="text-align: left; font-size: 70%;">
+					<h3 style="text-align: center;">Cross-Entropy Method</h3>
+
+					<p>
+						In the case of the multivariate normal distribution, parameters are updated according to the maximum likelihood estimate:
+					</p>
+
+					$$\boldsymbol{\mu}^{(k+1)} = \frac{1}{m_{\text{elite}}} \sum_{i=1}^{m_{\text{elite}}} \boldsymbol{x}^{(i)}$$
+					$$\ms{\Sigma}^{(k+1)} = \frac{1}{m_{\text{elite}}} \sum_{i=1}^{m_{\text{elite}}} \left( \boldsymbol{x}^{(i)} - \boldsymbol{\mu}^{(k+1)} \right) \left( \boldsymbol{x}^{(i)} - \boldsymbol{\mu}^{(k+1)} \right)^{\top}$$
+
+					<p>
+						with:<br>
+						$k$ = the iteration index<br>
+						$m_{\text{elite}}$ = the number of “elite” (i.e. best) samples
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<section>
+					<h3>Cross-Entropy Method</h3>
+
+					<p>Multivariate Normal distributions is not always the right family of distributions to choose…</p>
+
+					<img class="r-stretch" src="assets/optimization_cem/optimization_cem_mixture.png">
+
+					<p>Here, a mixture model would be a better choice…</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+The distribution family should be flexible enough to capture the relevant features of the objective function.
+Here we show the limitations of using a normal distribution on a multimodal objective function, which assigns greater density in between the two minima.
+A mixture model is able to center itself over each minimum.
+
+The normal distribution is unable to capture multiple local minima, in contrast to mixture models which can maintain several.
+						</div>
+					</aside>
+				</section>
+
+				<section style="text-align: left; font-size: 80%;">
+					<h3 style="text-align: center;">Cross-Entropy Method</h3>
+
+					<p style="text-align: left;">
+						Meta parameters:
+						<ul style="display: block; text-align: left; margin: 0 0 0 2em;">
+							<li>The family of distribution probability $\mathbb{P}_{\boldsymbol{\theta}}$</li>
+							<li>The number of solutions to sample at each iteration</li>
+							<li>The number of best solutions selected at each iteration to update $\boldsymbol{\theta}$</li>
+						</ul>
+					</p>
+
+					<br>
+
+					<p style="text-align: left;">
+						Termination criteria:
+						<ul style="display: block; text-align: left; margin: 0 0 0 2em;">
+							<li>Number of iterations</li>
+							<li>Value of $\boldsymbol{\theta}$</li>
+							<li>…</li>
+						</ul>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<section>
+					<h3>Cross-Entropy Method</h3>
+
+					<p style="text-align: left;">Strengths:</p>
+					<ul style="display: block; text-align: left; margin: 0 0 0 2em;">
+						<li>Simplicity</li>
+						<li>Good convergence</li>
+					</ul>
+
+					<br>
+
+					<p style="text-align: left;">
+						Example:<br>
+						I. Szita and A. Lorincz, <em>Learning Tetris Using the Noisy Cross-Entropy Method</em> (2006), Neural Computation <a href="https://www.academia.edu/download/31975697/SzitaLorincz05Learning.pdf">[PDF]</a>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<section>
+					<h3>Bibliography</h3>
+
+					<br>
+					
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<ul style="font-size: 0.6em;">
+								<li>
+									Rubinstein, R., 1999. The cross-entropy method for combinatorial and continuous optimization. <em>Methodology and computing in applied probability</em>, 1, pp.127-190.
+									[<a href="https://link.springer.com/content/pdf/10.1023/A:1010091220143.pdf">PDF</a>]
+								</li>
+								<li>
+									Rubinstein, R.Y., 2001. Combinatorial optimization, cross-entropy, ants and rare events. <em>Stochastic optimization: algorithms and applications</em>, pp.303-363.
+									[<a href="https://link.springer.com/content/pdf/10.1007/978-1-4757-6594-6.pdf">PDF</a>]
+								</li>
+								<li class="fragment current-visible" data-fragment-index="1">
+									Rubinstein, R.Y. and Kroese, D.P., 2004. <em>The cross-entropy method: a unified approach to combinatorial optimization, Monte-Carlo simulation, and machine learning</em> (Vol. 133). New York: Springer.
+								</li>
+							</ul>
+						</div>
+						<div style="float: left; width: 50%;">
+							<div class="r-stack">
+								<div class="fragment fade-out" data-fragment-index="1">
+									<a href="https://link.springer.com/content/pdf/10.1023/A:1010091220143.pdf"><img width="45%" src="assets/inf581_optimization/bib_rubinstein_1999.png" /></a>
+									<a href="https://link.springer.com/content/pdf/10.1007/978-1-4757-6594-6.pdf"><img width="45%" src="assets/inf581_optimization/bib_rubinstein_2001.png" /></a>
+									<p style="font-size: 0.5em;">
+										(the original papers)
+									</p>
+								</div>
+								<a href="https://link.springer.com/book/10.1007/978-1-4757-4321-0"><img class="fragment current-visible" data-fragment-index="1" width="50%" src="assets/inf581_optimization/cem_book.webp" /></a>
+							</div>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+					<!-- Ref style: Harvard -->
+
+					<!-- <p>Article de référence de l'algo avec lien vers le PDF (voir une sorte d'iframe qui rend le PDF directement consultable dans la slide et qui par défaut affiche la première page)</p> -->
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.5: CMA-ES ------------------------------------------ -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+
+				<section id="2.5-examples-cma">
+					<h3>CMA-ES</h3>
+					<h4 style="font-size: 80%;">Covariance Matrix Adaptation Evolution Strategy</h4>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section style="text-align: left; font-size: 70%;">
+					<h3 style="text-align: center;">CMA-ES</h3>
+
+					<p>
+						Hansen, N. and A. Ostermeier (2001) Completely Derandomized Self-Adaptation in Evolution Strategies. Evolutionary Computation, 9(2), pp. 159-195
+					</p>
+
+					<p>
+						Nikolaus Hansen now at Inria in RandOpt team (CMAP)
+					</p>
+
+					<p>
+						CMA-ES:
+						<ul style="padding-left: 1em; display: block;">
+							<li>For difficult optimisation problems in continuous domain</li>
+							<li>Usually considered as the best black box algorithm</li>
+							<li>Search space : between 3 and a hundred</li>
+						</ul>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+CMA-ES (Covariance Matrix Adaptation Evolution Strategy) is an evolutionary algorithm for difficult non-linear non-convex black-box optimisation problems in continuous domain.
+
+It’s considered as state-of-the-art in evolutionary computation and has been adopted as one of the standard tools for continuous optimisation in many (probably hundreds of) research labs and industrial environments around the world. The CMA-ES is typically applied to unconstrained or bounded constraint optimization problems, and search space dimensions between three and a hundred. The method should be applied, if derivative based methods, e.g. quasi-Newton BFGS or conjugate gradient, (supposedly) fail due to a rugged search landscape (e.g. discontinuities, sharp bends or ridges, noise, local optima, outliers). If second order derivative based methods are successful, they are usually faster than the CMA-ES: on purely convex-quadratic functions, f(x)=xTHx, BFGS (Matlabs function fminunc) is typically faster by a factor of about ten (in terms of number of objective function evaluations needed to reach a target function value, assuming that gradients are not available). On the most simple quadratic function f(x)=||x||2=xTx BFGS is faster by a factor of about 30.
+Similar to quasi-Newton methods (but not inspired by them), the CMA-ES is a second order approach estimating a positive definite matrix within an iterative procedure (more precisely: a covariance matrix, that is, on convex-quadratic functions, closely related to the inverse Hessian). This makes the method feasible on non-separable and/or badly conditioned problems. In contrast to quasi-Newton methods, the CMA-ES does not use or approximate gradients and does not even presume or require their existence. This makes the method feasible on non-smooth and even non-continuous problems, as well as on multimodal and/or noisy problems. It turns out to be a particularly reliable and highly competitive evolutionary algorithm for local optimization (Hansen & Ostermeier 2001) and, surprising at first sight, also for global optimization (Hansen & Kern 2004, CEC 2005, Hansen 2009 in BBOB-2009).
+The CMA-ES has several invariance properties. Two of them, inherited from the plain evolution strategy, are (i) invariance to order preserving (i.e. strictly monotonic) transformations of the objective function value (that is, e.g., ||x||2 and 3||x||0.2-100 are equivalent objective functions with identical performance of CMA-ES), and (ii) invariance to angle preserving (rigid) transformations of the search space (including rotation, reflection, and translation), if the initial search point is transformed accordingly. Invariances are highly desirable: they imply uniform behavior on classes of functions and therefore imply the generalization of empirical results.
+The CMA-ES does not require a tedious parameter tuning for its application. In fact, the choice of strategy internal parameters is not left to the user (arguably with the exception of population size λ). Finding good (default) strategy parameters is considered as part of the algorithm design, and not part of its application—the aim is to have a well-performing algorithm as is. The default population size λ is comparatively small to allow for fast convergence. Restarts with increasing population size (Auger & Hansen 2005) improve the global search performance. For the application of the CMA-ES, an initial solution, an initial standard deviation (step-size, variables should be defined such that the same standard deviations can be reasonably applied to all variables, see also here) and, possibly, the termination criteria (e.g. a function tolerance) need to be set by the user. The most common applications are model calibration (e.g. curve fitting) and shape optimisation.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section style="text-align: left; font-size: 75%;">
+					<h3 style="text-align: center;">CMA-ES</h3>
+
+					<ul>
+						<li>Like the cross-entropy method, a distribution is improved over time based on samples</li>
+						<li>CMA uses multivariate Gaussian distributions with 3 parameters</li>
+					</ul>
+
+					<p style="text-align: center;">
+						$\boldsymbol{x} \sim \mathcal{N}$
+						(
+						<span class="fragment highlight-current-red" data-fragment-index="1">$ \boldsymbol{m} $</span>,
+						<span class="fragment highlight-current-red" data-fragment-index="2">$ \sigma^2 $</span>
+						<span class="fragment highlight-current-red" data-fragment-index="3">$ \boldsymbol{C} $</span>
+						)
+					</p>
+
+					<p>
+						CMA maintains:
+						<ul style="padding-left: 1em; display: block;">
+							<li class="fragment highlight-current-red" data-fragment-index="1">a mean vector (position)</li>
+							<li class="fragment highlight-current-red" data-fragment-index="2">a step size scalar (amplitude)</li>
+							<li class="fragment highlight-current-red" data-fragment-index="3">a covariance matrix (direction)</li>
+						</ul>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+CMA maintains … over iterations
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section style="text-align: left; font-size: 70%;">
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<br>
+							<h3 style="text-align: center;">CMA-ES</h3>
+							<br>
+							<p>
+								Like the cross-entropy method, these 3 parameters are updated at each iteration to converge such that the proposal distribution $\mathcal{N}(\boldsymbol{m}, \sigma^2\boldsymbol{C})$ focus on the global optima $\boldsymbol{x}^*$
+							</p>
+						</div>
+						<div style="float: left; width: 50%;">
+							<img width="100%" src="assets/inf581_optimization/image78.png" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>CMA-ES</h3>
+
+					<p>
+						At each iteration, $\lambda$ points are sampled from this distribution
+					</p>
+
+					<p>
+						$$\boldsymbol{x}_i \sim \mathcal{N}(\boldsymbol{m}, \sigma^2 \boldsymbol{C}) \quad \text{for } i = 1, \ldots, \lambda$$
+					</p>
+
+					<p>
+						The samples are then sorted according to their objective function value
+					</p>
+
+					<p>
+						$$f(\boldsymbol{x}_1) \leq f(\boldsymbol{x}_2) \leq \ldots \leq f(\boldsymbol{x}_\lambda)$$
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section style="font-size: 70%;">
+					<h3>CMA-ES</h3>
+					<h4>Step 1: Update $\boldsymbol{m}$</h4>
+
+					<p>
+						$$\boldsymbol{x}_i = \boldsymbol{m} + \sigma \boldsymbol{y}_i, \quad \boldsymbol{y}_i \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{C}), \quad \text{for } i = 1, \ldots, \lambda$$
+
+						<!-- $$\boldsymbol{m} \leftarrow \sum_{i=1}^{m} w_i \boldsymbol{x}_{i:\lambda}$$ -->
+						$$
+						\boldsymbol{m} \leftarrow \sum_{i=1}^{\mu} w_i \boldsymbol{x}_{i:\lambda} =
+						\boldsymbol{m} + \sigma \boldsymbol{y}_w \quad \text{where } \boldsymbol{y}_w = \sum_{i=1}^{\mu} w_i \boldsymbol{y}_{i:\lambda}
+						$$
+					</p>
+
+					<!-- <p>
+						where $\boldsymbol{x}_{i:\lambda}$ is the $i$-th best sample and $w_i$ is a weight
+					</p>
+
+					<p>
+						with $\displaystyle \sum_{i=1}^m w_i = 1$
+					</p>
+					<p>
+						and $w_1 \geq w_2 \geq \dots \geq w_m \geq 0$
+					</p> -->
+
+					<img width="50%" src="assets/inf581_optimization/cma_mu.png" />
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+A new mean vector mu is formed using a weighted average of the sampled points
+where weights sum to 1
+(all weights are positive)
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<!-- <section style="font-size: 70%;">
+					<h3>CMA-ES</h3>
+					<h4>Step 1: Update $\boldsymbol{m}$</h4>
+
+					<p>
+						The recommended weighting is obtained by normalizing $\boldsymbol{w}$:
+
+						$$\boldsymbol{w} = \frac{\boldsymbol{w}'}{\sum_{i} w'_i}$$
+					</p>
+
+					<p>
+						with $\displaystyle \quad w'_i = \ln\left(\frac{m+1}{2}\right) - \ln(i) \quad $ for $i = 1, \ldots, m$
+					</p>
+
+					<p>
+						CMA tends to update the mean more "aggressively" than CEM
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/cma_mu.png" />
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+The recommended weighting is obtained by normalizing weights like this...
+						</div>
+					</aside>
+				</section> -->
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section style="font-size: 70%;">
+					<h3>CMA-ES</h3>
+					<h4>Step 2: Update $\boldsymbol{C}$</h4>
+
+					<p>
+						The covariance update is then
+
+						<!-- $$
+						\boldsymbol{C}^{(k+1)} \leftarrow
+						\left( 1 + \underbrace{c_1 c_c (1 - h_{\sigma})(2 - c_c) - c_1 - c_{\mu}}_{\text{typically zero}} \right) \boldsymbol{C}^{(k)}
+						+ \underbrace{c_1 \boldsymbol{p}_{\boldsymbol{C}} \boldsymbol{p}_{\boldsymbol{C}}^\top}_{\text{rank-one update}}
+						+ \underbrace{c_{\mu} \sum_{i=1}^{m} w_i^{\circ} \boldsymbol{\delta}^{(i)} \left( \boldsymbol{\delta}^{(i)} \right)^\top}_{\text{rank-$m$ update}}
+						$$ -->
+
+						$$
+						\boldsymbol{C} \leftarrow
+						(1 - c_1 - c_{\mu}) \boldsymbol{C}
+						+ \underbrace{c_1 \boldsymbol{p_c} \boldsymbol{p_c}^\top}_{\text{rank-one update}}
+						+ \underbrace{c_{\mu} \sum_{i=1}^{\mu} w_i \boldsymbol{y}_{i:\lambda} \boldsymbol{y}_{i:\lambda}^\top}_{\text{rank-$\mu$ update}}
+						$$
+
+						Rank-one update using cumulation vector allow for correlations between consecutive steps to be exploited, permitting the covariance matrix to elongate itself more quickly along a favorable axis.
+
+						Rank-$\mu$ update the direction according to best solutions
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Then the covariance matrix is updated ;
+
+The first term represents the old covariance matrix being decayed by factors c1 and cμ.
+The constants c1 and cμ are decay rates that control the adaptation speed of the covariance matrix.
+Subtracting them from 1 ensures that the matrix shrinks slightly, making space for the new information.
+
+The second term is a rank-one update which allow for correlations between consecutive steps to be exploited,
+permitting the covariance matrix to elongate itself more quickly along a favorable axis.
+
+The third term update the direction according to best solutions
+
+---
+
+p sigma is the evolution path -> increase its likelihood
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section style="font-size: 70%;">
+					<h3>CMA-ES</h3>
+					<h4>Step 3: Update $\sigma$</h4>
+
+					<p>
+						The new step size $\sigma$ is obtained according to
+
+$$
+\sigma \leftarrow
+\sigma \times
+\underbrace{
+	\exp\left(
+		\frac{\color{gray}{c_\sigma}}{\color{gray}{d_\sigma}}
+		\left(
+			\frac{
+				\color{red}{\|\boldsymbol{p}_{\sigma}\|}
+			}{
+				\color{blue}{\mathbb{E} \| \mathcal{N}(\boldsymbol{0}, \textbf{I}) \|}
+			} - 1
+		\right)
+	\right)
+}_{> 1 ~ \Leftrightarrow ~ \|\boldsymbol{p}_{\sigma}\| \text{ is greater than its expectation}}
+$$
+
+						<!-- Comparing the length of $\boldsymbol{p}_{\sigma}$ to its expected length under random selection provides the mechanism by which $\sigma$ is increased or decreased -->
+					</p>
+
+					<img width="60%" src="assets/inf581_optimization/cma_sigma.svg" />
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Finally the new step size sigma is obtained
+comparing the length of the path followed by the solution vector “x” for the “N” previous iteration
+with the “expected length” under a random selection.<br>
+
+The main idea is that
+if the step size is “too large”, the vector x will go back and forth and the length of p sigma [in red] will be short… In this case we have to reduce sigma
+on the contrary, if the algorithm move well in one strong direction of the solution space, we can save some iterations by increasing the step size sigma.
+
+<!-- L’idée centrale est de comparer la longueur du chemin d’évolution $p_\sigma$ à ce qu’on obtiendrait si les directions sélectionnées étaient purement aléatoires. -->
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<!-- <section style="text-align: left; font-size: 60%;">
+					<h3 style="text-align: center;">CMA-ES summary</h3>
+
+					<p>
+						<b>Input</b>:
+							$\boldsymbol{m} \in \mathbb{R}^n, \sigma \in \mathbb{R}_+, \lambda$ <br>
+						<b>Initialize</b>:
+							$\boldsymbol{C} = \boldsymbol{I},$ and
+							$\boldsymbol{p_c} = \boldsymbol{0}, \boldsymbol{p_\sigma} = \boldsymbol{0},$ <br>
+						<b>Set</b>:
+							$c_c \approx \frac{4}{n}$,
+							$c_\sigma \approx \frac{4}{n}$,
+							$c_1 \approx \frac{2}{n^2}$,
+							$c_{\mu} \approx \frac{\mu_w}{n^2}$,
+							$c_1 + c_{\mu} \leq 1$,
+							$d_\sigma \approx 1 + \sqrt{\frac{\mu_w}{n}},$ and
+							$w_i = 1 \ldots \lambda$ such that $\mu_w = \frac{1}{\sum_{i=1}^{m} w_i^2} \approx 0.3 \lambda$<br><br>
+
+						<b>WHILE</b> not terminate <br>
+						$\quad$ $\boldsymbol{x}_i = \boldsymbol{m} + \sigma \boldsymbol{y}_i, \quad \boldsymbol{y}_i \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{C}), \quad \text{for } i = 1, \ldots, \lambda$
+							<span style="position: absolute; right: 0;">sampling</span> <br>
+						$\quad$ $\boldsymbol{m} \leftarrow \sum_{i=1}^{m} w_i \boldsymbol{x}_{i:\lambda} = \boldsymbol{m} + \sigma \boldsymbol{y}_w \quad \text{where } \boldsymbol{y}_w = \sum_{i=1}^{m} w_i \boldsymbol{y}_{i:\lambda}$
+							<span style="position: absolute; right: 0;">update mean</span> <br>
+						$\quad$ $\boldsymbol{p_c} \leftarrow (1 - c_c)\boldsymbol{p_c} + \mathbb{1}_{\{\|\boldsymbol{p_\sigma}\| < 1.5\sqrt{n}\}} \sqrt{1 - (1 - c_c)^2} \sqrt{\mu_w} \boldsymbol{y}_w$
+							<span style="position: absolute; right: 0;">cumulation for $\boldsymbol{C}$</span> <br>
+						$\quad$ $\boldsymbol{p_\sigma} \leftarrow (1 - c_\sigma)\boldsymbol{p_\sigma} + \sqrt{1 - (1 - c_\sigma)^2} \sqrt{\mu_w} \boldsymbol{C}^{-\frac{1}{2}} \boldsymbol{y}_w$
+							<span style="position: absolute; right: 0;">cumulation for $\sigma$</span> <br>
+						$\quad$ $\boldsymbol{C} \leftarrow (1 - c_1 - c_{\mu}) \boldsymbol{C} + c_1 \boldsymbol{p_c} \boldsymbol{p_c}^T + c_{\mu} \sum_{i=1}^{m} w_i \boldsymbol{y}_{i:\lambda} \boldsymbol{y}_{i:\lambda}^T$
+							<span style="position: absolute; right: 0;">update $\boldsymbol{C}$</span> <br>
+						$\quad$ $\sigma \leftarrow \sigma \exp\left(\frac{c_\sigma}{d_\sigma} \left(\frac{\|\boldsymbol{p_\sigma}\|}{E\|\mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\|} - 1\right)\right)$
+							<span style="position: absolute; right: 0;">update of $\sigma$</span> <br>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section> -->
+
+				<!-- ------------------------------------------------------ -->
+				
+				<!-- <section>
+
+					<img class="r-stretch" src="assets/inf581_optimization/image107.png" />
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section> -->
+
+				<!-- ------------------------------------------------------ -->
+
+				<section style="text-align: left; font-size: 60%;">
+					<h3 style="text-align: center;">CMA-ES summary</h3>
+
+					<p>
+						<b>INPUT</b>: <br>
+							$\quad$ $\boldsymbol{m} \in \mathbb{R}^n, \sigma \in \mathbb{R}_+, \lambda$ <br>
+						<b>INITIALIZE</b>: <br>
+							$\quad$ $\boldsymbol{C} = \textbf{I}$,
+								$\boldsymbol{p_c} = \boldsymbol{0}$ and
+								$\boldsymbol{p_\sigma} = \boldsymbol{0}$ <br>
+						<b>SET</b>: <br>
+							$\quad$ $c_c \approx \frac{4}{n}$,
+								$c_\sigma \approx \frac{4}{n}$,
+								$c_1 \approx \frac{2}{n^2}$,
+								$c_{\mu} \approx \frac{\mu_w}{n^2}$,
+								$c_1 + c_{\mu} \leq 1$,
+								$d_\sigma \approx 1 + \sqrt{\frac{\mu_w}{n}},$ and <br>
+							$\quad$ $w_i = 1 \dots \lambda$ such that $\mu_w = \frac{1}{\sum_{i=1}^{\mu} w_i^2} \approx 0.3 \lambda$<br><br>
+
+						<b>WHILE</b> not terminate <br>
+						$\quad$ $\boldsymbol{x}_i = \boldsymbol{m} + \sigma \boldsymbol{y}_i, \quad \boldsymbol{y}_i \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{C}), \quad \text{for } i = 1, \ldots, \lambda$
+							<span style="position: absolute; right: 0;">sampling</span> <br>
+						$\quad$ $\boldsymbol{m} \leftarrow \sum_{i=1}^{\mu} w_i \boldsymbol{x}_{i:\lambda} = \boldsymbol{m} + \sigma \boldsymbol{y}_w \quad \text{where } \boldsymbol{y}_w = \sum_{i=1}^{\mu} w_i \boldsymbol{y}_{i:\lambda}$
+							<span style="position: absolute; right: 0;">update mean</span> <br>
+						$\quad$ $\boldsymbol{p_c} \leftarrow (1 - c_c)\boldsymbol{p_c} + \mathbb{1}_{\{\|\boldsymbol{p_\sigma}\| < 1.5\sqrt{n}\}} \sqrt{1 - (1 - c_c)^2} \sqrt{\mu_w} \boldsymbol{y}_w$
+							<span style="position: absolute; right: 0;">cumulation for $\boldsymbol{C}$</span> <br>
+						$\quad$ $\boldsymbol{p_\sigma} \leftarrow (1 - c_\sigma)\boldsymbol{p_\sigma} + \sqrt{1 - (1 - c_\sigma)^2} \sqrt{\mu_w} \boldsymbol{C}^{-\frac{1}{2}} \boldsymbol{y}_w$
+							<span style="position: absolute; right: 0;">cumulation for $\sigma$</span> <br>
+						$\quad$ $\boldsymbol{C} \leftarrow (1 - c_1 - c_{\mu}) \boldsymbol{C} + c_1 \boldsymbol{p_c} \boldsymbol{p_c}^\top + c_{\mu} \sum_{i=1}^{\mu} w_i \boldsymbol{y}_{i:\lambda} \boldsymbol{y}_{i:\lambda}^\top$
+							<span style="position: absolute; right: 0;">update $\boldsymbol{C}$</span> <br>
+						$\quad$ $\sigma \leftarrow \sigma \exp\left(\frac{c_\sigma}{d_\sigma} \left(\frac{\|\boldsymbol{p_\sigma}\|}{E\|\mathcal{N}(\boldsymbol{0}, \textbf{I})\|} - 1\right)\right)$
+							<span style="position: absolute; right: 0;">update of $\sigma$</span> <br>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<section>
+					<img class="r-stretch" src="assets/inf581_optimization/image101.png" />
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>References</h3>
+
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<p style="font-size: 0.5em; margin-top: 8em; text-align: left;">
+								Hansen, N. and Ostermeier, A., 2001. Completely derandomized self-adaptation in evolution strategies. <em>Evolutionary computation</em>, 9(2), pp.159-195.
+								[<a href="http://www.cmap.polytechnique.fr/~nikolaus.hansen/cmaartic.pdf">PDF</a>]
+							</p>
+							<p style="font-size: 0.5em; margin-top: 4em; text-align: left;">
+								Hansen, N., 2016. The CMA evolution strategy: A tutorial. <em>arXiv preprint arXiv:1604.00772</em>.
+								[<a href="https://arxiv.org/pdf/1604.00772.pdf">PDF</a>]
+							</p>
+						</div>
+						<div style="float: left; width: 50%;">
+							<a href="http://www.cmap.polytechnique.fr/~nikolaus.hansen/cmaartic.pdf"><img width="70%" src="assets/inf581_optimization/bib_cmaes.png" /></a>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- endregion -->
+
+				<!-- ------------------------------------------------------ -->
+				<!-- 2.5: PARTICLE SWARM OPTIMIZATION (PSO) --------------- -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- #region -->
+				
+				<section id="2.5-examples-pso">
+					<h3>Particle Swarm Optimization</h3>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Particle Swarm Optimization (PSO)</h3>
+
+					<br>
+				
+					<p style="text-align: left; font-size: 0.6em;">
+						Use momentum : accumulate speed in a favorable direction
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>To accelerate convergence toward minima</li>
+							<li>Don’t be disturbed by local perturbations</li>
+						</ul>
+					</p>
+
+					<p style="text-align: left; font-size: 0.6em;">
+						Each individual (or particle) in the population keep tracks of:
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>its current position</li>
+							<li>its current velocity</li>
+							<li>the best position it has seen so far</li>
+						</ul>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Particle Swarm Optimization (PSO)</h3>
+
+					<br>
+				
+					<p style="text-align: left; font-size: 0.6em;">
+						At each iteration, each individual is accelerated toward:
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>the best position it has seen</li>
+							<li>the best position found thus far by any individual</li>
+						</ul>
+					</p>
+
+					<p style="text-align: left; font-size: 0.6em;">
+						The acceleration is weighted by a random term
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Particle Swarm Optimization (PSO)</h3>
+
+					<br>
+
+					<p style="text-align: left; font-size: 0.6em;">
+						The update equations are:
+
+						$$
+						\begin{aligned}
+							x^{(i)} &\leftarrow x^{(i)} + v^{(i)} \\
+							v^{(i)} &\leftarrow wv^{(i)} + c_1 r_1 \left( x_{\text{best}}^{(i)} - x^{(i)} \right) + c_2 r_2 \left( x_{\text{best}} - x^{(i)} \right)
+						\end{aligned}
+						$$
+
+						with:
+					</p>
+					<table style="font-size: 0.6em;">
+						<tbody>
+							<tr>
+								<td style="border-bottom: 0px;">$\boldsymbol{x}^{(i)}, \boldsymbol{x}^{(i)}$</td>
+								<td style="border-bottom: 0px;">position and velocity of particle $i$</td>
+							</tr>
+							<tr>
+								<td style="border-bottom: 0px;">$\boldsymbol{x}_{\text{best}}$</td>
+								<td style="border-bottom: 0px;">the best location found so far over all particles</td>
+							</tr>
+							<tr>
+								<td style="border-bottom: 0px;">$w, c_1, c_2$</td>
+								<td style="border-bottom: 0px;">parameters (inertia and momentum coefficients)</td>
+							</tr>
+							<tr>
+								<td>$r_1, r_2$</td>
+								<td>random numbers drawn from $\mathcal{U}(0,1)$</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Particle Swarm Optimization (PSO)</h3>
+
+					<img class="r-stretch" src="assets/inf581_optimization/image104.png" />
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+An illustration of the behavior of the algorithm over 8 iterations
+
+Example on the wheeler’s ridge test function
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Particle Swarm Optimization (PSO)</h3>
+
+					<img class="r-stretch" src="assets/inf581_optimization/image124.gif" />
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+				<!-- PART 3: APPLICATION TO RL -------------------------------------------------------------------------------------------------- -->
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+
+				<!-- #region -->
+
+				<section id="part3-application-to-rl">
+					<h3>Part 3</h3>
+					<h4>Application to Reinforcement Learning</h4>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Reinforcement Learning Landscape</h3>
+				
+					<p style="text-align: left; font-size: 0.6em;">
+						In Reinforcement Learning, we can either:
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>Learn the value function $V$ or optimize the action-value function $Q$ (DQN, …)</li>
+							<li>Optimize the policy $\pi_{\boldsymbol{\theta}}$ (REINFORCE)</li>
+							<li>Do both (Action Critic methods)</li>
+						</ul>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Direct Policy Search (DPS)</h3>
+				
+					<p style="font-size: 0.8em;">Policy Gradient is a special case of Direct Policy Search (DPS)</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/dps.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Policy Gradient (PG)</h3>
+				
+					<p style="text-align: left; font-size: 0.6em;">
+						Policy Gradient is a special case of Direct Policy Search (DPS):
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>PG search $\boldsymbol{\theta}^* = \arg\max_{\boldsymbol{\theta}} J(\boldsymbol{\theta})$ with a gradient ascent method</li>
+							<li>Iteratively update $\boldsymbol{\theta}$ : $\quad \boldsymbol{\theta} \leftarrow \boldsymbol{\theta} + \alpha \nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta})$</li>
+							<li>A convenient analytical formulation of $\nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta})$ is given by the <em>Policy Gradient theorem</em>:</li>
+						</ul>
+					</p>
+					<p style="font-size: 0.7em;">
+						$$\nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta}) = \nabla_{\boldsymbol{\theta}} V^{\pi_\boldsymbol{\theta}}(\boldsymbol{s}) = \mathbb{E}_{\pi_{\boldsymbol{\theta}}} \left[ \nabla_{\boldsymbol{\theta}} \log \pi_{\boldsymbol{\theta}}(\boldsymbol{s}, \boldsymbol{a}) Q^{\pi_{\boldsymbol{\theta}}}(\boldsymbol{s}, \boldsymbol{a}) \right]$$
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>DPS: gradient based VS gradient free methods</h3>
+				
+					<p style="text-align: left; font-size: 0.6em;">
+						Possible issues with Policy Gradient (gradient based methods):
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>May have a slow convergence</li>
+							<li>Only found local optima</li>
+							<li>Requires an analytical formulation of $\nabla_{\boldsymbol{\theta}} \ln \pi_{\boldsymbol{\theta}}$ which is not always known</li>
+						</ul>
+					</p>
+					
+					<p style="text-align: left; font-size: 0.6em;">
+						Direct Policy Search methods using gradient free optimization procedures are interesting alternatives to tackle these issues:
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>No gradient</li>
+							<li>Search global optima</li>
+							<li>Efficient if the parameters space is not too big (<100 dimensions)</li>
+							<li>MDP (Markov Decision Process) assumptions not even required!</li>
+						</ul>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Direct Policy Search (DPS) - The Policy</h3>
+				
+					<p>
+						Usually, the policy $\pi_{\boldsymbol{\theta}}$ (i.e. the agent) is a neural network
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/image113.png" />
+
+					<p>
+						Usually, $\boldsymbol{\theta}$ is the weights of the neural network
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+
+				<section>
+					<h3>Machine Learning</h3>
+					<h4>Few applications examples among thousands</h4>
+
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/optim_robots.png" width="100%" />
+						</div>
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/optim_robots.gif" width="100%" />
+						</div>
+					</div>
+					<p style="clear: both; font-size: 0.6em;">
+						<br>
+						Flexible Muscle-Based Locomotion for Bipedal Creatures<br>
+						T. Geijtenbeek, M van de Panne, F van der Stappen<br>
+						<a href="https://yewtu.be/watch?v=pgaEE27nsQw">https://youtu.be/pgaEE27nsQw</a>
+					</p>
+
+					<video data-autoplay src="https://yewtu.be/watch?v=pgaEE27nsQw"></video>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">Here we have another example in robotics.
+
+Mathematical opimization is used to find the best way for a robot to use its mussle to move straight forward.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<!-- https://revealjs.com/backgrounds/ -->
+				<section data-background-video="assets/inf581_optimization/optim_robots.mp4" 
+						 data-background-video-loop data-background-video-muted>
+				</section>
+
+				<!-- https://revealjs.com/media/ -->
+				<!--
+					<section>
+						<h3>Machine Learning</h3>
+						<h4>Few applications examples among thousands</h4>
+	
+						<video data-autoplay src="assets/inf581_optimization/optim_robots.mp4"></video>
+	
+						<aside class="notes">
+							<div class="fr-notes"></div>
+							<div class="en-notes"></div>
+						</aside>
+					</section>
+				-->
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Direct Policy Search (DPS) - The Policy</h3>
+				
+					<p>
+						$\boldsymbol{\theta}$ can also define the <em>topology</em> of the neural network
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/image119.png" />
+					
+					<p>
+						We call it neuroevolution
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Direct Policy Search (DPS) - The Policy</h3>
+					
+					<p style="font-size: 0.8em;">
+						In robotics, $\boldsymbol{\theta}$ can even define the <em>topology of the robot</em> itself !
+					</p>
+				
+					<img class="r-stretch" src="assets/inf581_optimization/golem.jpg" />
+
+					<p style="font-size: 0.8em;">
+						<a href="http://www.demo.cs.brandeis.edu/golem/">http://www.demo.cs.brandeis.edu/golem/</a>
+						<a href="https://www.creativemachineslab.com/golem.html">https://www.creativemachineslab.com/golem.html</a> 
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+				
+					<img class="r-stretch" src="assets/inf581_optimization/image112.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>The Golem project</h3>
+					
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<a style="font-size: 0.8em;" href="https://youtu.be/sLtXXFw_q8c">https://youtu.be/sLtXXFw_q8c</a>
+							<img src="assets/inf581_optimization/image110.png" width="100%" />
+						</div>
+						<div style=" float: left; width: 50%;">
+							<a style="font-size: 0.8em;" href="https://youtu.be/z9ptOeByLA4">https://youtu.be/z9ptOeByLA4</a>
+							<img src="assets/inf581_optimization/image116.png" width="92%" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Other applications in robotics</h3>
+				
+					<p>Resilient robots</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/image125.png" />
+
+					<p style="font-size: 0.6em;">
+						<a href="https://www.youtube.com/watch?v=T-c17RKh3uE&feature=youtu.be">https://www.youtube.com/watch?v=T-c17RKh3uE&feature=youtu.be</a>
+						<a href="https://members.loria.fr/JBMouret/videos.html">https://members.loria.fr/JBMouret/videos.html</a>
+						<a href="https://members.loria.fr/JBMouret/publications.html">https://members.loria.fr/JBMouret/publications.html</a>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+				<!-- CONCLUSION ----------------------------------------------------------------------------------------------------------------- -->
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+
+				<!-- #region -->
+
+				<section id="conclusion">
+					<h3>Conclusion</h3>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Optimization landscape</h3>
+				
+					<div class="row">
+						<div style=" float: left; width: 60%;">
+							<p style="text-align: left; font-size: 0.6em;">
+								<b>Descent methods</b>
+								<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+									<li>Gradient descent, Nesterov momentum, AdaGrad, Conjugate Gradient, Newton, …</li>
+									<li>Widely used in Machine Learning</li>
+								</ul>
+							</p>
+							<br>
+							<p style="text-align: left; font-size: 0.6em;">
+								<b>Local gradient free methods</b>
+								<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+									<li>Pattern search</li>
+									<li>Simple and useful alternative to gradient descent when we have no gradient</li>
+								</ul>
+							</p>
+						</div>
+						<div style=" float: left; width: 40%;">
+							<img src="assets/inf581_optimization/gradient_descent.gif" width="70%" />
+							<img src="assets/inf581_optimization/pattern_search.gif" width="50%" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Optimization landscape</h3>
+
+					<br>
+					<br>
+				
+					<div class="row">
+						<div style=" float: left; width: 60%;">
+							<p style="text-align: left; font-size: 0.6em;">
+								<b>Global gradient free methods (blackbox)</b>
+								<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+									<li>CEM, CMA-ES, SAES, GA, DE, ...</li>
+									<li>Difficult multimodal functions</li>
+									<li>Up to hundreds of dimensions</li>
+									<li>Alternative to Deep RL for some problems</li>
+								</ul>
+							</p>
+						</div>
+						<div style=" float: left; width: 40%;">
+							<img src="assets/inf581_optimization/image123.png" width="100%" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Optimization landscape</h3>
+				
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<p style="text-align: left; font-size: 0.6em;">
+								<b>Linear programming</b>
+								<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+									<li>Simplex algorithm</li>
+									<li>Up to millions of dimensions</li>
+									<li>But for linear objective function and linear constraints</li>
+									<li>Widely used in the industry (traffic planning, logistic, …)</li>
+								</ul>
+							</p>
+						</div>
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/image115.png" width="100%" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Benchmarks</h3>
+					<h4>Black box optimization</h4>
+					
+					<br>
+					<br>
+
+					<ul>
+						<li><a href="http://numbbo.github.io/workshops/">BBoB workshop series</a></li>
+						<li>Coco (Inria): <a href="http://numbbo.github.io/coco/">http://numbbo.github.io/coco/</a></li>
+					</ul>
+
+					<br>
+					<br>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Software packages</h3>
+				
+					<p style="text-align: left; font-size: 0.6em;">
+						Open Source
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>CMA-ES</li>
+							<li>scipy.optimize</li>
+							<li>Deap</li>
+							<li>...</li>
+						</ul>
+					</p>
+
+					<p style="text-align: left; font-size: 0.6em;">
+						Mathematical programming
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>Open source: Coin-OR (CBC, IPopt, Pyomo, PuLP, …), GLPK, CVXOPT</li>
+							<li>Commercial: CPLEX, Xpress, Gurobi, Knitro, AMPL, GAMS, ...</li>
+						</ul>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Lab 7</h3>
+				
+					<a href="http://www.jdhp.org/inf581/lab7">www.jdhp.org/inf581/lab7</a>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- endregion -->
+
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+				<!-- END ------------------------------------------------------------------------------------------------------------------------ -->
+				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/zoom.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/search.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="dist/plugin/math.js"></script>
+
+		<script>
+
+			// Also available as an ES module, see:
+			// https://revealjs.com/initialization/
+			Reveal.initialize({
+				controls: true,
+				progress: true,
+				center: true,
+				hash: true,
+				slideNumber: 'h.v',
+
+				// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+				maxScale: 4.0,
+				mathjax2: {
+					//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+					//mathjax: 'mathjax/MathJax.js',
+					config: 'TeX-AMS_HTML-full',
+                                       // pass other options into `MathJax.Hub.Config()`
+					TeX: {
+						Macros: {
+							R: '\\mathbb{R}',
+							set: [ '\\left\\{#1 \\; ; \\; #2\\right\\}', 2 ]
+						}
+					}
+				},
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2 ]
+
+				//// Reveal.js plugins
+				//dependencies: [
+				//	{ src: 'revealjs/plugin/reveald3.js' },
+				//]
+			});
+
+		</script>
+
+		<!-- Assurez-vous que jdhp.js est référencé après tous les autres scripts -->
+		<script src="jdhp.js"></script>
+
+	</body>
+</html>

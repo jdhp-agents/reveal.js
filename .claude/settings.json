@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(alembic:*)",
+      "Bash(echo:*)",
+      "Bash(fastapi:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(head:*)",
+      "Bash(make:*)",
+      "Bash(mypy:*)",
+      "Bash(npm:*)",
+      "Bash(pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "mcp__playwright__*"
+    ]
+  }
+}
