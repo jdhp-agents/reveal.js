@@ -12,6 +12,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { expandIncludes } from './deck-includes.mjs';
 
 const root = path.resolve(import.meta.dirname, '..');
 const site = path.join(root, '_site');
@@ -19,10 +20,12 @@ const site = path.join(root, '_site');
 fs.rmSync(site, { recursive: true, force: true });
 fs.mkdirSync(site);
 
-// Root HTML pages (landing page + every deck), with .ts module scripts rewritten to .js
+// Root HTML pages (landing page + every deck): chapter includes expanded, then
+// .ts module scripts rewritten to .js
 for (const file of fs.readdirSync(root)) {
 	if (!file.endsWith('.html')) continue;
-	const html = fs.readFileSync(path.join(root, file), 'utf8')
+	const source = path.join(root, file);
+	const html = expandIncludes(fs.readFileSync(source, 'utf8'), source)
 		.replace(/(<script[^>]+src="[^"]+)\.ts"/g, '$1.js"');
 	fs.writeFileSync(path.join(site, file), html);
 	console.log(`html  ${file}`);

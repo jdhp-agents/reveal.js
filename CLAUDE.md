@@ -11,8 +11,9 @@ Two distinct things live side by side here, and most tasks concern only one of t
    `plugin/`, `test/`, `examples/`, plus `demo.html`.
 2. **The author's personal slide decks** — the other `*.html` files at the repo root
    (`csc-53439-ep_*.html`, `inf581_optimization.html`, `optimization_cem*.html`), with their
-   media (images, videos, PDFs) in `assets/<deck-name>/` and shared styling/behavior in
-   `jdhp.css` / `jdhp.js` at the repo root. These are the reason this clone exists; the
+   media (images, videos, PDFs) in `assets/<deck-name>/`, chapter files (for split decks) in
+   `decks/<deck-name>/`, and shared styling/behavior in `jdhp.css` / `jdhp.js` at the repo
+   root. These are the reason this clone exists; the
    framework is the tool. `index.html` at the repo root is neither of these — it's a plain
    static landing page (not a reveal.js deck) listing links to the personal decks.
 
@@ -74,6 +75,20 @@ and decision history. The established pattern, to reuse for every converted figu
 - The `reveald3` plugin is not needed (it embeds external d3 pages in iframes); use plain
   drawing code, and `Reveal.on('fragmentshown', ...)` if a figure must animate with
   fragments.
+
+**Chapter includes (split decks)** — long decks are split into one file per chapter: the
+master `.html` at the root keeps the head/`Reveal.initialize` shell and pulls each chapter
+with a full-line directive `<!-- @include decks/<deck-name>/NN-<chapter>.html -->` (path
+relative to the including file; directives can nest). Expansion is server-side, by the same
+function in both paths — in dev via the `deckIncludes()` Vite plugin
+(`scripts/deck-includes.mjs`, wired into `vite.config.ts`; editing a chapter file
+auto-reloads the browser), at publish time in `scripts/build-decks.mjs` — so the browser
+always sees a single assembled page (reveal.js/MathJax/fragments behave identically, the
+published HTML stays fully static, `decks/` itself is not published). `inf581_optimization.html`
+is split this way (17 chapters in `decks/inf581_optimization/`, cut exactly at the
+`<!-- #region -->`…`<!-- endregion -->` markers, which stay inside the chapter files). To
+edit a slide of a split deck, edit the chapter file, not the master; to add a chapter, create
+the file and add its `@include` line.
 
 **Publishing the decks (GitHub Pages)** — `npm run build:decks` type-checks, assembles the
 static site into `_site/` (gitignored) and compiles each figure `.ts` to a standalone `.js`

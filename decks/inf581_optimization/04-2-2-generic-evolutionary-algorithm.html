@@ -1,0 +1,406 @@
+				<!-- #region -->
+				
+				<section id="2.2-generic-evolutionary-algorithm">
+					<h3>Generic Evolutionary Algorithm</h3>
+					<h4>Illustration on the Rosenbrock function</h4>
+				
+					<div class="r-stack">
+						<p class="fragment fade-out" data-fragment-index="1" style="font-size: 65%;">
+							$$f(\boldsymbol{x}) = \sum_{i=1}^{n-1} \left[ 100(x_{i+1} - x_i^2)^2 + (x_i - 1)^2 \right]$$
+						</p>
+						<p class="fragment" data-fragment-index="1" style="font-size: 65%;">
+							$$f(\boldsymbol{x}) = (1 - x_1)^2 + 100 (x_2 - x_1^2)^2$$
+						</p>
+					</div>
+
+					<img class="fragment" data-fragment-index="1" class="r-stretch" src="assets/inf581_optimization/func_rosenbrock.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Most Evolutionary algorithms can be defined with a “common generic framework”
+
+I’ll present it in the next slides.
+
+I’ll illustrate it on <b style="color:blue">this</b> optimisation function: the Rosenbrock function
+
+In this case, the objective function has only 2 dimensions (x1 and x2).
+
+The goal is to find the global minimum of this function, which is at (1, 1).
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Generic Evolutionary Algorithm</h3>
+				
+					<!--
+						<div style="background-color: #;" class="r-stretch">
+							<img class="r-stretch" src="assets/inf581_optimization/image28.png" />
+							<span style="color:#c53030;">●</span>
+						</div>
+						<object data="assets/inf581_optimization/func.svg" type="image/svg+xml"></object>
+	
+						<svg width="256" height="256" viewBox="0 0 256 256">
+							<circle class="fragment current-visible" data-fragment-index="0" fill="orange" cx="100" cy="100" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="1" fill="orange" cx="200" cy="100" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="2" fill="orange" cx="100" cy="200" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="3" fill="orange" cx="200" cy="200" r="7" />
+						</svg>
+						<object data="assets/inf581_optimization/func.svg" type="image/svg+xml" style="width: 512px; height: 512px; position: absolute; top: 0; left: 0;"></object>
+	
+						<svg width="512" height="512" viewBox="0 0 512 512" style="position: absolute; top: 0; left: 0;">
+							<circle class="fragment current-visible" data-fragment-index="0" fill="orange" cx="0" cy="0" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="0" fill="orange" cx="100" cy="100" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="1" fill="orange" cx="200" cy="100" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="2" fill="orange" cx="100" cy="200" r="7" />
+							<circle class="fragment current-visible" data-fragment-index="3" fill="orange" cx="200" cy="200" r="7" />
+						</svg>
+					-->
+
+					<div class="row">
+						<div style="float: left; width: 55%;">
+							<div style="text-align: left; font-size: 0.45em;">
+								<div class="fragment highlight-current-red" data-fragment-index="1">
+									<b>Input</b>:<br>
+									$\quad\quad$ $f$: the objective function<br>
+		
+									<b>Algorithm parameter</b>:<br>
+									$\quad\quad$ $\mu$: number of parents per generation<br>
+									$\quad\quad$ $\rho$: number of parents used to make each child<br>
+									$\quad\quad$ $\lambda$: number of children per generation<br>
+									$\quad\quad$ mutation operator<br>
+									$\quad\quad$ mating selection operator<br>
+									$\quad\quad$ survivor selection operator<br>
+									$\quad\quad$ termination criterion<br>
+									$\quad\quad$ an initialization procedure<br><br>
+								</div>
+	
+								<span class="fragment highlight-current-red" data-fragment-index="2">Initialize a population of $\mu$ individuals</span><br>
+								<span class="fragment highlight-current-red" data-fragment-index="3">Evaluate each individual $\boldsymbol{x}$: $f(\boldsymbol{x})$</span><br><br>
+	
+								<b>FOR EACH</b> generation (until termination criterion)<br>
+								$\quad$ <span class="fragment highlight-current-red" data-fragment-index="8"><b>FOR EACH</b> child $\boldsymbol{x}$</span><br>
+								$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="4">1. select $\rho$ parents</span><br>
+								$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="5">2. $\boldsymbol{x} \leftarrow$ recombinate selected parents (crossover)</span><br>
+								$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="6">3. mutate $\boldsymbol{x}$</span><br>
+								$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="7">4. evaluate $f(\boldsymbol{x})$</span><br>
+								$\quad$ <span class="fragment highlight-current-red" data-fragment-index="9">Select the next generation of $\mu$ individuals</span><br>
+	
+								<b>RETURN</b> the best individual
+							</div>
+						</div>
+						<div style="float: left; width: 45%;">
+							<div style="position: relative; width: 512px; height: 512px;">
+								<object data="assets/inf581_optimization/rosenbrock_contour.svg" type="image/svg+xml" style="width: 100%; height: 100%;"></object>
+								<svg width="100%" height="100%" viewBox="0 0 512 512" style="position: absolute; top: 0; left: 0;">
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="2" fill="gray" cx="380" cy="420" r="7" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="3" fill="red" cx="380" cy="420" r="7" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="red"  cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="red"  cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="4" fill="gray" cx="380" cy="420" r="7" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="red"  cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="red"  cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="gray" cx="380" cy="420" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="5" fill="red"  cx="270" cy="250" r="7" />
+									<!-- arrow -->
+									<defs>
+										<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+											<polygon points="0 0, 7 3.5, 0 7" fill="red" />
+										</marker>
+									</defs>
+									<line class="fragment current-visible" data-fragment-index="5" x1="195" y1="212" x2="251" y2="241" stroke="red" stroke-width="2" marker-end="url(#arrowhead)" />
+									<line class="fragment current-visible" data-fragment-index="5" x1="344" y1="287" x2="288" y2="260" stroke="red" stroke-width="2" marker-end="url(#arrowhead)" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray"  cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray"  cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="gray" cx="380" cy="420" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="6" fill="red"  cx="260" cy="280" r="7" />
+									<line   class="fragment current-visible" data-fragment-index="6" x1="270" y1="250" x2="266" y2="260" stroke="red" stroke-width="2" marker-end="url(#arrowhead)" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray"  cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray"  cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="gray" cx="380" cy="420" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="7" fill="red"  cx="260" cy="280" r="7" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="300" cy="140" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="480" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="190" cy="210" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="150" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="270" cy="350" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="gray" cx="380" cy="420" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="190" cy="080" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="210" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="130" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="430" cy="240" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="360" cy="250" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="260" cy="280" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="360" cy="380" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="8" fill="red"  cx="160" cy="380" r="7" />
+									<!-- -->
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="240" cy="050" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="100" cy="100" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="300" cy="140" r="7" />
+									<!-- <circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="480" cy="160" r="7" /> -->
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="440" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="150" cy="190" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="190" cy="210" r="7" />
+									<!-- <circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="120" cy="260" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="150" cy="300" r="7" /> -->
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="350" cy="290" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="400" cy="300" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="300" cy="320" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red" cx="270" cy="350" r="7" />
+									<!-- <circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="110" cy="370" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="480" cy="400" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="green" cx="380" cy="420" r="7" /> -->
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="190" cy="080" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="210" cy="160" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="130" cy="180" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="430" cy="240" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="360" cy="250" r="7" />
+									<circle class="fragment current-visible" data-fragment-index="9" fill="red"  cx="260" cy="280" r="7" />
+									<!-- <circle class="fragment current-visible" data-fragment-index="9" fill="green"  cx="360" cy="380" r="7" /> -->
+									<!-- <circle class="fragment current-visible" data-fragment-index="9" fill="green"  cx="160" cy="380" r="7" /> -->
+								</svg>
+							</div>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes" style="font-size: 65%;">
+In this generic framework, the algorithme takes as input the objective function to optimize.
+
+It also requires meta parameters like :
+- <b style="color:blue">the number of parents per “generation” “mu”</b> (a “generation” is an “iteration” in evolutionary algorithms)
+- <b style="color:blue">the number of parents used to make each child “rho”</b> (which is not necessarily equals to 2)
+- <b style="color:blue">the number of “children”</b> (that is to say “new solutions”) to generate per iteration
+- <b style="color:blue">a “mutation operator”</b> which is used to explore near good solutions
+- <b style="color:blue">a “mating operator”</b> which is used to make new solutions (or “children”) using properties of already good known solutions
+- <b style="color:blue">a “survivor operator”</b> that bias the algorithm exploration of solutions toward good known solutions
+<b style="color:blue">[...]</b>
+
+---
+
+The optimization procedure usually looks like this:
+
+- we start by initialize a population of “mu” “individuals” (that is to say “mu” initial solution vectors “x”) ;
+  We use the initialization procedure for that.
+  Usually the initialization procedure is just a random sampling.
+
+<b style="color:blue">[... show indiv on the right side ...]</b>
+
+---
+
+then <b style="color:blue">[...]</b>
+
+---
+
+then we repeat these two loops <b style="color:blue">[...]</b>
+
+---
+
+<b style="color:blue">[... explain what is recobination … -> two or more parents are mixed to create a new “child” solution ...]</b>
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Generic Evolutionary Algorithm</h3>
+
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<div style="text-align: left; font-size: 0.45em;">
+								<b>Input</b>:<br>
+								$\quad\quad$ $f$: the objective function<br>
+	
+								<b>Algorithm parameter</b>:<br>
+								$\quad\quad$ $\mu$: number of parents per generation<br>
+								$\quad\quad$ $\rho$: number of parents used to make each child<br>
+								$\quad\quad$ $\lambda$: number of children per generation<br>
+								$\quad\quad$ mutation operator<br>
+								$\quad\quad$ mating selection operator<br>
+								$\quad\quad$ survivor selection operator<br>
+								$\quad\quad$ termination criterion<br>
+								$\quad\quad$ an initialization procedure<br><br>
+	
+								Initialize a population of $\mu$ individuals<br>
+								Evaluate each individual $\boldsymbol{x}$: $f(\boldsymbol{x})$<br><br>
+	
+								<b>FOR EACH</b> generation (until termination criterion)<br>
+								$\quad$ <b>FOR EACH</b> child $\boldsymbol{x}$<br>
+								$\quad\quad$ 1. select $\rho$ parents<br>
+								$\quad\quad$ 2. $\boldsymbol{x} \leftarrow$ recombinate selected parents (crossover)<br>
+								$\quad\quad$ 3. mutate $\boldsymbol{x}$<br>
+								$\quad\quad$ 4. evaluate $f(\boldsymbol{x})$<br>
+								$\quad$ Select the next generation of $\mu$ individuals<br>
+	
+								<b>RETURN</b> the best individual
+							</div>
+						</div>
+						<div style="float: left; width: 50%;">
+							<br><br>
+							<img width="100%" src="assets/inf581_optimization/generic_ea.png" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+So it can be depicted like this <b style="color:blue">[...]</b>
+
+we find here the 3 main operators applied at each generation:
+- the mating or crossover operator in yellow
+- the mutation operator in yellow too
+- selection operator in blue
+
+In red we have the evaluation of individuals
+in green the initialization procedure
+and in gray the stopping criteria
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<br>
+							<img width="100%" src="assets/inf581_optimization/design_1.gif" />
+						</div>
+						<div style="float: left; width: 50%;">
+							<br>
+							<img width="100%" src="assets/inf581_optimization/design_2.png" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Here we have two examples of how the algorithm converges,
+in the solution space.
+
+On these two examples,
+we have a solution space of 4 dimensions in on the left
+and 6 dimensions on the right.
+
+Here we display the projection of visited solutions on all pairs of axes
+
+And on the right plot, color is used to depict iterations:
+black is the points visited at the beginning of the exploration
+and yellow are points visited at the end, where the algorithm converged
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->

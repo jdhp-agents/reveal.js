@@ -1,0 +1,278 @@
+				<!-- #region -->
+
+				<section id="2.1-population-methods-intro">
+					<h3>Population methods</h3>
+				
+					<p style="text-align: left; font-size: 0.8em;">
+						Descent methods:
+						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+							<li>A single solution is updated incrementally toward a local minimum</li>
+						</ul>
+					</p>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Population methods:
+						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+							<li>Iterative methods where several solutions (called individuals) are tested at each iteration</li>
+							<li>Information at different points in the solution space can be shared between individuals</li>
+							<li>Help the algorithm to avoid being stuck in a local optimum</li>
+							<li>Easy to parallelize</li>
+						</ul>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+As we just saw, in descent methods,
+- <b style="color:blue">[...]</b>
+
+But now I'll talk about population methods, that are quite different.
+- Population methods are <b style="color:blue">iterative methods where [...]</b>
+- <b style="color:blue">[...]</b>
+- <b style="color:blue">[...]</b>.
+- One advantage of these methods is that <b style="color:blue">they are often easy to parallelize</b>
+
+So population methods a random search
+where we progressively bias the search
+toward interesting areas
+of the solution space
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Evolutionary Algorithms</h3>
+					<h4>(a.k.a. Evolutionary Computing)</h4>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Let's start with Evolutionary Algorithms.
+
+This is one of the main family of population methods.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Evolutionary Algorithms</h3>
+					<h4 style="font-size: 0.65em;">Biomimetic algorithms, inspired by natural selection and evolution</h4>
+				
+					<div class="row">
+						<div style="float: left; width: 30%;">
+							<br>
+							<p style="text-align: left; font-size: 0.6em;">
+								Fitter individuals are more likely to pass on their <b>genes</b> to the next generation.
+							</p>
+							<p style="text-align: left; font-size: 0.6em;">
+								Chromosomes of the fitter individuals are passed on to the next generation after undergoing the genetic operations of <b>crossover</b> and <b>mutation</b>
+							</p>
+						</div>
+						<div style="float: left; width: 70%;">
+							<br>
+							<img width="100%" src="assets/inf581_optimization/mice.png" />
+							<p style="font-size: 0.25em;">Evolution by Natural Selection Source: <a href="https://www.khanacademy.org/science/biology/her/evolution-and-natural-selection/a/darwin-evolution-natural-selection">Khan Academy</a></p>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+Evolutionary algorithms are <b style="color:blue">biomimetic algorithms, inspired by natural selection and evolution</b>
+
+It reproduces the natural selection in silico.
+
+The main idea is the following :
+“Good” individuals (for a given problem : here survive and reproduce)
+are more likely to pass on their genes to the next generation.
+
+Chromosomes of these “good” individuals are passed on to the next generation
+after undergoing the genetic operations of crossover and mutation
+to give a chance for next generations individuals to be even better.
+
+In this illustration <b style="color:blue">[...]</b>, we have mice of different colors.
+In this environment where rocks are dark, the dark mice are more likely to survive and reproduce
+as predators have more difficulties to see them.
+The color of the mice is a kind of “gene” that is passed on to the next generation.
+So the population of mice will evolve to be darker and darker to adapt to the environment.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Families of Evolutionary Algorithms (1/3)</h3>
+				
+					<p style="text-align: left; font-size: 0.7em;">
+						Evolution Strategies (ES)
+						<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+							<li>Ingo Rechenberg & Hans-Paul Schwefel [1965]</li>
+							<li>Made for continuous solution spaces</li>
+						</ul>
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/func_himmelblau.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+There are 3 main families of Evolutionary Algorithms.
+
+The first one is <b style="color:blue">[...]</b>
+- by <b style="color:blue">[...]</b>
+- It’s very well adapted for objective functions with a continuous solution spaces
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Families of Evolutionary Algorithms (2/3)</h3>
+				
+					<p style="text-align: left; font-size: 0.7em;">
+						Genetic Algorithms (GA)
+						<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+							<li>J.H. Holland [1975]</li>
+							<li>Dissociate genotype and phenotype</li>
+						</ul>
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/ga_spaces.jpg" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+The second family is probably the most famous, it’s genetic algorithms.
+
+Here the bio inspiration is even stronger as not only a kind of natural selection is reproduced but also genetic consideration.
+In ES we only have a phenotype.
+Here we also have a genotype and solutions are coded with genes.
+
+This has impacts on crossover and mutation operators, we will discuss that later.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Families of Evolutionary Algorithms (3/3)</h3>
+				
+					<p style="text-align: left; font-size: 0.7em;">
+						Genetic Programming (GP)
+						<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+							<li>J. Koza [1988]</li>
+							<li>Based on Genetic Algorithms, but individuals are programs</li>
+						</ul>
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/gp_example.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+The third family of EA is less known ;
+it’s genetic programming
+and here solutions are coded as programs (with a tree of operators).
+
+We won’t discuss this family in details here but it can be interesting for some applications.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<!--
+				<section style="text-align: left; font-size: 70%;">
+					<h3 style="text-align: center;">Past, present, future</h3>
+				
+					<ul>
+						<li>Old methods (60’s)</li>
+						<li>Genetic Algorithms (and EAs) became very popular after the publication of Goldberg’s book in 1989</li>
+					</ul>
+					<div class="r-stack">
+						<div class="fragment current-visible" data-fragment-index="1">
+							<img class="r-stretch" src="assets/inf581_optimization/book_goldberg.png" />
+						</div>
+						<div class="fragment current-visible" data-fragment-index="2" style="width: 100%; background-color: #c53030;">
+							<ul>
+								<li>Evolution Strategies are very popular thanks CMA-ES</li>
+								<ul>
+									<li>The state of the art nowadays</li>
+									<li>Works up to few hundreds of dimensions (solution space)</li>
+								</ul>
+							</ul>
+						</div>
+					</div>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				-->
+
+				<section style="text-align: left; font-size: 65%;">
+					<h3 style="text-align: center;">Past, present, future</h3>
+
+					<br>
+				
+					<div class="row">
+						<div style="float: left; width: 50%;">
+							<ul>
+								<li>Old methods (60’s)</li>
+								<li class="fragment" data-fragment-index="1">Genetic Algorithms (and EAs) became very popular after the publication of Goldberg’s book in 1989</li>
+								<li class="fragment" data-fragment-index="2">Evolution Strategies are very popular thanks CMA-ES</li>
+								<ul class="fragment" data-fragment-index="2">
+									<li>The state of the art nowadays</li>
+									<li>Works up to few hundreds of dimensions (solution space)</li>
+								</ul>
+								<li class="fragment" data-fragment-index="3">Recently regains attention in RL community<br>e.g. [<a href="https://arxiv.org/pdf/1703.03864]">arxiv.org/pdf/1703.03864</a>]</li>
+							</ul>
+						</div>
+						<div style="float: left; width: 50%;">
+							<div class="r-stack">
+								<div class="fragment current-visible" data-fragment-index="1">
+									<img width="100%" src="assets/inf581_optimization/book_goldberg.png" />
+								</div>
+								<div class="fragment current-visible" data-fragment-index="3">
+									<img width="100%" src="assets/inf581_optimization/mujoco.gif" />
+									<img width="100%" src="assets/inf581_optimization/mujoco_ea_tight.png" />
+								</div>
+								<div class="fragment current-visible" data-fragment-index="4">
+									<img width="100%" src="assets/inf581_optimization/rl_mario.gif" />
+								</div>
+							</div>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+- Evolutionary Algorithms are quite <b style="color:blue">old methods</b>, the first publications have been made in the sixties.
+- <b style="color:blue">[... in ninteen eighty nine]</b>
+- <b style="color:blue">[...]</b>
+- <b style="color:blue">[...]</b> Evolutionary algorithms can compete with modern Reinforcement Learning algorithms on some problems
+  (like some “atari” or “Mujoco” problems in the Gymnasium benchmark)
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->

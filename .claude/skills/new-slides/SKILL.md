@@ -63,6 +63,14 @@ See `FORMATS-ECRAN.md` (repo root) for the tested rationale. Non-negotiable in e
     the next iteration takes over (see `optimization_cem.html`, "At each iteration" slide).
   - Keep `data-fragment-index` sequences contiguous and keep listing indices and visual
     indices in lockstep — an off-by-one desynchronizes text and visual.
+- **Split decks (chapter includes)**: long decks keep only the head/`Reveal.initialize`
+  shell in the root `.html`; each chapter lives in `decks/<deck-name>/NN-<chapter>.html`
+  (its `<!-- #region -->`…`<!-- endregion -->` block, cut verbatim) and is pulled in with a
+  full-line `<!-- @include decks/<deck-name>/NN-<chapter>.html -->` directive. The browser
+  always receives the assembled page (expanded by the Vite plugin in dev — chapter edits
+  auto-reload — and by `scripts/build-decks.mjs` at publish time). **Edit the chapter file,
+  not the master**; grep in `decks/<deck-name>/` when looking for a slide of a split deck.
+  `inf581_optimization.html` is split this way; the other decks are single-file so far.
 - Speaker notes: `<aside class="notes">` containing `<div class="fr-notes">` and
   `<div class="en-notes">` (both languages; `jdhp.js` shows one).
 - Work-in-progress slides: add class `draft` to the section — `jdhp.css` gives them a

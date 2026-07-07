@@ -1,0 +1,179 @@
+				<!-- #region -->
+
+				<section id="2.4-operators-crossover" style="text-align: left; font-size: 65%;">
+					<h3 style="text-align: center;">Crossover (recombination) in GA</h3>
+
+					<!-- <img class="r-stretch" src="assets/inf581_optimization/crossover_in_ga.png" /> -->
+
+					<div>
+						<p>
+							Single-point crossover
+						</p>
+						<table style="font-size: 0.8em; margin-top: 0.25em; margin-bottom: 0.25em;">
+							<tbody>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 1</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="1">|</span><span style="color:#445ed1;">● ● ● ● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 2</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#c53030;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="1">|</span><span style="color:#c53030;">● ● ● ● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr class="fragment fade-down" data-fragment-index="2">
+									<td style="border-bottom: 0px; text-align: right;">Child</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+										<span style="color:#c53030;">● ● ● ● ● ● ● ●</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="fragment" data-fragment-index="3">
+						<p>
+							Two-point / k-point crossover
+						</p>
+						<table style="font-size: 0.8em; margin-top: 0.25em; margin-bottom: 0.25em;">
+							<tbody>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 1</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="4">|</span><span style="color:#445ed1;">● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="4">|</span><span style="color:#445ed1;">● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 2</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#c53030;">● ● ● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="4">|</span><span style="color:#c53030;">● ● ● ● ● ● ● ●</span><span class="fragment" data-fragment-index="4">|</span><span style="color:#c53030;">● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr class="fragment fade-down" data-fragment-index="5">
+									<td style="border-bottom: 0px; text-align: right;">Child</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ●</span>
+										<span style="color:#c53030;">● ● ● ● ● ● ● ●</span>
+										<span style="color:#445ed1;">● ● ● ● ●</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<div class="fragment" data-fragment-index="6">
+						<p>
+							Uniform crossover
+						</p>
+						<table style="font-size: 0.8em; margin-top: 0.25em; margin-bottom: 0.25em;">
+							<tbody>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 1</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr>
+									<td style="border-bottom: 0px; text-align: right;">Parent 2</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#c53030;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+									</td>
+								</tr>
+								<tr class="fragment fade-down" data-fragment-index="7">
+									<td style="border-bottom: 0px; text-align: right;">Child</td>
+									<td style="border-bottom: 0px;">
+										<span style="color:#445ed1;">● ●</span>
+										<span style="color:#c53030;">●</span>
+										<span style="color:#445ed1;">●</span>
+										<span style="color:#c53030;">● ● ●</span>
+										<span style="color:#445ed1;">● ●</span>
+										<span style="color:#c53030;">●</span>
+										<span style="color:#445ed1;">●</span>
+										<span style="color:#c53030;">● ●</span>
+										<span style="color:#445ed1;">●</span>
+										<span style="color:#c53030;">● ●</span>
+										<span style="color:#445ed1;">● ● ●</span>
+										<span style="color:#c53030;">● ●</span>
+										<span style="color:#445ed1;">● ●</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						<p class="fragment" data-fragment-index="7" style="text-align: center; font-size: 80%;">
+							Each gene or bit is chosen from either parent with equal probability
+						</p>
+					</div>
+
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section style="text-align: left; font-size: 85%;">
+					<h3 style="text-align: center;">Crossover (recombination) in ES</h3>
+
+					<h4 style="margin-top: 1em;">Global intermediate recombination</h4>
+					<ul style="list-style: none;">
+						<li>Each component of the child solution vector $x$ is the arithmetic mean of its parents' components</li>
+					</ul>
+
+					<h4 style="margin-top: 1em;">Discrete recombination</h4>
+					<ul style="list-style: none;">
+						<li>Each component of the child solution vector $x$ is chosen from either parent with equal probability</li>
+					</ul>
+
+					<!-- <img class="r-stretch" src="assets/inf581_optimization/es_discrete_recombination.png" /> -->
+
+					<table style="font-size: 0.8em; margin-top: 0.25em; margin-bottom: 0.25em;">
+						<tbody>
+							<tr>
+								<td style="border-bottom: 0px; text-align: right;">Parent 1</td>
+								<td style="border-bottom: 0px;">
+									<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+								</td>
+							</tr>
+							<tr>
+								<td style="border-bottom: 0px; text-align: right;">Parent 2</td>
+								<td style="border-bottom: 0px;">
+									<span style="color:#c53030;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+								</td>
+							</tr>
+							<tr class="fragment fade-down" data-fragment-index="1">
+								<td style="border-bottom: 0px; text-align: right;">Child</td>
+								<td style="border-bottom: 0px;">
+									<span style="color:#445ed1;">● ●</span>
+									<span style="color:#c53030;">●</span>
+									<span style="color:#445ed1;">●</span>
+									<span style="color:#c53030;">● ● ●</span>
+									<span style="color:#445ed1;">● ●</span>
+									<span style="color:#c53030;">●</span>
+									<span style="color:#445ed1;">●</span>
+									<span style="color:#c53030;">● ●</span>
+									<span style="color:#445ed1;">●</span>
+									<span style="color:#c53030;">● ●</span>
+									<span style="color:#445ed1;">● ● ●</span>
+									<span style="color:#c53030;">● ●</span>
+									<span style="color:#445ed1;">● ●</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->

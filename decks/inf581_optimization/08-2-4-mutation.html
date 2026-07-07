@@ -1,0 +1,96 @@
+				<!-- #region -->
+
+				<section id="2.4-operators-mutation" style="text-align: left; font-size: 75%;">
+					<h3 style="text-align: center;">Mutation</h3>
+
+					<p>To <b>explore</b> more of the state space</p>
+    
+					<p style="margin-bottom: 0.25em;">Can be:</p>
+					<ul>
+						<li>
+							Each bit in a <b>binary-valued</b> chromosome typically has a small probability of being flipped:
+							for a chromosome with $m$ bits,
+							this mutation rate is typically set to $1/m$ ⇒ one mutation per child chromosome in average
+						</li>
+					</ul>
+
+					<table style="font-size: 0.8em; margin-top: 0.25em; margin-bottom: 0.25em;">
+						<tbody>
+							<tr>
+								<td style="border-bottom: 0px; text-align: right;">Before mutation</td>
+								<td style="border-bottom: 0px;">
+									<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+								</td>
+							</tr>
+							<tr>
+								<td style="border-bottom: 0px; text-align: right;">After mutation</td>
+								<td style="border-bottom: 0px;">
+									<span style="color:#445ed1;">● ● ● ● ● ●</span>
+									<span style="color:#c53030;">●</span>
+									<span style="color:#445ed1;">●</span>
+									<span style="color:#c53030;">●</span>
+									<span style="color:#445ed1;">● ● ● ● ● ● ● ● ● ● ● ● ● ●</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<ul>
+						<li>Common mutation for <b>real-valued</b> chromosomes is to add zero-mean Gaussian noise</li>
+					</ul>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Controlling mutation strength</h3>
+					<h4>In real-valued chromosomes (ES)</h4>
+
+					<p style="text-align: left; font-size: 0.6em;">
+						How to set the standard deviation $\sigma$ of the Gaussian noise ?
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li class="fragment highlight-current-red" data-fragment-index="1">By deterministic rule: <b>Rechenberg’s 1/5th rule</b></li>
+							<li class="fragment highlight-current-red" data-fragment-index="2">By evolutive rules (Schwefel): <b>Self-Adaptation</b> Evolution Strategies</li>
+						</ul>
+					</p>
+
+					<div class="r-stack">   <!-- c.f. https://revealjs.com/layout/ -->
+						<div class="fragment current-visible" data-fragment-index="1" style="width: 100%;">
+							<p style="text-align: left; font-size: 0.6em;">
+								<b>Rechenberg’s 1/5th rule</b>:
+								<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+									<!-- <li>When $\mu = 1$</li>  TODO: THIS IS WRONG -->
+									<li>Increase step-size $\sigma$ if more than 20% of the new solutions (individuals) are “successful” (i.e. better than previous generations)</li>
+									<li>Decrease otherwise</li>
+								</ul>
+							</p>
+						</div>
+						<div class="fragment current-visible" data-fragment-index="2" style="width: 100%;">
+							<p style="text-align: left; font-size: 0.6em;">
+								<b>Self-Adaptation</b>:
+								<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+									<li>$\sigma$ become a part of individuals genes</li>
+									<li>Each individual has a different $\sigma$</li>
+									<li>It’s subject to mutations too</li>
+									<li>An individual with an inappropriate $\sigma$ simply disappear !</li>
+								</ul>
+							</p>
+						</div>
+					</div>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->

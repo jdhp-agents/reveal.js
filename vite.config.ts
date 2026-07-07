@@ -3,6 +3,8 @@ import { ModuleFormat } from 'rollup';
 import { defineConfig } from 'vite';
 import dts from 'vite-plugin-dts';
 import { rewriteLegacyCoreDtsPath } from './build/dts-paths.ts';
+// Personal decks: expands <!-- @include ... --> chapter files in dev (see scripts/deck-includes.mjs)
+import { deckIncludes } from './scripts/deck-includes.mjs';
 
 export const appendExtension = (format: ModuleFormat, name: String): string => {
 	if (format === 'es') {
@@ -42,6 +44,7 @@ export default defineConfig({
 		},
 	},
 	plugins: [
+		deckIncludes(),
 		dts({
 			insertTypesEntry: true,
 			rollupTypes: false,

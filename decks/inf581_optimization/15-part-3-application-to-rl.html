@@ -1,0 +1,298 @@
+				<!-- #region -->
+
+				<section id="part3-application-to-rl">
+					<h3>Part 3</h3>
+					<h4>Application to Reinforcement Learning</h4>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Reinforcement Learning Landscape</h3>
+				
+					<p style="text-align: left; font-size: 0.6em;">
+						In Reinforcement Learning, we can either:
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>Learn the value function $V$ or optimize the action-value function $Q$ (DQN, …)</li>
+							<li>Optimize the policy $\pi_{\boldsymbol{\theta}}$ (REINFORCE)</li>
+							<li>Do both (Action Critic methods)</li>
+						</ul>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Direct Policy Search (DPS)</h3>
+				
+					<p style="font-size: 0.8em;">Policy Gradient is a special case of Direct Policy Search (DPS)</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/dps.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Policy Gradient (PG)</h3>
+				
+					<p style="text-align: left; font-size: 0.6em;">
+						Policy Gradient is a special case of Direct Policy Search (DPS):
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>PG search $\boldsymbol{\theta}^* = \arg\max_{\boldsymbol{\theta}} J(\boldsymbol{\theta})$ with a gradient ascent method</li>
+							<li>Iteratively update $\boldsymbol{\theta}$ : $\quad \boldsymbol{\theta} \leftarrow \boldsymbol{\theta} + \alpha \nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta})$</li>
+							<li>A convenient analytical formulation of $\nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta})$ is given by the <em>Policy Gradient theorem</em>:</li>
+						</ul>
+					</p>
+					<p style="font-size: 0.7em;">
+						$$\nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta}) = \nabla_{\boldsymbol{\theta}} V^{\pi_\boldsymbol{\theta}}(\boldsymbol{s}) = \mathbb{E}_{\pi_{\boldsymbol{\theta}}} \left[ \nabla_{\boldsymbol{\theta}} \log \pi_{\boldsymbol{\theta}}(\boldsymbol{s}, \boldsymbol{a}) Q^{\pi_{\boldsymbol{\theta}}}(\boldsymbol{s}, \boldsymbol{a}) \right]$$
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>DPS: gradient based VS gradient free methods</h3>
+				
+					<p style="text-align: left; font-size: 0.6em;">
+						Possible issues with Policy Gradient (gradient based methods):
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>May have a slow convergence</li>
+							<li>Only found local optima</li>
+							<li>Requires an analytical formulation of $\nabla_{\boldsymbol{\theta}} \ln \pi_{\boldsymbol{\theta}}$ which is not always known</li>
+						</ul>
+					</p>
+					
+					<p style="text-align: left; font-size: 0.6em;">
+						Direct Policy Search methods using gradient free optimization procedures are interesting alternatives to tackle these issues:
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>No gradient</li>
+							<li>Search global optima</li>
+							<li>Efficient if the parameters space is not too big (<100 dimensions)</li>
+							<li>MDP (Markov Decision Process) assumptions not even required!</li>
+						</ul>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Direct Policy Search (DPS) - The Policy</h3>
+				
+					<p>
+						Usually, the policy $\pi_{\boldsymbol{\theta}}$ (i.e. the agent) is a neural network
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/image113.png" />
+
+					<p>
+						Usually, $\boldsymbol{\theta}$ is the weights of the neural network
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+
+				<section>
+					<h3>Machine Learning</h3>
+					<h4>Few applications examples among thousands</h4>
+
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/optim_robots.png" width="100%" />
+						</div>
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/optim_robots.gif" width="100%" />
+						</div>
+					</div>
+					<p style="clear: both; font-size: 0.6em;">
+						<br>
+						Flexible Muscle-Based Locomotion for Bipedal Creatures<br>
+						T. Geijtenbeek, M van de Panne, F van der Stappen<br>
+						<a href="https://yewtu.be/watch?v=pgaEE27nsQw">https://youtu.be/pgaEE27nsQw</a>
+					</p>
+
+					<video data-autoplay src="https://yewtu.be/watch?v=pgaEE27nsQw"></video>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">Here we have another example in robotics.
+
+Mathematical opimization is used to find the best way for a robot to use its mussle to move straight forward.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<!-- https://revealjs.com/backgrounds/ -->
+				<section data-background-video="assets/inf581_optimization/optim_robots.mp4" 
+						 data-background-video-loop data-background-video-muted>
+				</section>
+
+				<!-- https://revealjs.com/media/ -->
+				<!--
+					<section>
+						<h3>Machine Learning</h3>
+						<h4>Few applications examples among thousands</h4>
+	
+						<video data-autoplay src="assets/inf581_optimization/optim_robots.mp4"></video>
+	
+						<aside class="notes">
+							<div class="fr-notes"></div>
+							<div class="en-notes"></div>
+						</aside>
+					</section>
+				-->
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Direct Policy Search (DPS) - The Policy</h3>
+				
+					<p>
+						$\boldsymbol{\theta}$ can also define the <em>topology</em> of the neural network
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/image119.png" />
+					
+					<p>
+						We call it neuroevolution
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Direct Policy Search (DPS) - The Policy</h3>
+					
+					<p style="font-size: 0.8em;">
+						In robotics, $\boldsymbol{\theta}$ can even define the <em>topology of the robot</em> itself !
+					</p>
+				
+					<img class="r-stretch" src="assets/inf581_optimization/golem.jpg" />
+
+					<p style="font-size: 0.8em;">
+						<a href="http://www.demo.cs.brandeis.edu/golem/">http://www.demo.cs.brandeis.edu/golem/</a>
+						<a href="https://www.creativemachineslab.com/golem.html">https://www.creativemachineslab.com/golem.html</a> 
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+				
+					<img class="r-stretch" src="assets/inf581_optimization/image112.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>The Golem project</h3>
+					
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<a style="font-size: 0.8em;" href="https://youtu.be/sLtXXFw_q8c">https://youtu.be/sLtXXFw_q8c</a>
+							<img src="assets/inf581_optimization/image110.png" width="100%" />
+						</div>
+						<div style=" float: left; width: 50%;">
+							<a style="font-size: 0.8em;" href="https://youtu.be/z9ptOeByLA4">https://youtu.be/z9ptOeByLA4</a>
+							<img src="assets/inf581_optimization/image116.png" width="92%" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Other applications in robotics</h3>
+				
+					<p>Resilient robots</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/image125.png" />
+
+					<p style="font-size: 0.6em;">
+						<a href="https://www.youtube.com/watch?v=T-c17RKh3uE&feature=youtu.be">https://www.youtube.com/watch?v=T-c17RKh3uE&feature=youtu.be</a>
+						<a href="https://members.loria.fr/JBMouret/videos.html">https://members.loria.fr/JBMouret/videos.html</a>
+						<a href="https://members.loria.fr/JBMouret/publications.html">https://members.loria.fr/JBMouret/publications.html</a>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->

@@ -1,0 +1,64 @@
+				<!-- #region -->
+				
+				<section id="2.4-operators-selection">
+					<h3>Mating selection</h3>
+
+					<br>
+
+					<p style="text-align: left;">
+						Can either:
+						<ul style="padding-left: 1em; display: block;">
+							<li>Randomly select parents</li>
+							<li>Select among an “elite” population (best ones): apply a competition</li>
+						</ul>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Survivor Selection</h3>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Select individuals for the next generation among:
+						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+							<li>Children (“offspring”) only</li>
+							<li>Children + parents (best individuals can live several generations)</li>
+						</ul>
+					</p>
+
+					<br>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Notation for Evolution Strategies:
+					</p>
+					<table style="font-size: 0.8em;">
+						<tbody>
+							<tr>
+								<td style="border-bottom: 0px;">$(\mu \color{\red}{+} \lambda)\text{-ES}$</td>
+								<td style="border-bottom: 0px;">selection in $\{ \text{parents} \} \cup \{ \text{offspring} \}$</td>
+							</tr>
+							<tr>
+								<td style="border-bottom: 0px;">$(\mu \color{\red}{,} \lambda)\text{-ES}$</td>
+								<td style="border-bottom: 0px;">selection in $\{ \text{offspring} \}$</td>
+							</tr>
+						</tbody>
+					</table>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+offspring = children
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->

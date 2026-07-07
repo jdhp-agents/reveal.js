@@ -1,0 +1,257 @@
+				<!-- #region -->
+
+				<section id="2.5-examples-de">
+					<h3>Differential Evolution</h3>
+					
+					<p style="font-size: 0.5em; color: dimgray;">
+						Storn, R and Price, K, Differential Evolution - a Simple and Efficient Heuristic for Global Optimization over Continuous Spaces, Journal of Global Optimization, 1997, 11, 341 - 359
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<!-- <h3>TODO</h3> -->
+
+					<!-- <img class="r-stretch" src="assets/inf581_optimization/de_algo.png" /> -->
+
+					<div style="text-align: left; font-size: 0.55em;">
+						<!-- <b>Input</b>:<br>
+						$\quad\quad$ $f$: the objective function<br>
+
+						<b>Algorithm parameter</b>:<br>
+						$\quad\quad$ ... -->
+
+						<div class="fragment highlight-current-red" data-fragment-index="0">
+							Arbitrarily initialize the population<br><br>
+						</div>
+
+						<div class="fragment highlight-current-red" data-fragment-index="7">
+							<b>FOR EACH</b> generation<br>
+						</div>
+						<div class="fragment highlight-current-red" data-fragment-index="6">
+							$\quad$ <b>FOR EACH</b> children<br>
+						</div>
+						$\quad\quad$ 1. <em>MUTATION</em><br>
+						$\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="1">Choose 3 random distinct individuals $\boldsymbol{a}$, $\boldsymbol{b}$ et $\boldsymbol{c}$</span><br>
+						$\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="2">$\boldsymbol{b}$ and $\boldsymbol{c}$ define the direction and the amplitude of the mutation (i.e. the search vector)</span><br>
+						<br>
+						<div class="fragment highlight-current-red" data-fragment-index="3">
+							$\quad\quad\quad$ Combine them to make an interim individual $\boldsymbol{z} \leftarrow \boldsymbol{a} + \omega ~ (\boldsymbol{b} - \boldsymbol{c})$<br>
+							$\quad\quad\quad$ where $\omega$ is a mutation amplification factor (a scalar)<br>
+						</div>
+						<br>
+						$\quad\quad$ 2. <em>CROSSOVER</em><br>
+						<div class="fragment highlight-current-red" data-fragment-index="4">
+							$\quad\quad\quad$ Choose a random dimension $j \in [1,\dots,n]$ for optimization in $n$ dimensions<br>
+							$\quad\quad\quad$ Make the candidate individual $\boldsymbol{a}'$ using the binary crossover
+							$$
+								a'_i = 
+								\begin{cases} 
+									z_i & \text{if } i = j \text{ or with probability } p \\
+									x_i & \text{otherwise} 
+								\end{cases}
+							$$
+						</div>
+						$\quad\quad$ 3. <em>SELECTION</em><br>
+						<div class="fragment highlight-current-red" data-fragment-index="5">
+							$\quad\quad\quad$ Insert the best individual between $\boldsymbol{a}'$ and $\boldsymbol{a}$ into the next generation<br><br>
+						</div>
+
+						<div class="fragment highlight-current-red" data-fragment-index="8">
+							<b>RETURN</b> the best individual in the last generation
+						</div>
+					</div>
+
+
+					<div class="fragment" data-fragment-index="0" style="position: absolute; top: 0; right: 0;">
+						<object data="assets/inf581_optimization/rosenbrock_contour2.svg" type="image/svg+xml" style="width: 100%;"></object>
+						<svg width="256px" height="150px" style="position: absolute; top: 0; right: 0;">
+							<!-- Arrowhead definition -->
+							<defs>
+								<marker id="arrowhead2" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+									<polygon points="0 0, 7 3.5, 0 7" fill="red" />
+								</marker>
+							</defs>
+
+							<!-- Initial population -->
+							<g class="fragment current-visible" data-fragment-index="6">
+								<circle class="fragment" data-fragment-index="0" cx="20"  cy="50" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="220" cy="90" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="120" cy="230" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="70"  cy="80" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="180" cy="10" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="10"  cy="130" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="150" cy="30" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="0" cx="200" cy="80" r="5" fill="black"/>
+								<circle class="fragment" data-fragment-index="4" cx="15" cy="100" r="5" fill="black"/>
+							</g>
+							<g class="fragment fade-out" data-fragment-index="6">
+								<g class="fragment semi-fade-out" data-fragment-index="1">
+									<g class="fragment semi-fade-out" data-fragment-index="1">
+										<g class="fragment semi-fade-out" data-fragment-index="1">
+											<circle class="fragment" data-fragment-index="0" cx="20"  cy="50" r="5" fill="black"/>
+											<circle class="fragment" data-fragment-index="0" cx="220" cy="90" r="5" fill="black"/>
+											<circle class="fragment" data-fragment-index="0" cx="120" cy="230" r="5" fill="black"/>
+											<circle class="fragment" data-fragment-index="0" cx="70"  cy="80" r="5" fill="black"/>
+											<circle class="fragment" data-fragment-index="0" cx="180" cy="10" r="5" fill="black"/>
+											<circle class="fragment" data-fragment-index="0" cx="10"  cy="130" r="5" fill="black"/>
+										</g>
+									</g>
+								</g>
+							</g>
+
+							<!-- A -->
+							<g class="fragment fade-out" data-fragment-index="5">
+								<circle class="fragment" data-fragment-index="0" cx="100" cy="100" r="5" fill="black"/>
+								<text   class="fragment" data-fragment-index="1" x="110" y="100" font-family="sans-serif" font-size="20px" fill="black">a</text>
+							</g>
+
+							<g class="fragment fade-out" data-fragment-index="6">
+								<!-- B -->
+								<circle class="fragment" data-fragment-index="0" cx="150" cy="30" r="5" fill="black"/>
+								<text   class="fragment" data-fragment-index="1" x="160" y="30" font-family="sans-serif" font-size="20px" fill="black">b</text>
+	
+								<!-- C -->
+								<circle class="fragment" data-fragment-index="0" cx="200" cy="80" r="5" fill="black"/>
+								<text   class="fragment" data-fragment-index="1" x="210" y="80" font-family="sans-serif" font-size="20px" fill="black">c</text>
+	
+								<!-- Z -->
+								<circle class="fragment" data-fragment-index="3" cx="15" cy="15" r="5" fill="black"/>
+								<text   class="fragment" data-fragment-index="3" x="25" y="15" font-family="sans-serif" font-size="20px" fill="black">z</text>
+	
+								<!-- A' -->
+								<circle class="fragment" data-fragment-index="4" cx="15" cy="100" r="5" fill="black"/>
+								<text   class="fragment" data-fragment-index="4" x="25" y="100" font-family="sans-serif" font-size="20px" fill="black">a'</text>
+							</g>
+
+							<!-- First arrow CB -->
+							<line class="fragment current-visible" data-fragment-index="2" x1="197" y1="77" x2="163" y2="43" stroke="red" stroke-width="2" marker-end="url(#arrowhead2)" />
+							<text class="fragment current-visible" data-fragment-index="2" x="175" y="55" font-family="sans-serif" font-size="20px" fill="black">&nbsp;b-c</text>
+							
+							<!-- Second arrow AZ -->
+							<line class="fragment current-visible" data-fragment-index="3" x1="97" y1="97" x2="28" y2="28" stroke="red" stroke-width="2" marker-end="url(#arrowhead2)" />
+							<text class="fragment current-visible" data-fragment-index="3" x="55" y="55" font-family="sans-serif" font-size="20px" fill="black">&nbsp;ω(b-c)</text>
+
+							<!-- Initial population -->
+							<g class="fragment semi-fade-out" data-fragment-index="8">
+								<g class="fragment semi-fade-out" data-fragment-index="8">
+									<g class="fragment fade-in" data-fragment-index="7">
+										<!-- Gen1 -->
+										<circle class="fragment" data-fragment-index="0" cx="20"  cy="50"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="220" cy="90"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="120" cy="230" r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="70"  cy="80"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="180" cy="10"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="10"  cy="130" r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="150" cy="30"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="0" cx="200" cy="80"  r="2.5" fill="black"/>
+										<circle class="fragment" data-fragment-index="4" cx="15" cy="100"  r="2.5" fill="black"/>
+										<!-- Gen2 -->
+										<circle class="fragment" data-fragment-index="0" cx="120" cy="50"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="200" cy="95"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="125" cy="200" r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="75"  cy="90"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="190" cy="110"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="50"  cy="120" r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="155" cy="60"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="0" cx="180" cy="85"  r="2.5" fill="blue"/>
+										<circle class="fragment" data-fragment-index="4" cx="55" cy="105"  r="2.5" fill="blue"/>
+										<!-- Gen3 -->
+										<circle class="fragment" data-fragment-index="0" cx="125" cy="60"  r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="180" cy="105" r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="120" cy="160" r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="95"  cy="95"  r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="140" cy="105" r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="80"  cy="100" r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="135" cy="80"  r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="0" cx="120" cy="95"  r="2.5" fill="darkmagenta"/>
+										<circle class="fragment" data-fragment-index="4" cx="115" cy="105" r="2.5" fill="darkmagenta"/>
+										<!-- Gen4 -->
+										<circle class="fragment" data-fragment-index="0" cx="120" cy="70"  r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="130" cy="107" r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="115" cy="120" r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="125" cy="105" r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="145" cy="95"  r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="110" cy="105" r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="165" cy="90"  r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="0" cx="140" cy="105" r="2.5" fill="darkred"/>
+										<circle class="fragment" data-fragment-index="4" cx="125" cy="95"  r="2.5" fill="darkred"/>
+										<!-- Gen5 -->
+										<circle class="fragment" data-fragment-index="0" cx="135" cy="90"  r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="140" cy="102" r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="155" cy="105" r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="145" cy="100" r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="160" cy="95"  r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="157" cy="97" r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="153" cy="95"  r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="0" cx="147" cy="102" r="2.5" fill="darkorange"/>
+										<circle class="fragment" data-fragment-index="4" cx="138" cy="98"  r="2.5" fill="darkorange"/>
+									</g>
+								</g>
+							</g>
+
+							<!-- x* -->
+							<circle class="fragment" data-fragment-index="8" cx="150" cy="100"  r="5" fill="red"/>
+							<text   class="fragment" data-fragment-index="8"  x="150"  y="100" font-family="sans-serif" font-size="20px" fill="red">&nbsp;&nbsp;x*</text>
+						</svg>
+					</div>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+								
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Differential Evolution</h3>
+				
+					<img class="r-stretch" src="assets/inf581_optimization/image67.png" />
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Differential Evolution</h3>
+
+					<br>
+				
+					<p style="text-align: left; font-size: 0.8em;">
+						Strength: require few meta parameters
+						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+							<li>$p$ : the crossover probability (typically 0.5)</li>
+							<li>$w$ : the differential weight (typically between 0.4 and 1)</li>
+						</ul>
+					</p>
+
+					<p style="text-align: left; font-size: 0.8em;">
+						Implemented in `scipy.optimize`
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->

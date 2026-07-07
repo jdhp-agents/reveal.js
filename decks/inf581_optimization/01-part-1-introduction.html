@@ -1,0 +1,564 @@
+				<!-- #region -->
+
+				<section id="part1-introduction">
+					<h3>Part 1</h3>
+					<h4>Introduction</h4>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+
+				<section style="font-size: 90%;">
+					<h3>Mathematical optimization</h3>
+
+					<p>
+						Find the minimum (or the maximum) of a function $f$
+
+						$$\boldsymbol{x}^* = \arg\min_{\boldsymbol{x} \in \mathcal{X}} f(\boldsymbol{x})$$
+					</p>
+
+					<img class="r-stretch" src="assets/inf581_optimization/toy_objective_func_1.png" />
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+Ok so… to begin with…
+the basic definition
+
+The aim of today's lecture is to study algorithms
+designed to find
+either the minimum
+or the maximum of a function
+
+So using this notation <b style="color:blue">[...]</b>, the subject here is to find x star.
+
+<!-- So of course, it has nothing to do with computer science optimisation, where the aim is to tune implementation of algorithms to improve their speedup (with for instance with parallelization, specialized hardware or compilation tips). -->
+
+<!-- So it’s not this.
+	In *mathematical* optimization, we design algorithms to find either the minimum or the maximum of a function, putting aside technical computer science considerations.
+-->
+<!-- , putting aside technical computer science considerations. -->
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<!-- <section>
+					<h3>Mathematical optimization</h3>
+					<h4>What is it used for?</h4>
+
+					<br>
+
+					<p style="text-align: left; font-size: 0.7em;">
+						Mathematical optimization can be applied everywhere...
+					</p>
+					<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+						<li>Industry : optimize Power Grid, air traffic, planning, logistics, …</li>
+						<li>Robotics : optimize actuators control, trajectory / energy consumption, ...</li>
+						<li>Finance : maximise long term profits, minimize risks, ...</li>
+						<li>Almost everything can be optimized…</li>
+					</ul>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+As you certainly know, mathematical optimisation is not only useful for AI
+but it has a huge list of possible applications.
+
+Actually it can be applied everywhere and it is valuable almost everywhere :
+for instance in the industry where it can be used to [...]
+in robotics to optimize [...] and so forth
+to maximise long term profits, minimize risks, …
+and well, actually almost everything can be optimized
+and life itself is the result of an optimization procedure with the theory of biological evolution explained by the simple rule of natural selection
+and as we will see, some optimization algorithms are highly inspired by Neo-Darwinism therories
+
+Well there are many other applications, some are listed in this link [...].
+						</div>
+					</aside>
+				</section> -->
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Minimize or maximize ?</h3>
+					
+					<br>
+			
+					<p class="fragment" data-fragment-index="1" style="text-align: left; font-size: 0.8em;">In optimization literature, usually by “optimize” one mean “minimize”</p>
+
+					<p class="fragment" data-fragment-index="2" style="text-align: left; font-size: 0.8em;">In reinforcement learning by “optimize” one mean “maximize”</p>
+
+					<p class="fragment" data-fragment-index="3" style="text-align: left; font-size: 0.8em;">Same algorithms in both cases</p>
+
+					<p class="fragment" data-fragment-index="3" style="text-align: left; font-size: 0.8em;">
+						$$
+						\arg\min f(x) \Leftrightarrow \arg\max -f(x)
+						$$
+					</p>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+The choice between minimization and maximization depends on the problem we try to solve.
+
+But, there are some conventions, and...
+<b style="color:blue">[...]</b>
+<b style="color:blue">[...]</b>
+
+<b style="color:blue">[...]</b>
+This is not an issue actually, we can use the same algorithms in both cases.
+We can switch from one convention to the other
+simply taking the opposite
+of the function to optimize.
+
+So no big news so far
+but as you will see in the lab,
+you have to remember this difference of conventions
+between the optimization
+and the reinforcement learning communities.
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Optimization in AI</h3>
+
+					<br>
+
+					<p style="text-align: left; font-size: 0.7em;">Optimization is a main component of modern AI (the other one is Learning)</p>
+
+					<p style="text-align: left; font-size: 0.7em;">Optimization and Learning are highly connected</p>
+
+					<p style="text-align: left; font-size: 0.7em;">
+						E.g. optimization is used to:
+						<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+							<li>set a model in supervised learning (e.g. weights of neural networks)</li>
+							<li>optimize a policy in Reinforcement Learning (Direct Policy Search)</li>
+						</ul>
+					</p>
+
+					<p style="text-align: left; font-size: 0.7em;">Some optimization algorithms use learning techniques (especially surrogate models)</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+So you may wonder why I’m talking about optimization in a machine learning course...
+
+Well, actually Machine Learning and optimization are the two main topics nowadays in modern IA
+and these two subjects are totally interconnected and interdependent.
+
+For instance the learning procedure in supervised learning is an optimization problem, where we try to find the neuron weights that minimize an error function.
+Training an agent in reinforcement learning is an optimization problem too, where we try to find the policy’s parameters that maximize the expected reward.
+So optimization can be seen as a required tool in machine learning.
+
+And optimization is often an iterative procedure where we try to find a vector that minimize (or maximize) a function, using solutions what have been seen in the past ;
+so optimization itself can also be seen as a learning problem!
+
+So again, Machine Learning and Optimization are totally interconnected and interdependent and that’s why mathematical optimization is presented here today.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Applications beyond AI</h3>
+
+					<p style="text-align: left; font-size: 0.6em;">
+						Mathematical optimization can be applied everywhere...
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li>Industry : optimize Power Grid, air traffic, planning, logistics, …</li>
+							<li>Robotics : optimize actuators control, trajectory / energy consumption, ...</li>
+							<li>Finance : maximize long term profits, minimize risks, ...</li>
+							<li>Almost everything can be optimized…</li>
+							<li>Life itself is the result of an optimization process (natural selection)</li>
+						</ul>
+					</p>
+
+					<!-- <p style="text-align: left; font-size: 0.5em;">
+						Many examples of applications: <a href="https://en.wikipedia.org/wiki/List_of_genetic_algorithm_applications">https://en.wikipedia.org/wiki/List_of_genetic_algorithm_applications</a>
+					</p> -->
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+As you certainly know, mathematical optimisation is not only useful for AI
+but it has a huge list of possible applications.
+
+Actually it can be applied everywhere and it is valuable almost everywhere :
+- for instance <b style="color:red">in the industry</b> where it can be used to <b style="color:blue">[...]</b>
+- in <b style="color:red">robotics</b> to optimize <b style="color:blue">[...]</b> and so forth
+- In <b style="color:red">finance</b> it is used to maximise long term profits or minimize risks
+and well, actually almost everything can be optimized
+and life itself is the result of an optimization procedure
+with the <b style="color:red">theory of biological evolution</b>
+explained by the <b style="color:red">simple rule of natural selection</b>.
+
+And as we will see later,
+some optimization algorithms are highly inspired by <b style="color:red">Neo-Darwinism therories</b>.
+
+<!-- Well there are many other applications, some are listed in this link [...]. -->
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Mathematical optimization</h3>
+					<h4>Few applications examples among thousands</h4>
+
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/antena_1.jpg" width="80%" />
+						</div>
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/antena_2.png" width="100%" />
+							<p style="text-align: left; font-size: 0.6em;">
+								The 2006 <b>NASA ST5 spacecraft antenna</b>.
+							</p>
+							<p style="text-align: left; font-size: 0.6em;">
+								This complicated shape was found by an evolutionary computer design program to <b>create the best radiation pattern</b>.
+							</p>
+							<p style="text-align: left; font-size: 0.6em;">
+								It is known as an <a href="https://en.wikipedia.org/wiki/Evolved_antenna">evolved antenna</a>.
+							</p>
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+So, some examples among others...
+
+Here we have an example in engineering
+
+where an optimization algorithm
+has been used to design the antenna of a spacecraft.
+
+It's objective was to find the best radiation pattern.
+
+As you can see, the optimal solution has a shape that is not very intuitive <b style="color:blue">[...]</b>
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Mathematical optimization</h3>
+					<h4>Few applications examples among thousands</h4>
+
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/optim_plane.png" width="100%" />
+						</div>
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/optim_plane_2.jpg" width="100%" />
+						</div>
+					</div>
+					<p style="clear: both; font-size: 0.6em;"><br><a href="https://www.sciencedirect.com/science/article/pii/S1568494617305690">https://www.sciencedirect.com/science/article/pii/S1568494617305690</a></p> 
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+This kind of algorithms can also be used
+to improve cars or aircraft aerodynamism…
+
+On the right side, we can see some of the solution that have been compared by the algorithm.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Mathematical optimization</h3>
+					<h4>Few applications examples among thousands</h4>
+
+					<div class="row">
+						<div style=" float: left; width: 50%;">
+							<br><br><br>
+							<p style="text-align: left; font-size: 0.6em;">Production planning in electric power grid</p>
+							<p style="text-align: left; font-size: 0.6em;">Huge optimization problem with <b>millions of dimensions</b>!</p>
+						</div>
+						<div style=" float: left; width: 50%;">
+							<img src="assets/inf581_optimization/optim_rte.gif" width="70%" />
+						</div>
+					</div>
+					<p style="clear: both;"></p> 
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+It can also be used to minimise
+the long term cost of electricity production,
+and the risk of power failure
+at the same time.
+
+This is a huge optimization problem,
+with millions of dimensions
+and constraints.
+
+So that’s a very difficult and very important problem
+as the financial or industrial consequences of a bad planning can be very serious.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Many different problems and algorithms</h3>
+			
+					<div class="row">
+						<div style=" float: left; width: 50%; font-size: 0.5em;">
+							<h5 style="text-align: left;" class="fragment" data-fragment-index="1">Problems</h5>
+							<ul>
+								<li class="fragment" data-fragment-index="1">Objective function shape:</li>
+								<ul class="fragment" data-fragment-index="1">
+									<li>Linear / <span class="fragment highlight-current-red" data-fragment-index="11">non-linear</span></li>
+									<li>Convex / <span class="fragment highlight-current-red" data-fragment-index="11">non-convex</span>, …</li>
+								</ul>
+								<li class="fragment" data-fragment-index="2"><span class="fragment highlight-current-red" data-fragment-index="11">Continuous</span> / <span class="fragment highlight-current-red" data-fragment-index="11">discrete (combinatorial)</span> / <span class="fragment highlight-current-red" data-fragment-index="11">mixte</span> </li>
+								<li class="fragment" data-fragment-index="3"><span class="fragment highlight-current-red" data-fragment-index="11">Uni-modal</span> / <span class="fragment highlight-current-red" data-fragment-index="11">multi-modal</span></li>
+								<li class="fragment" data-fragment-index="4">Multi-valued objective function:</li>
+								<ul class="fragment" data-fragment-index="4">
+									<li>Multi objective VS mono objective</li>
+								</ul>
+								<li class="fragment" data-fragment-index="5">With / <span class="fragment highlight-current-red" data-fragment-index="11">without gradient formulation</span></li>
+								<li class="fragment" data-fragment-index="6"><span class="fragment highlight-current-red" data-fragment-index="11">Stochastic objective function</span></li>
+								<li class="fragment" data-fragment-index="7">Constrained or <span class="fragment highlight-current-red" data-fragment-index="11">not</span></li>
+								<li class="fragment" data-fragment-index="8"><span class="fragment highlight-current-red" data-fragment-index="11">Dynamical (multi-stage optimization)</span></li>
+								<li class="fragment" data-fragment-index="9"><span class="fragment highlight-current-red" data-fragment-index="11">Optimize vectors</span> VS optimize functions (using Hamiltonian)</li>
+							</ul>
+						</div>
+						<div style=" float: left; width: 50%; font-size: 0.5em;">
+							<div class="r-stack">
+								<div class="fragment current-visible" data-fragment-index="1">
+									<img src="assets/inf581_optimization/image25.jpg" style="margin: 0; padding: 0;" width="80%" />
+									<img src="assets/inf581_optimization/image13.png" style="margin: 0; padding: 0;" width="80%" />
+								</div>
+								<img src="assets/inf581_optimization/image21.gif" class="fragment current-visible" data-fragment-index="2" />
+								<div class="fragment current-visible" data-fragment-index="3">
+									<img src="assets/inf581_optimization/image25.jpg" style="margin: 0; padding: 0;" width="80%" />
+									<img src="assets/inf581_optimization/toy_objective_func_2.png" style="margin: 0; padding: 0;" width="80%" />
+								</div>
+								<img src="assets/inf581_optimization/image11.png" class="fragment current-visible" data-fragment-index="4" />
+								<img src="assets/inf581_optimization/toy_objective_func_3.png" class="fragment current-visible" data-fragment-index="5" />
+								<img src="assets/inf581_optimization/toy_objective_func_4.png" class="fragment current-visible" data-fragment-index="6" />
+								<div class="fragment current-visible" data-fragment-index="7">
+									<img src="assets/inf581_optimization/image10.png" style="margin: 0; padding: 0;" width="80%" />
+									<img src="assets/inf581_optimization/image30.png" style="margin: 0; padding: 0;" width="80%" />
+								</div>
+								<div>
+									<h5 style="text-align: left;" class="fragment" data-fragment-index="10">Algorithms</h5>
+									<ul class="fragment" data-fragment-index="10">
+										<li><span class="fragment highlight-current-red" data-fragment-index="11">Global</span> VS Local</li>
+										<li>Gradient based / <span class="fragment highlight-current-red" data-fragment-index="11">gradient free (black box)</span></li>
+										<ul>
+											<li>Gradient based -> first order methods : gradient descent, conjugate gradient, nesterov momentum, adagrad, adam, …</li>
+											<li>Gradient based -> 2nd order methods : newton’s methods, quasi newton methods</li>
+										</ul>
+										<li><span class="fragment highlight-current-red" data-fragment-index="11">Population methods: genetic algorithms, differential evolution, particle swarm optimization, …</span></li>
+										<li><span class="fragment highlight-current-red" data-fragment-index="11">Stochastic algorithm (random sampling)</span></li>
+										<li>Multiobjective optimization</li>
+										<li>Surrogate models</li>
+										<li>Expression optimization: genetic programming,...</li>
+									</ul>
+									<br>
+									<br>
+									<br>
+									<br>
+									<br>
+									<br>
+								</div>
+							</div>
+						</div>
+					</div>
+					<p style="clear: both;"></p>
+			
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes" style="font-size: 65%;">
+There are many families of optimization problems with differents difficulties…
+for instance, the objective function can be 
+- <b style="color:blue">[...]</b>
+  - linear or non linear,
+  - convex or non convex
+- The <b style="color:red">solution space</b> can be
+  - <b style="color:red">continuous</b>, when we try to optimize a vector of real values
+  - it can be <b style="color:red">discrete</b>, when we try to optimize a vector of discrete values (for instance a binary vector)
+  - it can be <b style="color:red">mixte</b>, when we try to optimize a vector having continuous values on some dimensions and discrete values on others
+- The objective function can be <b style="color:red">Unimodal</b> (when only one global optimum to finds
+  or <b style="color:red">multi-modal</b> (when there are many optima to find)
+- The problem can be <b style="color:red">multi-objective</b> (when we try to optimize several objectives at the same time)
+  For instance a robot that tries to reach a target will search a trajectory that
+    minimizes its final distance to the target
+    and minimizes the time to reach the target
+    and minimizes the energy spent for that task
+  In this case, there is a large number of “good” solution with different compromises on each objectives (solutions that are on the “pareto front”)
+- An analytical formulation of the <b style="color:red">gradient</b> may be provided or not
+- The objective function may be <b style="color:red">stochastic</b>,
+  in this case, it returns different values when it is called several times on the same solution vector.
+  In other words the objective function is noised
+- The solution space can be <b style="color:red">constrained</b> or not
+- And finaly, the objective function may also <b style="color:red">change</b> in time
+
+---
+
+So there are <b style="color:red">many families of optimization problems</b>,
+but there are also <b style="color:red">many families of optimization algorithms</b>
+more or less adapted for these different problems.
+
+Some algorithms search for the global optimum when others search for a local optimum.
+Some require the gradient of the objective function when others don’t.
+Some are stochastic, some are not.
+And so forth.
+
+Today, <b style="color:red">we will focus on the problems and algorithms in red</b> in this list <b style="color:blue">[...]</b>
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Gradient descent</h3>
+
+					<div class="row">
+						<div style=" float: left; width: 60%;">
+							<p style="text-align: left; font-size: 0.6em; margin-bottom: 2em;">
+								Iteratively update $\boldsymbol{x}$ toward the steepest slope
+								$$\boldsymbol{x} \leftarrow \boldsymbol{x} - \alpha \nabla_{\boldsymbol{x}}f(\boldsymbol{x})$$
+							</p>
+
+							<p style="text-align: left; font-size: 0.6em;">
+								Requires gradient of the objective function
+								<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+									<li>$\alpha$ is the step size which influence the convergence rate</li>
+									<li>How to adapt it to converge faster ?</li>
+								</ul>
+							</p>
+						</div>
+						<div style=" float: left; width: 40%;">
+							<img src="assets/inf581_optimization/gradient_descent.gif" width="100%" />
+						</div>
+					</div>
+
+					<p style="clear: both; text-align: left; font-size: 0.6em;">
+						Popular variants of SGD in machine learning:
+						<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+							<li><b>Momentum optimization</b>: Nesterov Momentum / Nesterov Accelerated Gradient (NAG)</li>
+							<li><b>Adaptive methods</b>: AdaGrad, RMSProp, Adam</li>
+						</ul>
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes" style="font-size: 90%;">
+Before talking about <b style="color:red">gradient free methods</b>, let's quickly recall gradient descent.
+
+You already know this optimisation procedure <b style="color:blue">[...]</b>, the gradient descent (or gradient ascent).
+You already used it to optimize weights in neural networks
+and you also used it in previous labs with Policy Gradient to optimize the policy of an agent.
+
+So very quickly, in gradient descent we <b style="color:red">iteratively update</b> the current solution vector x
+<b style="color:red">toward the steepest slope</b>.
+
+This requires to know the gradient on x of the objective function f.
+Here <b style="color:blue">[...]</b> alpha <b style="color:blue">is the step size which influence the convergence rate</b>
+And the classical question with these algorithms is “what is the best way to adapt the learning rate alpha in order to fasten the convergence”
+
+If the learning rate is to small, explored solutions from one iteration to the other will be very close and the convergence will be very slow ;
+and if it is too large, there may be no convergence at all.
+And to be efficient, the algorithm should adapt this rate along iterations, depending on the local shape of the objective function.
+
+So there are many variants of stochastic gradient descent, you probably saw some of them as they are very popular in Machine Learning
+
+There are two main families of variants of SGD to adapt the learning rate along iterations:
+- <b style="color:red">momentum methods</b> with for instance the nesterov momentum algorithm
+- and the <b style="color:red">adaptive methods</b> like adagrad or adam
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+
+				<section>
+					<h3>Momentum methods</h3>
+				
+					<p style="text-align: left; font-size: 0.7em;">
+						"Classic" Gradient Descent:
+						$$\boldsymbol{x} \leftarrow \underbrace{\boldsymbol{x}}_{\text{position}} - \underbrace{\alpha ~ \nabla_{\boldsymbol{x}}f(\boldsymbol{x})}_{\text{momentum}}$$
+					</p>
+
+					<p style="text-align: left; font-size: 0.7em;">
+						Gradient Descent with momentum:
+						$$\boldsymbol{m} \leftarrow \underbrace{\beta \boldsymbol{m}}_{\text{momentum}} - \underbrace{\alpha ~ \nabla_{\boldsymbol{x}}f(\boldsymbol{x})}_{\text{acceleration}}$$
+						$$\boldsymbol{x} \leftarrow \underbrace{\boldsymbol{x}}_{\text{position}} + \underbrace{\boldsymbol{m}}_{\text{momentum}}$$
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+This is just a recall,
+in momentum methods we introduce a momentum term to adapt the learning rate
+and fasten the convergence.
+
+The momentum term is a moving average of the past gradients
+- it is used to accelerate the convergence in directions where the gradient is consistent along iterations
+- and to slow down the convergence in directions where the gradient is not consistent along iterations.
+						</div>
+					</aside>
+				</section>
+				
+				<!-- ------------------------------------------------------ -->
+				
+				<section>
+					<h3>Gradient free methods</h3>
+					<h4>(“black box optimization”)</h4>
+
+					<br>
+
+					<p style="text-align: left;">
+						Why gradient free methods ?
+						<ul style="padding-left: 1em; display: block;">
+							<li>gradient of objective function not always known</li>
+							<li>or difficult to compute</li>
+							<li>convergence can be slow</li>
+							<li>gradient based methods search for local optima (doesn’t help for multimodal functions)</li>
+						</ul>
+					</p>
+				
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+So gradient descent are useful but in the rest of the lecture I’ll talk about gradient free methods.
+
+There are several motivations for that :
+<b style="color:blue">[...]</b>
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
