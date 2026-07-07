@@ -21,8 +21,6 @@
 		<!-- Theme used for syntax highlighting of code -->
 		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
 
-		<!-- d3.js (vendored in lib/) for figures generated on the fly -->
-		<script src="lib/d3.v7.min.js"></script>
 	</head>
 	
 	<body>
@@ -152,27 +150,14 @@ Common choice : multivariate Normal distributions parameterized by a mean vector
 						</div>
 					</div>
 
-					<div class="r-stack">
-						<img class="fragment fade-out"        data-fragment-index="0"  src="assets/optimization_cem/cem_rosenbrock_01_p.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="0"  src="assets/optimization_cem/cem_rosenbrock_01.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="1"  src="assets/optimization_cem/cem_rosenbrock_01_elite.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="2"  src="assets/optimization_cem/cem_rosenbrock_02_p.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="3"  src="assets/optimization_cem/cem_rosenbrock_02.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="4"  src="assets/optimization_cem/cem_rosenbrock_02_elite.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="5"  src="assets/optimization_cem/cem_rosenbrock_03_p.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="6"  src="assets/optimization_cem/cem_rosenbrock_03.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="7"  src="assets/optimization_cem/cem_rosenbrock_03_elite.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="8"  src="assets/optimization_cem/cem_rosenbrock_04_p.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="9"  src="assets/optimization_cem/cem_rosenbrock_04.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="10" src="assets/optimization_cem/cem_rosenbrock_04_elite.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="11" src="assets/optimization_cem/cem_rosenbrock_05_p.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="12" src="assets/optimization_cem/cem_rosenbrock_05.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="13" src="assets/optimization_cem/cem_rosenbrock_05_elite.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="14" src="assets/optimization_cem/cem_rosenbrock_06_p.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="15" src="assets/optimization_cem/cem_rosenbrock_06.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="16" src="assets/optimization_cem/cem_rosenbrock_06_elite.svg" width="400">
-						<img class="fragment current-visible" data-fragment-index="17" src="assets/optimization_cem/cem_rosenbrock_07_p.svg" width="400">
+					<!-- Figure d3.js (remplace les images assets/optimization_cem/cem_rosenbrock_*.svg) :
+					     un jeton "itération:phase" par data-fragment-index — voir cem_rosenbrock.ts -->
+					<div style="text-align: center;">
+						<svg class="cem-rosenbrock-fig" width="400" height="381"
+						     data-initial-frame="1:proposal"
+						     data-frames="1:samples 1:fit 2:proposal 2:samples 2:fit 3:proposal 3:samples 3:fit 4:proposal 4:samples 4:fit 5:proposal 5:samples 5:fit 6:proposal 6:samples 6:fit 7:proposal"></svg>
 					</div>
+					<script type="module" src="assets/optimization_cem_v2/cem_rosenbrock.ts"></script>
 
 					<aside class="notes">
 						<div class="fr-notes">
@@ -194,20 +179,22 @@ Common choice : multivariate Normal distributions parameterized by a mean vector
 						<li>Update the proposal distribution to fit the best samples</li>
 					</ol> -->
 
+					<!-- Figures d3.js statiques (remplacent assets/optimization_cem/cem_rosenbrock_*_elite.svg) -->
 					<div class="r-vstack" style="padding: 0;">
 						<div class="r-hstack">
-							<img src="assets/optimization_cem/cem_rosenbrock_01_elite.svg"  width="400">
-							<img src="assets/optimization_cem/cem_rosenbrock_02_elite.svg"  width="400">
-							<img src="assets/optimization_cem/cem_rosenbrock_03_elite.svg"  width="400">
-							<img src="assets/optimization_cem/cem_rosenbrock_04_elite.svg" width="400">
+							<svg class="cem-rosenbrock-fig" width="235" height="224" data-iteration="1" data-phase="fit"></svg>
+							<svg class="cem-rosenbrock-fig" width="235" height="224" data-iteration="2" data-phase="fit"></svg>
+							<svg class="cem-rosenbrock-fig" width="235" height="224" data-iteration="3" data-phase="fit"></svg>
+							<svg class="cem-rosenbrock-fig" width="235" height="224" data-iteration="4" data-phase="fit"></svg>
 						</div>
 						<div class="r-hstack">
-							<img src="assets/optimization_cem/cem_rosenbrock_05_elite.svg"  width="400">
-							<img src="assets/optimization_cem/cem_rosenbrock_06_elite.svg"  width="400">
-							<img src="assets/optimization_cem/cem_rosenbrock_07_elite.svg"  width="400">
-							<img src="assets/optimization_cem/cem_rosenbrock_08_elite.svg" width="400">
+							<svg class="cem-rosenbrock-fig" width="235" height="224" data-iteration="5" data-phase="fit"></svg>
+							<svg class="cem-rosenbrock-fig" width="235" height="224" data-iteration="6" data-phase="fit"></svg>
+							<svg class="cem-rosenbrock-fig" width="235" height="224" data-iteration="7" data-phase="fit"></svg>
+							<svg class="cem-rosenbrock-fig" width="235" height="224" data-iteration="8" data-phase="fit"></svg>
 						</div>
 					</div>
+					<script type="module" src="assets/optimization_cem_v2/cem_rosenbrock.ts"></script>
 
 					<aside class="notes">
 						<div class="fr-notes">
@@ -266,21 +253,13 @@ Common choice : multivariate Normal distributions parameterized by a mean vector
 						<b>RETURN</b> $\boldsymbol{\theta}$
 					</p>
 
-					<div class="r-stack" style="padding: 0; position: absolute; top: 0; right: 0;">
-						<img class="fragment current-visible" data-fragment-index="0"   src="assets/optimization_cem/cem_rosenbrock_01_p.svg"         width="275">
-						<img class="fragment current-visible" data-fragment-index="1"   src="assets/optimization_cem/cem_rosenbrock_01.svg"           width="275">
-						<img class="fragment current-visible" data-fragment-index="2"   src="assets/optimization_cem/cem_rosenbrock_01_elite_nop.svg" width="275">
-						<img class="fragment current-visible" data-fragment-index="3"   src="assets/optimization_cem/cem_rosenbrock_01_elite.svg"     width="275">
-						<img class="fragment current-visible" data-fragment-index="4"   src="assets/optimization_cem/cem_rosenbrock_02.svg"           width="275">
-						<img class="fragment current-visible" data-fragment-index="5"   src="assets/optimization_cem/cem_rosenbrock_02_elite_nop.svg" width="275">
-						<img class="fragment current-visible" data-fragment-index="6"   src="assets/optimization_cem/cem_rosenbrock_02_elite.svg"     width="275">
-						<img class="fragment current-visible" data-fragment-index="7"   src="assets/optimization_cem/cem_rosenbrock_03.svg"           width="275">
-						<img class="fragment current-visible" data-fragment-index="8"   src="assets/optimization_cem/cem_rosenbrock_03_elite_nop.svg" width="275">
-						<img class="fragment current-visible" data-fragment-index="9"   src="assets/optimization_cem/cem_rosenbrock_03_elite.svg"     width="275">
-						<img class="fragment current-visible" data-fragment-index="10"  src="assets/optimization_cem/cem_rosenbrock_04.svg"           width="275">
-						<img class="fragment current-visible" data-fragment-index="11"  src="assets/optimization_cem/cem_rosenbrock_04_elite_nop.svg" width="275">
-						<img class="fragment current-visible" data-fragment-index="12"  src="assets/optimization_cem/cem_rosenbrock_04_elite.svg"     width="275">
+					<!-- Figure d3.js (remplace les images assets/optimization_cem/cem_rosenbrock_*.svg) :
+					     un jeton "itération:phase" par data-fragment-index, cachée avant le premier fragment -->
+					<div style="padding: 0; position: absolute; top: 0; right: 0;">
+						<svg class="cem-rosenbrock-fig" width="275" height="262"
+						     data-frames="1:proposal 1:samples 1:elite 1:fit 2:samples 2:elite 2:fit 3:samples 3:elite 3:fit 4:samples 4:elite 4:fit"></svg>
 					</div>
+					<script type="module" src="assets/optimization_cem_v2/cem_rosenbrock.ts"></script>
 
 					<aside class="notes">
 						<div class="fr-notes">
@@ -323,7 +302,7 @@ Common choice : multivariate Normal distributions parameterized by a mean vector
 					<div class="r-stretch">
 						<svg id="cem-mixture-fig" viewBox="0 0 760 420" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: 100%;"></svg>
 					</div>
-					<script src="assets/optimization_cem_v2/optimization_cem_mixture.js"></script>
+					<script type="module" src="assets/optimization_cem_v2/optimization_cem_mixture.ts"></script>
 
 					<p>Here, a mixture model would be a better choice…</p>
 

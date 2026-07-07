@@ -1,0 +1,40 @@
+{
+  "_readme": [
+    "Paramètres d'affichage des figures « CEM sur Rosenbrock » de optimization_cem_v2.html,",
+    "dessinées par cem_rosenbrock.ts. Les données par itération (échantillons, statut élite,",
+    "mu/sigma de la proposal distribution) sont dans cem_rosenbrock_data.json.",
+    "- objective.expression : expression JavaScript de f(x, y) — l'opérateur ** est autorisé.",
+    "- objective.contourLevels : valeurs de f dont on trace la courbe de niveau (couleurs :",
+    "  viridis inversé sur échelle log). labeledLevels : sous-ensemble étiqueté sur la figure.",
+    "- proposal.pdfLevels : niveaux absolus de densité de N(mu, sigma) tracés en ellipses",
+    "  (mêmes niveaux que les figures matplotlib d'origine).",
+    "- title : {k} est remplacé par le numéro d'itération."
+  ],
+  "objective": {
+    "expression": "(1 - x)**2 + 100 * (y - x**2)**2",
+    "xDomain": [-2, 2],
+    "yDomain": [-2, 2],
+    "gridResolution": 256,
+    "contourLevels": [1, 3.5938, 12.9155, 46.4159, 166.8101, 599.4843, 2154.4347, 7742.6368, 27825.5941, 100000],
+    "labeledLevels": [1, 3.5938, 12.9155, 46.4159, 166.8101, 599.4843, 2154.4347],
+    "strokeWidth": 2.25
+  },
+  "proposal": {
+    "pdfLevels": [0.01, 0.04, 0.1, 0.95],
+    "currentColor": "#000000",
+    "fittedColor": "#ff0000",
+    "strokeWidth": 2.25,
+    "dash": "2.25 3.7125"
+  },
+  "samples": {
+    "color": "#000000",
+    "eliteColor": "#ff0000",
+    "radius": 4.5,
+    "strokeWidth": 1.5
+  },
+  "axes": {
+    "xTicks": [-2, -1, 0, 1, 2],
+    "yTicks": [-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]
+  },
+  "title": "Iteration {k}"
+}

@@ -68,22 +68,26 @@ See `FORMATS-ECRAN.md` (repo root) for the tested rationale. Non-negotiable in e
 - Work-in-progress slides: add class `draft` to the section — `jdhp.css` gives them a
   yellow background so they're easy to spot; remove the class when the slide is done.
 - **d3.js-generated figures** (the pattern of `optimization_cem_v2.html`, where static PNGs
-  are progressively replaced by figures drawn on the fly — preferred for new figures):
-  - d3 v7 is vendored at `lib/d3.v7.min.js` (no CDN; decks must work offline). Load it once
-    in the deck's `<head>`.
+  are progressively replaced by figures drawn on the fly — preferred for new figures; full
+  architecture and decision history in `D3-FIGURES.md` at the repo root):
+  - One figure = one TypeScript file `assets/<deck-name>/<figure-name>.ts` (named after the
+    image it replaces), never inline — the deck HTML must stay light. It starts with
+    `import * as d3 from 'd3'` (npm devDependencies `d3` + `@types/d3`); `assets/**/*.ts`
+    is included in the root `tsconfig.json`, so `tsc --noEmit` and the IDE type-check it.
   - In the slide: `<div class="r-stretch">` wrapping an `<svg>` with an `id`, a `viewBox`
-    (~760×420) and `preserveAspectRatio="xMidYMid meet"`.
-  - Drawing code goes in its own file `assets/<deck-name>/<figure-name>.js` (named after the
-    image it replaces), never inline — the deck HTML must stay light. Reference it with
-    `<script src="..."></script>` right after the div, inside the same `<section>`: external
-    scripts run in document order (d3 is already loaded from the head) and MathJax skips
-    script tags, so each figure stays self-contained in its slide.
+    (~760×420) and `preserveAspectRatio="xMidYMid meet"`, then
+    `<script type="module" src="assets/<deck-name>/<figure-name>.ts"></script>` right after
+    the div, inside the same `<section>` — each figure stays self-contained in its slide.
+    The Vite dev server transpiles the `.ts` on the fly: dev stays "edit + reload".
+  - Publishing: `npm run build:decks` assembles `_site/` and compiles each figure to a
+    standalone `.js` bundle; `.github/workflows/deploy-slides.yml` deploys it to GitHub
+    Pages on push to `master`.
   - When reproducing an existing figure, keep its color code (e.g. black objective/samples,
     blue `#4aa3df` / red `#ee6a6a` fits — a validated CVD-safe pair) and compute the curves
     from the real math (actual pdfs, samples placed exactly on the function).
   - The `reveald3` plugin is NOT used (this repo doesn't build it; it targets iframe-embedded
     external d3 pages) — its `Reveal.initialize` references stay commented out. To animate a
-    figure with fragments, use `Reveal.on('fragmentshown', ...)` in the figure's JS file.
+    figure with fragments, use `Reveal.on('fragmentshown', ...)` in the figure's TS file.
 
 ## Verifying
 

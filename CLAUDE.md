@@ -59,21 +59,28 @@ results:
 
 **d3.js-generated figures** — `optimization_cem_v2.html` is a rewrite of `optimization_cem.html`
 (kept untouched as reference) where static PNG figures are progressively replaced by figures
-drawn on the fly with d3.js. The established pattern, to reuse for every converted figure:
+drawn on the fly with d3.js. See `D3-FIGURES.md` at the repo root for the full architecture
+and decision history. The established pattern, to reuse for every converted figure:
 
-- d3 v7 is vendored at `lib/d3.v7.min.js` (no CDN — decks must work offline) and loaded once
-  in the deck's `<head>`. See `D3-VENDORING.md` at the repo root for why d3 is a vendored
-  static file rather than an npm dependency (the decks have no build step, on purpose).
+- One figure = one TypeScript file `assets/<deck-name>/<figure-name>.ts` (named after the
+  image it replaces), NOT inline in the HTML — the author wants the deck HTML kept light.
+  It does `import * as d3 from 'd3'` (npm devDependency, with `@types/d3`); figures are
+  covered by the root `tsconfig.json` (`assets/**/*.ts` is in its include).
 - In the slide: a `<div class="r-stretch">` wrapping an `<svg>` with an `id`, a `viewBox`
-  (~760×420) and `preserveAspectRatio="xMidYMid meet"` — sharp at any scale, 4K included.
-- The drawing code lives in its own file `assets/<deck-name>/<figure-name>.js` (named after
-  the image it replaces), NOT inline in the HTML — the author wants the deck HTML kept light.
-  It is referenced by a `<script src="...">` placed right after the div inside the same
-  `<section>`, so each figure stays self-contained (external scripts execute in document
-  order, after d3 from the head; MathJax ignores script tags).
-- The `reveald3` plugin is not needed for this (it embeds external d3 pages in iframes); use
-  plain inline drawing code, and `Reveal.on('fragmentshown', ...)` if a figure must animate
-  with fragments.
+  (~760×420) and `preserveAspectRatio="xMidYMid meet"`, followed by
+  `<script type="module" src="assets/<deck-name>/<figure-name>.ts"></script>` inside the
+  same `<section>` — each figure stays self-contained. The Vite dev server transpiles the
+  `.ts` on the fly, so the dev cycle stays "edit + reload", no build.
+- The `reveald3` plugin is not needed (it embeds external d3 pages in iframes); use plain
+  drawing code, and `Reveal.on('fragmentshown', ...)` if a figure must animate with
+  fragments.
+
+**Publishing the decks (GitHub Pages)** — `npm run build:decks` type-checks, assembles the
+static site into `_site/` (gitignored) and compiles each figure `.ts` to a standalone `.js`
+bundle (`scripts/build-decks.mjs` + `vite.config.decks.ts`; the committed `dist/` is copied
+as-is, never rebuilt at publish time). `.github/workflows/deploy-slides.yml` runs this on
+every push to `master` and deploys `_site/` to GitHub Pages (repo setting required once:
+Settings → Pages → Source: "GitHub Actions").
 
 ## Commands
 
@@ -81,6 +88,8 @@ drawn on the fly with d3.js. The established pattern, to reuse for every convert
   `*.html` is reachable by its path). Override the port with `npm start --port=8001`.
 - `npm run build` — full build of core + all plugins + styles into `dist/`.
   `npm run build:styles` is the faster CSS/theme-only variant.
+- `npm run build:decks` — builds the publishable static site of the personal decks into
+  `_site/` (used by the GitHub Pages workflow; see `D3-FIGURES.md`).
 - `npm test` — runs every QUnit suite in `test/*.html` headlessly (Puppeteer), each suite
   loaded through a temporary Vite server on port 8009. There is no single-test CLI filter; to
   run one suite, start `npm start` and open `http://localhost:8000/test/<file>.html` in a

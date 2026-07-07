@@ -9,6 +9,7 @@ out/
 log/*.log
 tmp/**
 node_modules/
+_site/
 .sass-cache
 presentation
 presentation.zip
