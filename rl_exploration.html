@@ -1,0 +1,1339 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Exploration and Uncertainty</title>
+
+		<meta name="description" content="Exploration and Uncertainty">
+		<meta name="author" content="Jérémie Decock">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+				<!-- ------------------------------------------------------ -->
+				<!-- TITLE AND OUTLINE ------------------------------------ -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- Slide: Titre -->
+				<section>
+					<h1 style="font-size: 1.4em;">Exploration and Uncertainty</h1>
+					<br>
+					<br>
+					<p style="font-size: 1em;"><small><a href="https://www.jdhp.org/">Jérémie Decock</a></small></p>
+					<p style="font-size: 1em;"><small>October 3, 2025</small></p>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes"></div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				<!-- EXPLORATION AND UNCERTAINTY --------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+<!-- @preview /rl_exploration.html -->
+<!-- #region -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Exploration-Exploitation Dilemma -->
+<section>
+	<h3>Exploration-Exploitation Dilemma</h3>
+	<!-- <h4>A core Challenge in Reinforcement Learning</h4> -->
+	<figure>
+		<img src="assets/rl_exploration/exploration_vs_exploitation.png"
+			alt="Exploration-Exploitation Dilemma" style="width: 50%; margin-bottom: 10px;">
+		<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+			A real-life example of the exploration vs exploitation dilemma: where to eat?<br>
+			(Image source: UC Berkeley AI course slide, <a
+				href="https://web.archive.org/web/20250130152055if_/https://ai.berkeley.edu/slides/Lecture%2011%20--%20Reinforcement%20Learning%20II/SP14%20CS188%20Lecture%2011%20--%20Reinforcement%20Learning%20II.pptx">lecture
+				11</a>.)
+		</figcaption>
+	</figure>
+	<ul style="font-size: 0.6em;">
+		<li>Agent must <b>explore</b> to discover rewarding actions and states.</li>
+		<li>Agent must <b>exploit</b> known information to maximize reward.</li>
+		<li>Balancing exploration and exploitation is critical for efficient learning.</li>
+		<li>Too much exploration: slow progress; too much exploitation: suboptimal policies.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Let's start with a picture.
+Here is our robot, and it's hungry.
+On the left, "The Usual Place": a restaurant it knows well, and it's pretty happy with it.
+On the right, a new restaurant just opened.
+So, what should it do?
+
+If it goes to the usual place, it gets a good meal for sure.
+That's <b style="color:red">exploitation</b>: use what you already know to get the best reward.
+If it tries the new place, maybe it's disappointing... or maybe it's a new favorite.
+That's <b style="color:red">exploration</b>: take some risk to gather information.
+
+Well, an RL agent has exactly the same problem.
+It must explore to discover <b style="color:red">rewarding actions and states</b>.
+And it must exploit what it knows to <b style="color:red">maximize its reward</b>.
+
+The hard part is to find the right <b style="color:red">balance</b>.
+Too much exploration, and learning is <b style="color:red">slow</b>: we keep trying bad options.
+Too much exploitation, and we get stuck with a <b style="color:red">suboptimal policy</b>: we never find the better restaurant.
+The best long-term strategy often means accepting some <b style="color:red">short-term sacrifices</b>.
+		</div>
+		<!-- Sources:
+		- https://lilianweng.github.io/posts/2018-02-19-rl-overview/#exploration-exploitation-dilemma
+		- https://lilianweng.github.io/posts/2018-01-23-multi-armed-bandit/#exploitation-vs-exploration
+		-->
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Unstructured Exploration -->
+<!-- <section>
+	<h3>Unstructured Exploration</h3>
+	<ul>
+		<li><b>ε-greedy</b>: random action with probability ε, otherwise greedy action.</li>
+		<li><b>Gaussian noise</b>: add noise to actions (continuous control).</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Exploration non structurée : méthodes simples, peu coûteuses, mais souvent inefficaces dans des
+			environnements complexes ou à grande dimension.
+		</div>
+		<div class="en-notes">
+			Unstructured exploration uses simple stochasticity (randomness) to encourage the agent to try
+			new actions. Effective in simple tasks, but often insufficient for complex environments.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Unstructured Exploration (ε-greedy) -->
+<section>
+	<h3>Unstructured Exploration</h3>
+	<h4 style="text-transform: none;">$\varepsilon$-greedy</h4>
+
+	<div class="r-stack">
+		<div class="fragment fade-out" data-fragment-index="1">
+			<div style="text-align: center; margin-bottom: 0.5em; font-size: 0.5em;">
+				Deep Q-Learning Algorithm<br>
+			</div>
+			<div style="font-size: 0.3em; text-align: left; width: fit-content; margin: 0 auto;">
+				<!--
+				<b>Input</b>:<br>
+					$\quad\quad$ none<br>
+				<b>Algorithm parameter</b>:<br>
+					$\quad\quad$ discount factor $\gamma$<br>
+					$\quad\quad$ step size $\alpha \in (0,1]$<br>
+					$\quad\quad$ small $\epsilon > 0$<br>
+					$\quad\quad$ capacity of the experience replay memory $M$<br>
+					$\quad\quad$ batch size $m$<br>
+					$\quad\quad$ target network update frequency $\color{red}{\tau}$<br><br>
+	
+				<b>Initialize</b> replay memory $\mathcal{D}$ to capacity $M$<br>
+				<b>Initialize</b> action-value function $\hat{Q}_{\mathbf{\omega_1}}$ with random weights $\mathbf{\omega_1}$<br>
+				<b>Initialize</b> target action-value function $\hat{Q}_{\mathbf{\omega_2}}$ with weights $\color{red}{\mathbf{\omega_2} = \mathbf{\omega_1}}$<br><br>-->
+				<b>FOR EACH</b> episode<br>
+				$\quad$ $\mathbf{s} \leftarrow \text{env.reset}()$<br>
+				$\quad$ <b>DO</b> <br>
+				$\quad\quad$ $\mathbf{a} \leftarrow \color{red}{\epsilon\text{-greedy}(\mathbf{s},
+				\hat{Q}_{\mathbf{\omega_1}})}$<br>
+				$\quad\quad$ $r, \mathbf{s'} \leftarrow \text{env.step}(\mathbf{a})$<br>
+				$\quad\quad$ Store transition $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ in $\mathcal{D}$<br>
+				$\quad\quad$ If $\mathcal{D}$ contains "enough" transitions<br>
+				$\quad\quad\quad$ Sample random batch of transitions $(\mathbf{s}_j, \mathbf{a}_j, r_j,
+				\mathbf{s'}_j)$ from $\mathcal{D}$ with $j=1$ to $m$<br>
+				$\quad\quad\quad$ For each $j$, set $y_j =
+				\begin{cases}
+				r_j & \text{for terminal } \mathbf{s'}_j\\
+				r_j + \gamma \max_{\mathbf{a}^\star} \hat{Q}_{\mathbf{\omega_{2}}}
+				(\mathbf{s'}_j)_{\mathbf{a}^\star} & \text{for non-terminal } \mathbf{s'}_j
+				\end{cases}$<br>
+				$\quad\quad\quad$ Perform a gradient descent step on $\left( y_j -
+				\hat{Q}_{\mathbf{\omega_1}}(\mathbf{s}_j)_{\mathbf{a}_j} \right)^2$ with respect to the weights
+				$\mathbf{\omega_1}$<br>
+				$\quad\quad\quad$ Every $\tau$ steps reset $\hat{Q}_{\mathbf{\omega_2}}$ to
+				$\hat{Q}_{\mathbf{\omega_1}}$, i.e., set $\mathbf{\omega_2} \leftarrow \mathbf{\omega_1}$<br>
+				$\quad\quad$ $\mathbf{s} \leftarrow \mathbf{s'}$ <br>
+				$\quad$ <b>UNTIL</b> $\mathbf{s}$ is final<br>
+				<b>RETURN</b> $\mathbf{\omega_1}$
+			</div>
+		</div>
+		<div class="fragment" data-fragment-index="1">
+			<img src="assets/rl_exploration/lab1_epsilon.png" alt="ε-greedy Exploration" style="width: 52%; margin-bottom: 0;">
+		</div>
+	</div>
+	<div class="r-stack">
+		<div class="fragment fade-out" data-fragment-index="1" style="font-size: 0.4em;">
+			<div style="text-align: left; width: fit-content; margin: 0 auto;">
+				<p style="margin-bottom: 0;">At each step:</p>
+				<ul style="padding-left: 1em; display: block; margin-left: 0;">
+					<li>with probability <b>ε</b>, select a random action;</li>
+					<li>with probability <b>1-ε</b>, select the action with the highest estimated value.</li>
+				</ul>
+			</div>
+			<p>
+				👉 Simple to implement, widely used in discrete action spaces.
+			</p>
+		</div>
+		<p class="fragment" data-fragment-index="1" style="font-size: 0.4em;">
+			Typically, ε is annealed (decreased) over time to shift from exploration to exploitation.<br>
+			The decay schedule is a hyperparameter and often determined empirically.
+		</p>
+	</div>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, how do we explore in practice?
+The simplest family of methods is called <b style="color:red">unstructured exploration</b>.
+"Unstructured" means we just inject some <b style="color:red">randomness</b> into the agent's choices.
+
+The best-known example is <b style="color:red">ε-greedy</b>.
+You already know it: it's the line in red, in the DQN algorithm.
+At each step, with probability ε, we pick a <b style="color:red">random action</b>.
+Otherwise, we pick the <b style="color:red">greedy action</b>: the one with the highest estimated Q-value.
+It's very simple, and it's the default choice in <b style="color:red">discrete action spaces</b>.
+
+<i style="color:gray">[click]</i>
+In practice, ε is not constant.
+We start with a large ε, so the agent explores a lot.
+Then we <b style="color:red">decrease ε over time</b>, down to a small minimum value.
+So the agent shifts smoothly from exploration to exploitation.
+How fast should ε decrease?
+Well, that's a <b style="color:red">hyperparameter</b>, and it's usually tuned by trial and error.
+
+The weakness of ε-greedy: this randomness is <b style="color:red">blind</b>.
+The agent doesn't try to go where it knows the least.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Unstructured Exploration (Gaussian Noise) -->
+<section>
+	<h3>Unstructured Exploration</h3>
+	<h4>Gaussian Noise</h4>
+
+	<ul style="font-size: 0.7em; margin-top: 2em;">
+		<li>Add zero-mean Gaussian noise to the action output by the policy.</li>
+		<li>Common in algorithms for continuous control (e.g., DDPG, TD3).</li>
+		<li>Noise variance can be annealed to reduce exploration over time.</li>
+		<li>Encourages local exploration around the current policy's actions.</li>
+	</ul>
+	<!-- <ul style="font-size: 0.7em;">
+		<li>
+			<a href="https://arxiv.org/abs/1509.02971" target="_blank">Continuous Control With Deep
+				Reinforcement Learning</a>, Lillicrap et al., 2015.<br>
+			<b>Algorithm:</b> DDPG
+		</li>
+	</ul> -->
+	<p style="font-size: 0.7em; margin-top: 1em;">
+		$$\mu'(s_t) = \mu(s_t | \theta^{\mu}_t) + \mathcal{N}$$
+		where $\mu(s_t | \theta^{\mu}_t)$ is the actor network with weights $\theta^{\mu}_t$<br>
+		and $\mathcal{N}$ is a noise process (e.g. Gaussian or Ornstein-Uhlenbeck).
+	</p>
+	<!-- <img src="assets/rl_exploration/ddpg.png" alt="Gaussian Noise Exploration" style="width: 50%; margin-bottom: 10px;"> -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Now, what about <b style="color:red">continuous actions</b>?
+Here, ε-greedy is not the natural choice.
+Instead, we take the action of the policy, and we add some <b style="color:red">noise</b> to it.
+
+Look at the formula.
+μ is the actor network: it outputs a <b style="color:red">deterministic action</b>.
+And we add a noise term, N, on top of it.
+Typically, a zero-mean <b style="color:red">Gaussian noise</b>.
+That's what <b style="color:red">DDPG</b> and <b style="color:red">TD3</b> do.
+And like with ε, we can <b style="color:red">reduce the noise</b> over time.
+
+A small detail.
+Independent Gaussian noise makes the actions jitter from one step to the next.
+So the original DDPG paper used an <b style="color:red">Ornstein-Uhlenbeck</b> process.
+It's a noise that is correlated in time, better for physical systems with inertia.
+Later, TD3 showed that simple Gaussian noise works just as well in practice.
+
+The limit?
+This exploration is <b style="color:red">local</b>: the agent only tries actions close to what it already does.
+So it won't discover <b style="color:red">far-away or rare states</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Limits of Unstructured Exploration (Case Study: Montezuma's Revenge) -->
+<section>
+	<h3 style="font-size: 1.1em;">Limits of Unstructured Exploration</h3>
+	<h4 style="font-size: 0.8em;">Case Study: Montezuma's Revenge (Atari)</h4>
+
+	<p style="font-size:0.55em; text-align: left; margin-left: 3em;">
+		Unstructured methods (ε-greedy, Gaussian noise) struggle in environments with <b>sparse
+		rewards</b> and <b>complex exploration</b> requirements.
+	</p>
+
+	<video src="assets/rl_exploration/montezuma_revenge.mp4" controls style="width: 50%; display: block; margin: 0 auto 0 auto;"></video>
+	
+	<p style="font-size: 0.55em; text-align: left; margin-bottom: 0; margin-left: 3em;">
+		<b>Montezuma's Revenge</b> (Atari): classic benchmark for hard exploration.
+	</p>
+	<ul style="font-size: 0.55em; padding-left: 1em; display: block; margin-left: 3em;">
+		<li>Random actions rarely reach rewarding states; agent fails to learn meaningful behavior.</li>
+		<li>Motivates the need for <b>intrinsic motivation</b> and <b>structured exploration</b> techniques.</li>
+	</ul>
+			<!-- Placeholder: insert a screenshot or short animation of Montezuma's Revenge gameplay.
+					 Objective: show the complexity and sparse rewards of the environment, highlighting why random exploration is ineffective. -->
+			<!-- <img src="assets/rl_exploration/montezuma_revenge.jpg"
+				alt="Montezuma's Revenge (Atari)" style="width: 90%; margin-bottom: 10px;">
+			<div style="font-size: 0.5em;">
+				<a href="https://ale.farama.org/environments/montezuma_revenge" target="_blank">ALE:
+					Montezuma's Revenge</a>
+			</div>
+			https://www.retrogames.cz/play_124-Atari2600.php
+		</div> -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+OK, so do these simple methods work?
+Well, on easy problems, yes.
+But here is a famous counter-example: <b style="color:red">Montezuma's Revenge</b>, an Atari game.
+
+<i style="color:gray">[play the video]</i>
+To get the first reward, the player must grab the <b style="color:red">key</b>.
+So: go down the ladders, jump over the rolling skull, and climb up to the key.
+And to get the next reward, go all the way back and open a door.
+That's a long and very <b style="color:red">precise sequence</b> of actions.
+One bad jump, and you lose a life.
+
+Now imagine an agent that just presses <b style="color:red">random buttons</b>.
+It will almost never reach the key.
+So it almost never sees a reward: the rewards are <b style="color:red">sparse</b>.
+And with no reward, there is nothing to learn.
+In fact, the original DQN scored <b style="color:red">zero points</b> on this game.
+
+So we need smarter ways to explore.
+That's the motivation for the rest of this part: <b style="color:red">intrinsic motivation</b>, and <b style="color:red">structured exploration</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Maximum Entropy RL (Exploration and Robustness via Entropy) -->
+<section>
+	<h3>Maximum Entropy RL</h3>
+	<h4>Exploration and Robustness via Entropy</h4>
+
+	<p style="font-size: 0.6em; text-align: left; margin-bottom: 0; margin-left: 3em;">
+		Augments the reward with an entropy term to encourage diverse actions:
+		$$ J(\pi) = \mathbb{E}_{\pi} \left[ \sum_t \Big( r_t + \alpha \mathcal{H}(\pi(\cdot|s_t)) \Big) \right] $$
+		where $\mathcal{H}$ is the entropy and $\alpha$ controls the exploration-exploitation tradeoff.
+	</p>
+	<ul style="font-size: 0.6em; padding-left: 1em; display: block; margin-left: 3em; margin-top: 1em;">
+		<li>Promotes stochastic policies, improving robustness and exploration.</li>
+		<li>Widely used in robotics and continuous action domains.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Another family of methods: <b style="color:red">maximum entropy RL</b>.
+Jesse already presented it in the first part of the course, so I'll be quick.
+
+Here, the idea is to change the <b style="color:red">objective</b> itself.
+Look at the formula.
+At each step, the agent gets the usual reward, r.
+Plus a bonus: the <b style="color:red">entropy</b> of its policy in the current state, weighted by α.
+
+What does it mean?
+Entropy measures how <b style="color:red">random</b> the policy is.
+So the agent is rewarded for keeping its options open.
+For not committing too early to a single action.
+And α sets the <b style="color:red">balance</b>: a large α means more exploration, and with α equal to zero, we're back to standard RL.
+
+Two benefits.
+First, better <b style="color:red">exploration</b>, since the policy stays stochastic.
+Second, more <b style="color:red">robust</b> policies: the agent learns several ways to solve the task, not just one.
+That's why it's widely used in <b style="color:red">robotics</b> and continuous control.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Maximum Entropy RL (Exploration and Robustness via Entropy) -->
+<section>
+	<h3>Maximum Entropy RL</h3>
+	<h4>Exploration and Robustness via Entropy</h4>
+
+	<p style="font-size:0.7em; margin-top: 2em; text-align: left; margin-bottom: 0.5em;">
+		<b>Key algorithms</b>:
+	</p>
+	<ul style="font-size: 0.7em; padding-left: 0; display: block;">
+		<li style="margin-bottom: 0.5em;">
+			<b>Soft Q-Learning (SQL)</b>: incorporates entropy into Q-learning updates.<br>
+			<span style="font-size: 0.9em;"><a href="https://arxiv.org/abs/1702.08165" target="_blank">Reinforcement Learning with Deep Energy-Based Policies</a>, Haarnoja et al., 2017.</span>
+		</li>
+		<li>
+			<b>Soft Actor-Critic (SAC)</b>: off-policy actor-critic with entropy maximization,<br>
+			a standard baseline for continuous control.<br>
+			<span style="font-size: 0.9em;"><a href="https://arxiv.org/abs/1801.01290" target="_blank">Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor</a>, Haarnoja et al., 2018.</span>
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Two key algorithms here, both by Haarnoja and colleagues.
+
+First, <b style="color:red">Soft Q-Learning</b>, in 2017.
+It puts the entropy term inside the <b style="color:red">Q-learning update</b>.
+That's why it's called "soft".
+The hard max over actions of Q-learning becomes a <b style="color:red">soft maximum</b>: a log-sum-exp.
+
+Then, <b style="color:red">Soft Actor-Critic</b>, or SAC, in 2018.
+It's an <b style="color:red">off-policy actor-critic</b>, with this entropy bonus.
+Off-policy means it can reuse past experience from a replay buffer.
+So it's quite <b style="color:red">sample-efficient</b>.
+SAC quickly became a <b style="color:red">standard baseline</b> for continuous control.
+If you need a solid algorithm for a robot arm, SAC is often the first thing to try.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Maximum Entropy RL Principle -->
+<!-- <section>
+	<h3>Maximum Entropy RL Principle</h3>
+	<h4>Exploration and Robustness via Entropy</h4>
+	<ul>
+		<li>Augments reward with entropy term: encourages diverse actions.</li>
+		<li>Objective: maximize expected return <b>and</b> policy entropy.</li>
+		<li>Leads to more robust and exploratory policies.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Le principe du maximum entropy RL consiste à favoriser l’exploration en ajoutant un terme
+			d’entropie à la fonction objectif, ce qui pousse l’agent à maintenir une politique stochastique.
+		</div>
+		<div class="en-notes">
+			Maximum entropy RL encourages agents to explore by rewarding randomness in their actions,
+			improving robustness and avoiding premature convergence.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Soft RL Algorithms -->
+<!-- <section>
+	<h3>Soft RL Algorithms</h3>
+	<h4>Soft Q-Learning, Soft Actor-Critic</h4>
+	<ul>
+		<li><b>Soft Q-Learning (SQL)</b>: incorporates entropy into Q-learning updates.</li>
+		<li><b>Soft Actor-Critic (SAC)</b>: off-policy actor-critic with entropy maximization.</li>
+		<li>State-of-the-art for continuous control tasks.</li>
+	</ul>
+	<ul style="font-size: 0.7em;">
+		<li>
+			<a href="https://arxiv.org/abs/1704.06440" target="_blank">
+				Equivalence Between Policy Gradients and Soft Q-Learning
+			</a>, Schulman et al., 2017.<br>
+			<b>Contribution:</b> Reveals a theoretical link between these two families of RL algorithms.
+		</li>
+		<li>
+			<a href="https://arxiv.org/abs/1801.01290" target="_blank">
+				Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor
+			</a>, Haarnoja et al., 2018.<br>
+			<b>Algorithm:</b> SAC
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			SQL et SAC sont des algorithmes qui intègrent explicitement l’entropie dans l’apprentissage,
+			permettant une exploration efficace et des politiques plus stables.
+		</div>
+		<div class="en-notes">
+			Soft RL algorithms leverage entropy to balance exploration and exploitation, achieving strong
+			empirical results in challenging environments.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Parameter Noise-based Exploration (Noisy Nets, Parameter Space Noise) -->
+<section>
+	<h3>Parameter Noise-based Exploration</h3>
+	<h4>Noisy Nets, Parameter Space Noise</h4>
+
+	<ul style="font-size: 0.8em; margin-top: 2em; margin-bottom: 2em;">
+		<li style="margin-bottom: 0.5em;">
+			<!-- <b>Noisy Nets</b>: -->
+			<a href="https://arxiv.org/pdf/1706.10295" target="_blank">
+				Fortunato et al. (2018). Noisy Networks for Exploration
+			</a>
+			<!-- https://openreview.net/pdf?id=rywHCPkAW -->
+		</li>
+		<li>
+			<!-- <b>Parameter Space Noise</b>: -->
+			<a href="https://arxiv.org/pdf/1706.01905" target="_blank">
+				Plappert et al. (2018). Parameter space noise for exploration
+			</a>
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Next idea: instead of adding noise to the actions, we add noise to the <b style="color:red">network's weights</b>.
+Two papers proposed this, at the same time.
+
+Why is it different?
+With action noise, every step is perturbed independently.
+So the agent keeps changing its mind, at every single step.
+With parameter noise, we perturb the <b style="color:red">policy itself</b>.
+As long as the perturbation is fixed, the behavior is <b style="color:red">consistent</b>: same state, same action.
+It's like trying a slightly different strategy, rather than pressing random buttons.
+
+In <b style="color:red">Noisy Nets</b>, the linear layers of the network get noisy weights.
+And the network <b style="color:red">learns the amount of noise</b>, by gradient descent.
+So there is no ε to tune anymore: the agent decides by itself how much to explore.
+By the way, Noisy Nets is one of the components of <b style="color:red">Rainbow</b>.
+
+<b style="color:red">Parameter space noise</b>, by Plappert and colleagues, applies the same idea to DQN, DDPG and TRPO.
+Here, the noise is sampled at the start of an episode, and kept fixed during the episode.
+And its scale is <b style="color:red">adapted</b> automatically, to keep a target level of change in the actions.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Intrinsic Reward-based Exploration -->
+<!--
+<section>
+	<h3>Intrinsic Reward-based Exploration</h3>
+	<h4>Curiosity, State Prediction, Epistemic Uncertainty</h4>
+	<ul>
+		<li><b>Curiosity-driven</b>: reward for visiting novel or unpredictable states.</li>
+		<li><b>State prediction error</b>: reward based on prediction error of next state.</li>
+		<li><b>Examples</b>:
+			<ul>
+				<li>
+					<b>RND (Random Network Distillation)</b> –
+					<a href="https://arxiv.org/abs/1810.12894" target="_blank">Burda et al., 2018</a>
+					&nbsp;|&nbsp;
+					<a href="https://openai.com/index/reinforcement-learning-with-prediction-based-rewards/" target="_blank">OpenAI blog post</a>
+				</li>
+				<li>
+					<b>ICM (Intrinsic Curiosity Module)</b> –
+					<a href="https://arxiv.org/abs/1705.05363" target="_blank">Pathak et al., 2017</a>
+				</li>
+			</ul>
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			L’exploration guidée par récompense intrinsèque pousse l’agent à découvrir de nouveaux états ou
+			à réduire son incertitude, ce qui favorise l’apprentissage dans des environnements à récompense
+			rare.
+
+
+			RND :
+			- explore their environments through **curiosity**
+			- exceeds average human performance on Montezuma’s Revenge
+		</div>
+		<div class="en-notes">
+			Intrinsic motivation encourages agents to seek novelty or reduce uncertainty, enabling better
+			exploration especially in sparse-reward settings.
+		</div>
+	</aside>
+</section>
+            -->
+
+<!--
+TODO
+
+# Slide 1
+
+Intrinsic Rewards as Exploration Bonuses (https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#intrinsic-rewards-as-exploration-bonuses)
+
+on remplace r_t par r_t + β * r^i_t
+
+[...]
+
+2 approches :
+- count-based exploration
+- prediction-based exploration
+
+# Slide 2
+
+Count-based Exploration (https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#count-based-exploration)
+Pb...
+
+Alternative: Counting by Density Model (Bellemare et al., 2016; Ostrovski et al., 2017; Tang et al., 2016)
+
+# Slide 3
+
+Prediction-based Exploration (https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#prediction-based-exploration)
+- Les grandes lignes...
+
+Forward Dynamics (https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#forward-dynamics)
+- Les grandes lignes... (paragraphe avant AIC Intelligent Adaptive Curiosity)
+- Limites : ... -> ce qui amenne aux random networks (https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#random-networks) + https://chatgpt.com/c/68ddabd1-09d8-8328-94a0-2e75d7fc3f0b
+
+# Slide 4
+RND
+-->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Intrinsic Reward-based Exploration -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+
+	<p style="font-size:0.7em; margin-top: 2em; text-align: left;">
+		Augment environment reward $r_t$ with an <b><em>intrinsic reward</em></b> $r^i_t$:
+		$$r_t \leftarrow r_t + \beta \cdot r^i_t$$
+		where $\beta$ balances exploitation vs exploration.
+	</p>
+	<p style="font-size:0.7em; text-align: left;">
+		👉 Encourages agent to explore novel or uncertain states.
+	</p>
+	<p style="font-size:0.7em; text-align: left; margin-bottom: 0;">
+		Two main approaches:
+	</p>
+	<ul style="font-size: 0.7em; padding-left: 0; display: block;">
+		<li>
+			<b>Count-based exploration</b>: bonus for visiting rarely seen states.
+		</li>
+		<li>
+			<b>Prediction-based exploration</b>: bonus for high prediction error (surprise).
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Let's come back to our Montezuma problem: <b style="color:red">sparse rewards</b>.
+If the environment almost never gives a reward... well, let's <b style="color:red">create our own</b>!
+
+The idea: we add an <b style="color:red">intrinsic reward</b> to the reward of the environment.
+The environment reward is called <i>extrinsic</i>: it defines the task.
+The intrinsic reward is an <b style="color:red">exploration bonus</b>: it's high when the agent sees something new.
+And β is a weight, to balance exploitation and exploration.
+
+This comes from psychology: <b style="color:red">intrinsic motivation</b>, or <b style="color:red">curiosity</b>.
+Think of a child: nobody pays them to explore, exploring is rewarding in itself.
+
+So now, the question is: how do we measure "new"?
+There are two main approaches.
+<b style="color:red">Count-based</b> exploration: a bonus for states we have rarely visited.
+<b style="color:red">Prediction-based</b> exploration: a bonus when the agent is <b style="color:red">surprised</b>, when it fails to predict what happens.
+Let's see both.
+		</div>
+		<!-- Sources:
+		- https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#intrinsic-rewards-as-exploration-bonuses
+		- Oudeyer & Kaplan (2008), intrinsic motivation in psychology
+		-->
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Intrinsic Reward-based Exploration (Count-based Exploration) -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4>Count-based Exploration</h4>
+
+	<p style="font-size: 0.7em; text-align: left;">
+		Assigns an exploration bonus that decreases with the state visit count $N(s_t)$:
+		$$r^i_t = \frac{1}{\sqrt{N(s_t)}}$$
+	</p>
+
+	<p style="font-size: 0.7em; text-align: left;">
+		<b>Advantage</b>: Effective in small, discrete state spaces.
+	</p>
+
+	<p style="font-size:0.7em; text-align: left;">
+		<b>Limitation</b>: Infeasible in high-dimensional or continuous spaces<br>(counts become sparse or meaningless).
+	</p>
+
+	<p style="font-size:0.7em; text-align: left; margin-bottom: 0;">
+		<b>Alternatives:</b> approximate state visitation counts:
+	</p>
+	<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+		<li>Bellemare et al., 2016 – CTS-based pseudocounts</li>
+		<li>Ostrovski et al., 2017 – PixelCNN-based pseudocounts</li>
+		<li>Tang et al., 2017 – Hash-based counts</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+The first approach is the most intuitive one: we <b style="color:red">count</b>.
+N of s is the number of times we have visited state s.
+And the bonus is one over the square root of this count.
+So a new state gives a <b style="color:red">big bonus</b>, and the more we visit it, the smaller the bonus.
+This pushes the agent toward <b style="color:red">rarely visited states</b>.
+In a small, discrete world, like a grid world, this works very well.
+
+But what about Atari, where the state is an <b style="color:red">image</b>?
+Well, you almost <b style="color:red">never see the exact same image twice</b>.
+So almost all the counts are zero, or one.
+And the bonus doesn't tell us anything useful.
+Same problem with continuous states.
+
+So the solution is to <b style="color:red">approximate</b> the counts: we call them <b style="color:red">pseudo-counts</b>.
+Bellemare and colleagues use a <b style="color:red">density model</b> of the images, to estimate how familiar a state is.
+Ostrovski and colleagues improve it with a neural density model, PixelCNN.
+And Tang and colleagues use a simpler trick: they <b style="color:red">hash</b> each state into a short code, and count the codes.
+So similar states share the same count.
+		</div>
+		<!-- Sources:
+		- https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#count-based-exploration
+		-->
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Prediction-based Exploration (Prediction-based Exploration) -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4>Prediction-based Exploration</h4>
+
+	<p style="font-size:0.65em; text-align: left;">
+		Uses prediction error as intrinsic reward:
+		$$r^i_t = \| f(s_t, a_t) - s_{t+1} \|$$
+		where $f$ is a learned forward dynamics model.
+	</p>
+
+	<p style="font-size:0.65em; text-align: left; margin-bottom: 0;">
+		<b>Properties:</b>
+	</p>
+	<ul style="font-size: 0.65em; padding-left: 0; display: block;">
+		<li>Agent is rewarded for visiting states where its model is uncertain or inaccurate (novelty/surprise).</li>
+		<li>Common in high-dimensional or continuous environments.</li>
+	</ul>
+
+	<p style="font-size:0.65em; text-align: left; margin-bottom: 0;">
+		<b>Limitations:</b>
+	</p>
+	<ul style="font-size: 0.65em; display: block;">
+		<li>Model can be "fooled" by stochasticity or noise.</li>
+		<li>May focus on unpredictable but irrelevant states.</li>
+		<li>Motivates use of random networks (e.g., RND) for more robust novelty estimation.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+The second approach: we reward the agent when it is <b style="color:red">surprised</b>.
+For that, the agent learns a <b style="color:red">forward model</b>, f.
+It takes the current state and the action, and it tries to <b style="color:red">predict the next state</b>.
+The intrinsic reward is the <b style="color:red">prediction error</b>: the gap between the prediction and what really happened.
+
+Why does it work?
+If the model predicts well, the agent already knows this part of the world: no bonus.
+If the error is large, it's an <b style="color:red">unknown region</b>: big bonus, so let's go there!
+And as the model learns, the bonus decreases: same effect as with counts, but without counting.
+That's why it scales to <b style="color:red">images</b> and continuous states.
+In practice, like in ICM, we usually predict <b style="color:red">features</b> of the next state, rather than raw pixels.
+
+But there is a catch.
+The model can be <b style="color:red">fooled by randomness</b>.
+If something in the environment is just unpredictable, the error stays high forever.
+So the agent may focus on things that are unpredictable, but completely <b style="color:red">irrelevant</b>.
+Let me show you the classic example.
+		</div>
+		<!-- Sources:
+		- https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#forward-dynamics
+		-->
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Limits of Prediction-based Intrinsic Motivation -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4 style="font-size: 0.9em;">Limits of Prediction-based Intrinsic Motivation</h4>
+
+	<ul style="font-size: 0.9em; margin-top: 2em;">
+		<li>In stochastic environments, dynamics are unpredictable (e.g., random noise, a "noisy TV" showing random images).</li>
+		<li>Prediction error remains high even for familiar states.</li>
+		<li>Agent is attracted to noisy or unpredictable regions, leading to biased and inefficient exploration.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+This is called the <b style="color:red">noisy TV problem</b>.
+Imagine there is a TV in the maze, and it shows <b style="color:red">random images</b>.
+The agent tries to predict the next image on the screen.
+But it's pure noise: it can <b style="color:red">never</b> predict it.
+Even after watching it for hours.
+So the prediction error stays high, and the bonus stays high.
+
+Result: the agent is hooked.
+It stays in front of the TV forever, like a <b style="color:red">couch potato</b>.
+And it stops exploring the rest of the world.
+
+So, the problem is this.
+The prediction error mixes up two very different things.
+Something <b style="color:red">new</b>, that we can learn about.
+And something just <b style="color:red">random</b>, that we will never be able to predict.
+In technical terms, the first one is <b style="color:red">epistemic</b> uncertainty: what we don't know yet.
+The second one is <b style="color:red">aleatoric</b> uncertainty: the pure randomness of the environment.
+For exploration, we want a bonus for the first one only.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Motivation for RND -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4>Motivation for RND</h4>
+
+	<p style="font-size: 0.7em; text-align: left;">
+		A measure of novelty that is <b>more stable</b> and <b>less sensitive to randomness</b>.
+	</p>
+
+	<ul style="font-size: 0.7em;">
+		<li>
+			<b>Target network</b> = a fixed random function \( f_{\text{target}}(s) \).
+			<ul>
+				<li>Since it is frozen, it defines a <b>stable representation</b> of states.</li>
+				<li>Each state has a deterministic, time-invariant signature.</li>
+			</ul>
+		</li>
+		<li>
+			<b>Predictor network</b> = a network trained to approximate \( f_{\text{target}}(s) \).
+			<ul>
+				<li>The prediction error is <b>high at first</b> for all states.</li>
+				<li>As some states are revisited, the predictor learns to approximate them &rarr; error decreases.</li>
+				<li>Truly novel states remain hard &rarr; high error &rarr; strong intrinsic reward.</li>
+			</ul>
+		</li>
+	</ul>
+	<p style="font-size: 0.7em; text-align: left;">
+		👉 Unlike dynamics prediction, this error <b>does not depend on the environment’s stochasticity</b>, but only on whether the state has already been “learned” by the predictor.
+	</p>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So here comes <b style="color:red">Random Network Distillation</b>, or RND.
+It keeps the idea of a prediction error.
+But it changes <b style="color:red">what we predict</b>.
+
+We take a first network, initialized at random, and we <b style="color:red">freeze</b> it.
+That's the <b style="color:red">target network</b>.
+It never learns anything: it's just a fixed, random function of the state.
+So each state gets a kind of random <b style="color:red">signature</b>, and this signature never changes.
+
+Then, a second network, the <b style="color:red">predictor</b>, is trained to reproduce this signature.
+At the beginning, the predictor is bad everywhere: the error is high for all states.
+On the states we visit often, it gets good: the error goes down.
+But on <b style="color:red">new states</b>, it has never been trained: the error stays high.
+So this error is a measure of <b style="color:red">novelty</b>.
+
+And here is the key point.
+The target only depends on the current state, not on what happens next.
+It's a <b style="color:red">deterministic</b> function of the state.
+So the randomness of the transitions can't fool it anymore.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Random Network Distillation (RND) -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4>Focus on RND</h4>
+
+	<ul style="font-size: 0.7em;">
+		<li>RND uses two neural networks:
+			<ul>
+				<li>
+					<b>Target network</b>: randomly initialized, fixed parameters.
+				</li>
+				<li>
+					<b>Predictor network</b>: trained to predict the target network's output for each state.
+				</li>
+			</ul>
+		</li>
+		<li>
+			<b>Intrinsic reward</b>: prediction error (difference between predictor and target outputs).
+			<ul>
+				<li>States that are <b>novel</b> (rarely visited) yield high prediction error and thus high intrinsic reward.</li>
+				<li>As the agent visits a state more often, the predictor learns to match the target, reducing the intrinsic reward.</li>
+				<li>Encourages exploration of <b>unfamiliar</b> states.</li>
+			</ul>
+		</li>
+	</ul>
+
+	<!-- Placeholder: insert a diagram showing the RND architecture (state input, target network, predictor network, prediction error as intrinsic reward).
+				Objective: visualize the flow from state to intrinsic reward and the learning process. -->
+	<!-- <img src="assets/rl_exploration/rnd_diagram.png" alt="RND Architecture"
+		style="width: 90%; margin-bottom: 10px;"> -->
+	<p style="font-size: 0.7em; margin-top: 1em;">
+		<a href="https://arxiv.org/abs/1810.12894" target="_blank">Burda et al. (2018). Exploration by random network distillation.</a>
+	</p>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, let me summarize how RND works.
+Two networks, and both take the <b style="color:red">state</b> as input.
+The <b style="color:red">target</b>: random weights, frozen.
+The <b style="color:red">predictor</b>: trained to match the target's output, on the states we visit.
+The <b style="color:red">intrinsic reward</b> is the gap between the two outputs.
+New state: big gap, big reward.
+Familiar state: small gap, small reward.
+
+Why is it nice?
+First, it's <b style="color:red">simple</b>: two standard networks, and no model of the environment's dynamics.
+Second, it's <b style="color:red">stable</b>: the target never moves, so the definition of novelty doesn't drift.
+Third, it's much less <b style="color:red">fooled by randomness</b>, as we just saw.
+
+And it works!
+RND was the first method to beat the <b style="color:red">average human score</b> on Montezuma's Revenge.
+Without any human demonstration.
+Let's see it in action.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Video -->
+<section>
+	<video src="assets/rl_exploration/demo_rnd.mp4" controls style="width: 100%; display: block; margin: 0 auto;"></video>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<i style="color:gray">[play the video]</i>
+So this is the <b style="color:red">RND agent</b>, playing Montezuma's Revenge.
+This video comes from OpenAI, where RND was developed.
+Look: it <b style="color:red">collects the keys</b>...
+it collects gems...
+it goes through the <b style="color:red">laser gates</b>...
+and at some point, it even <b style="color:red">finishes the first level</b>.
+
+Remember: the original DQN scored zero on this game.
+Here, the game rewards are still there, but they are very rare.
+What keeps the agent moving into <b style="color:red">new rooms</b> is the intrinsic reward: its <b style="color:red">curiosity</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Key Publications on Intrinsic Motivation -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4>Other Key Publications</h4>
+
+	<table style="font-size: 0.45em; width: 100%;">
+		<thead>
+			<tr>
+				<th style="text-align: left;">Algorithm</th>
+				<th style="text-align: left;">Reference</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>VIME</td>
+				<td>
+					<a href="https://arxiv.org/abs/1605.09674" target="_blank">
+						Houthooft et al., 2016. Variational Information Maximizing Exploration.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>CTS-based Pseudocounts</td>
+				<td>
+					<a href="https://arxiv.org/abs/1606.01868" target="_blank">
+						Bellemare et al., 2016. Unifying Count-Based Exploration and Intrinsic Motivation.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>PixelCNN-based Pseudocounts</td>
+				<td>
+					<a href="https://arxiv.org/abs/1703.01310" target="_blank">
+						Ostrovski et al., 2017. Count-Based Exploration with Neural Density Models.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>Hash-based Counts</td>
+				<td>
+					<a href="https://arxiv.org/abs/1611.04717" target="_blank">
+						Tang et al., 2017. #Exploration: A Study of Count-Based Exploration for Deep Reinforcement Learning.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>EX2</td>
+				<td>
+					<a href="https://arxiv.org/abs/1703.01260" target="_blank">
+						Fu et al., 2017. EX2: Exploration with Exemplar Models for Deep Reinforcement Learning.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>Intrinsic Curiosity Module (ICM)</td>
+				<td>
+					<a href="https://arxiv.org/abs/1705.05363" target="_blank">
+						Pathak et al., 2017. Curiosity-driven Exploration by Self-supervised Prediction.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>Curiosity-driven Learning (systematic analysis)</td>
+				<td>
+					<a href="https://arxiv.org/abs/1808.04355" target="_blank">
+						Burda et al., 2018. Large-Scale Study of Curiosity-Driven Learning.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>RND</td>
+				<td>
+					<a href="https://arxiv.org/abs/1810.12894" target="_blank">
+						Burda et al., 2018. Exploration by Random Network Distillation.
+					</a>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here are the <b style="color:red">key papers</b> on this topic, if you want to go further.
+I won't go through all of them, just a few words on each.
+
+<b style="color:red">VIME</b>: the bonus is the <b style="color:red">information gain</b> about the environment's dynamics, with a Bayesian neural network.
+Then the three <b style="color:red">pseudo-count</b> papers: these are the count-based methods we've just seen.
+<b style="color:red">EX2</b>: a classifier tries to tell a state apart from the states already visited.
+If that's easy, the state is new.
+<b style="color:red">ICM</b>, the Intrinsic Curiosity Module: prediction-based, in a learned feature space.
+Then a <b style="color:red">large-scale study</b> by Burda and colleagues.
+They trained agents with curiosity alone, no game reward at all, on 54 environments.
+And surprisingly, it works quite well on many games.
+And finally, <b style="color:red">RND</b>, that we've just discussed.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Limits of Intrinsic Reward and Memory-based Exploration -->
+<!-- <section>
+	<h3>Limits of Intrinsic Reward</h3>
+	<h4>Motivation for Memory-based Exploration</h4>
+	<ul style="font-size: 0.7em;">
+		<li><b>Intrinsic reward methods</b> (e.g., novelty, prediction error) encourage exploration by
+			rewarding new or surprising states.</li>
+		<li><b>Key limitations:</b>
+			<ul>
+				<li><b>Slow function approximation:</b> Neural networks may lag in updating, so states can
+					appear "novel" longer than they are.</li>
+				<li><b>Non-stationary bonus:</b> What is surprising changes as the agent learns, making the
+					intrinsic reward unstable.</li>
+				<li><b>Knowledge fading:</b> Once a state is no longer novel, the agent may forget its
+					importance, even if it is crucial for solving the task.</li>
+			</ul>
+		</li>
+		<li><b>Alternative:</b> <b>Memory-based exploration</b> augments the agent with an explicit memory
+			module to track visited states and contexts.</li>
+		<li>This enables more reliable novelty detection, stabilizes exploration signals, and helps retain
+			knowledge of key states.</li>
+		<li><b>Example:</b> <i>Never Give Up (NGU)</i> combines short-term episodic memory with long-term
+			novelty signals (e.g., RND) to avoid forgetting useful states.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Les méthodes à récompense intrinsèque présentent trois limites majeures : lenteur de
+			l’approximation par réseau de neurones (décalage entre la réalité et le signal), instabilité du
+			bonus (non-stationnarité), et oubli de certains états importants (knowledge fading). Les
+			approches à mémoire externe (memory-based exploration) permettent de stabiliser le signal
+			d’exploration et de conserver la trace des états clés, comme dans Never Give Up (NGU).
+		</div>
+		<div class="en-notes">
+			Intrinsic reward approaches have key drawbacks: slow adaptation of neural approximators,
+			non-stationary exploration bonuses, and forgetting of important states. Memory-based exploration
+			methods address these by explicitly tracking visited states, providing more stable and
+			persistent exploration signals (e.g., NGU).
+
+			Les bonus d’exploration basés uniquement sur des récompenses intrinsèques ont des limites
+			(instabilité, oubli, lenteur).
+			Pour les corriger, certaines méthodes donnent à l’agent une **mémoire externe** qui lui permet
+			de juger la nouveauté et l’importance des états de manière plus stable et durable.
+
+			### Contexte
+
+			Dans le RL, beaucoup de méthodes d’exploration donnent à l’agent un **bonus de récompense
+			intrinsèque** (par ex. basé sur la nouveauté ou l’erreur de prédiction).
+			L’idée est : « si tu vois quelque chose de nouveau ou difficile à prédire, tu reçois un bonus,
+			donc tu es encouragé à explorer davantage. »
+
+			Mais ces **reward bonuses** posent plusieurs problèmes :
+
+			### Les trois inconvénients cités
+
+			1. **Function approximation is slow to catch up**
+
+			* Dans le DRL, la fonction de valeur ou de bonus est approximée par un réseau de neurones.
+			* Ce réseau met du temps à s’ajuster → un état peut rester considéré comme « nouveau » ou «
+			surprenant » pendant plusieurs pas, même après avoir déjà été vu plusieurs fois.
+			* Cela crée un décalage entre la réalité et le signal de bonus.
+
+			2. **Exploration bonus is non-stationary**
+
+			* Comme l’agent apprend en permanence, ce qui est « surprenant » change sans cesse.
+			* La fonction de récompense intrinsèque n’est donc pas stable : aujourd’hui un état donne un
+			gros bonus, demain presque plus rien.
+			* Cette instabilité complique l’apprentissage, car la politique poursuit un signal mouvant.
+
+			3. **Knowledge fading**
+
+			* Au fur et à mesure que l’agent apprend, un état cesse de paraître « nouveau » et n’apporte
+			plus de récompense intrinsèque.
+			* Conséquence : l’agent peut oublier l’intérêt de certains états cruciaux pour résoudre la tâche
+			(par exemple une clé ou un couloir important dans un jeu comme Montezuma’s Revenge), car ils ne
+			donnent plus de bonus même s’ils sont essentiels.
+
+			### Alternative
+
+			Les méthodes de **memory-based exploration** ajoutent un **module de mémoire externe** (parfois
+			inspiré de la mémoire épisodique biologique).
+
+			* Au lieu de se fier uniquement à un bonus instantané et évanescent, l’agent garde une trace
+			explicite de **ce qu’il a vu** et **dans quel contexte**.
+			* Cette mémoire permet :
+
+			* de comparer un nouvel état à ceux déjà rencontrés (détection plus fiable de nouveauté),
+			* de stabiliser le signal d’exploration (moins dépendant des fluctuations de l’approximation),
+			* de rappeler à l’agent des états clés même s’ils ne sont plus « intrinsèquement nouveaux ».
+
+			Exemple : dans **Never Give Up (NGU)**, l’agent combine une mémoire à court terme (dans
+			l’épisode) et un signal de nouveauté à long terme (RND), ce qui lui évite d’oublier des états
+			utiles.
+
+			chatgpt.com/c/68dd976b-1440-8332-a0e8-7494f01f1fdb
+		</div>
+	</aside>
+</section> -->
+
+<!-- Slide: Structured Exploration via State Archive (Go-Explore) -->
+<!-- <section>
+	<h3>Memory-based Exploration</h3>
+	<h4>Archive-based / Return-based Exploration</h4>
+	<ul style="font-size: 0.8em;">
+		<li>
+			<b>Go-Explore</b> (Ecoffet et al., 2019): systematic exploration by explicitly archiving and
+			revisiting states.
+			<a href="https://arxiv.org/abs/1901.10995" target="_blank">[arXiv]</a>
+			&nbsp;|&nbsp;
+			<a href="https://www.uber.com/en-FR/blog/go-explore/" target="_blank">[Uber AI blog]</a>
+		</li>
+		<li>Two phases:
+			<ul>
+				<li><b>Exploration:</b> Build an archive of visited states ("cells"), return to promising
+					states, and explore from there.</li>
+				<li><b>Robustification:</b> Learn robust policies to reliably reach and exploit discovered
+					trajectories.</li>
+			</ul>
+		</li>
+		<li>Highly effective in environments with <b>sparse rewards</b> (e.g., Montezuma's Revenge).</li>
+		<li>Distinct from intrinsic reward or parameter noise approaches: relies on <b>explicit state memory
+				and systematic return</b>.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Go-Explore inaugure une nouvelle catégorie d’exploration structurée : l’agent archive
+			explicitement les états visités, retourne à des états prometteurs, puis explore systématiquement
+			à partir de là. Cette approche contourne les limites des méthodes basées sur la curiosité ou le
+			bruit, et a permis des percées sur des environnements à récompense très rare comme Montezuma’s
+			Revenge.
+		</div>
+		<div class="en-notes">
+			Go-Explore represents a new family of structured exploration: the agent explicitly archives
+			visited states, returns to promising ones, and systematically explores from there. This approach
+			overcomes the limitations of curiosity- or noise-based methods and has achieved breakthroughs in
+			hard-exploration environments such as Montezuma’s Revenge.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Video -->
+<!-- <section>
+	<video src="assets/rl_exploration/demo_goexplore_nosound.mp4" controls style="width: 100%; display: block; margin: 0 auto 1em auto;"></video>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+			<p>
+				...
+			</p>
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!--
+<section data-background-video="assets/rl_exploration/montezuma_revenge_go-explore.mp4"
+	data-background-video-loop data-background-video-muted>
+	<h2>Video</h2>
+</section>
+-->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- TODO: Une slide sur les application concrètes aurait été bien... -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Further Reading on Exploration -->
+<section>
+	<h3>Further Reading</h3>
+
+	<p style="font-size: 0.7em; margin-top: 2em; text-align: left;">
+		<a href="https://lilianweng.github.io/posts/2020-06-07-exploration-drl/" target="_blank">Exploration Strategies in Deep Reinforcement Learning</a>, Lilian Weng, 2020.
+	</p>
+	<p style="font-size: 0.7em; text-align: left;">
+		👉 A comprehensive blog post covering a wide range of exploration techniques, theoretical motivations, and practical considerations in deep RL.
+	</p>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+And if you want <b style="color:red">one single resource</b> on exploration, read this blog post by <b style="color:red">Lilian Weng</b>.
+It's very clear, well illustrated, and it covers much more than what we saw today.
+For instance, memory-based methods like <b style="color:red">Go-Explore</b>, which reached superhuman scores on Montezuma's Revenge.
+
+OK, that's it for exploration.
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->
+			</div>
+
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/zoom.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/search.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="dist/plugin/math.js"></script>
+
+		<script>
+
+			// Also available as an ES module, see:
+			// https://revealjs.com/initialization/
+			Reveal.initialize({
+				// Display presentation control arrows
+				controls: true,
+
+				// Help the user learn the controls by providing hints, for example by
+				// bouncing the down arrow when they first encounter a vertical slide
+				controlsTutorial: true,
+
+				// Determines where controls appear, "edges" or "bottom-right"
+				controlsLayout: 'bottom-right',
+
+				// Visibility rule for backwards navigation arrows; "faded", "hidden"
+				// or "visible"
+				controlsBackArrows: 'faded',
+
+				// Display a presentation progress bar
+				progress: true,
+
+				// Vertical centering of slides
+				center: true,
+
+				hash: true,
+				slideNumber: 'h.v',
+
+				// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+				maxScale: 4.0,
+				mathjax2: {
+					//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+					//mathjax: 'mathjax/MathJax.js',
+					config: 'TeX-AMS_HTML-full',
+					// pass other options into `MathJax.Hub.Config()`
+					TeX: {
+						Macros: {
+							R: '\\mathbb{R}',
+							set: ['\\left\\{#1 \\; ; \\; #2\\right\\}', 2]
+						}
+					}
+				},
+
+				// There are three typesetters available
+				// RevealMath.MathJax2 (default)
+				// RevealMath.MathJax3
+				// RevealMath.KaTeX
+				//
+				// More info at https://revealjs.com/math/
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2]
+
+				// // Reveal.js plugins
+				// dependencies: [
+				// 	{ src: 'revealjs/plugin/reveald3.js' },
+				// ]
+			});
+
+		</script>
+
+		<!-- Assurez-vous que jdhp.js est référencé après tous les autres scripts -->
+		<script src="jdhp.js"></script>
+
+	</body>
+
+</html>
