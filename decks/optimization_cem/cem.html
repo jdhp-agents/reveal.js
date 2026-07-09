@@ -233,7 +233,7 @@ Common choice : multivariate Normal distributions parameterized by a mean vector
 </section>
 
 <section style="text-align: left; font-size: 70%;">
-	<h3 style="text-align: center;">Cross-Entropy Method</h3>
+	<h3 style="text-align: center;">The <em>proposal distribution</em> $P_{\boldsymbol{\theta}}$</h3>
 
 	<p>
 		In the case of the multivariate normal distribution, parameters are updated according to the maximum likelihood estimate:
@@ -257,7 +257,7 @@ Common choice : multivariate Normal distributions parameterized by a mean vector
 </section>
 
 <section>
-	<h3>Cross-Entropy Method</h3>
+	<h3>The <em>proposal distribution</em> $P_{\boldsymbol{\theta}}$</h3>
 
 	<p>Multivariate Normal distributions is not always the right family of distributions to choose…</p>
 
@@ -267,7 +267,8 @@ Common choice : multivariate Normal distributions parameterized by a mean vector
 	</div>
 	<script type="module" src="assets/optimization_cem/optimization_cem_mixture.ts"></script>
 
-	<p>Here, a mixture model would be a better choice…</p>
+	<!-- optimization_cem_mixture.ts turns this into a fragment synchronized with its "mixture model fit" layer -->
+	<p class="cem-mixture-caption">Here, a mixture model would be a better choice…</p>
 
 	<aside class="notes">
 		<div class="fr-notes">

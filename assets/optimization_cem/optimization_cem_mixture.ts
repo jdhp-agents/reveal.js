@@ -44,46 +44,76 @@ g.append('text')
 	.attr('font-style', 'italic').attr('fill', '#444')
 	.text('x');
 
-// Curves (f drawn last so it stays on top)
-g.append('path').attr('d', path(normalFit))
-	.attr('fill', 'none').attr('stroke', color.normal).attr('stroke-width', 2);
-g.append('path').attr('d', path(mixtureFit))
-	.attr('fill', 'none').attr('stroke', color.mixture).attr('stroke-width', 2);
-g.append('path').attr('d', path(f))
-	.attr('fill', 'none').attr('stroke', color.f).attr('stroke-width', 2.5);
-
 // Samples drawn from the objective function (fixed for reproducibility)
 const sampleX: number[] = [-4.7, -3.9, -3.75, -3.15, -3.05, 2.15, 2.9, 3.0, 4.1, 4.35];
-g.selectAll('circle.sample').data(sampleX).join('circle')
-	.attr('class', 'sample')
-	.attr('cx', v => x(v)).attr('cy', v => y(f(v))).attr('r', 5)
-	.attr('fill', color.f).attr('stroke', '#fff').attr('stroke-width', 1.5);
 
-// Legend
-interface LegendEntry {
+// Layers in order of appearance: each non-static one is a reveal.js fragment,
+// and its legend row (same order, top to bottom) shares its fragment index so
+// both fade in together.
+interface Layer {
 	label: string;
 	color: string;
+	fn?: (v: number) => number; // curve layers
+	strokeWidth?: number;
+	dot?: boolean; // samples layer
 	italic?: boolean;
-	dot?: boolean;
+	onTop?: boolean; // kept above the fitted curves
+	static?: boolean; // shown as soon as the slide appears, not a fragment
+	captionSelector?: string; // slide element revealed together with this layer
 }
+const layers: Layer[] = [
+	{ label: 'f', color: color.f, fn: f, strokeWidth: 2.5, italic: true, onTop: true, static: true },
+	{ label: 'samples', color: color.f, dot: true, onTop: true },
+	{ label: 'normal fit', color: color.normal, fn: normalFit, strokeWidth: 2 },
+	{ label: 'mixture model fit', color: color.mixture, fn: mixtureFit, strokeWidth: 2, captionSelector: '.cem-mixture-caption' }
+];
+
 const legend = g.append('g')
 	.attr('transform', `translate(${width + 35},25)`)
 	.attr('font-size', 18);
-const entries: LegendEntry[] = [
-	{ label: 'f', color: color.f, italic: true },
-	{ label: 'mixture model fit', color: color.mixture },
-	{ label: 'normal fit', color: color.normal },
-	{ label: 'samples', color: color.f, dot: true }
-];
-entries.forEach((e, i) => {
-	const row = legend.append('g').attr('transform', `translate(0,${i * 38})`);
-	if (e.dot) {
-		row.append('circle').attr('cx', 14).attr('cy', 0).attr('r', 5).attr('fill', e.color);
+
+const asFragment = <S extends d3.Selection<SVGGElement, unknown, HTMLElement, unknown>>(sel: S, index: number): S =>
+	sel.attr('class', 'fragment').attr('data-fragment-index', index);
+
+let fragmentIndex = 0;
+const layerGroups = layers.map((layer, i) => {
+	const group = g.append('g');
+	if (layer.dot) {
+		group.selectAll('circle').data(sampleX).join('circle')
+			.attr('cx', v => x(v)).attr('cy', v => y(f(v))).attr('r', 5)
+			.attr('fill', layer.color).attr('stroke', '#fff').attr('stroke-width', 1.5);
+	} else {
+		group.append('path').attr('d', path(layer.fn!))
+			.attr('fill', 'none').attr('stroke', layer.color).attr('stroke-width', layer.strokeWidth!);
+	}
+
+	const row = legend.append('g')
+		.attr('transform', `translate(0,${i * 38})`);
+	if (!layer.static) {
+		asFragment(group, fragmentIndex);
+		asFragment(row, fragmentIndex);
+		if (layer.captionSelector) {
+			// Fragment indices must be set here, after Reveal.initialize: reveal.js
+			// renumbers any index hardcoded in the slide HTML before this module runs.
+			svg.node()?.closest('section')?.querySelectorAll(layer.captionSelector).forEach(el => {
+				el.classList.add('fragment');
+				el.setAttribute('data-fragment-index', String(fragmentIndex));
+			});
+		}
+		fragmentIndex++;
+	}
+	if (layer.dot) {
+		row.append('circle').attr('cx', 14).attr('cy', 0).attr('r', 5).attr('fill', layer.color);
 	} else {
 		row.append('line').attr('x1', 0).attr('x2', 28).attr('y1', 0).attr('y2', 0)
-			.attr('stroke', e.color).attr('stroke-width', e.label === 'f' ? 2.5 : 2);
+			.attr('stroke', layer.color).attr('stroke-width', layer.strokeWidth!);
 	}
 	row.append('text').attr('x', 38).attr('y', 6).attr('fill', '#333')
-		.attr('font-style', e.italic ? 'italic' : 'normal')
-		.text(e.label);
+		.attr('font-style', layer.italic ? 'italic' : 'normal')
+		.text(layer.label);
+
+	return group;
 });
+
+// f and the samples are appended before the fitted curves but must stay above them
+layers.forEach((layer, i) => { if (layer.onTop) layerGroups[i].raise(); });
