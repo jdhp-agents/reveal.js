@@ -31,6 +31,44 @@ Common choice : multivariate Normal distributions parameterized by a mean vector
 	</aside>
 </section>
 
+<section>
+	<h3>The objective function $f$</h3>
+
+	<p style="font-size: 60%; margin: 0.3em 0;">
+		Example used in the next slides — the <em>Rosenbrock function</em>:
+		$f(x_1, x_2) = (1 - x_1)^2 + 100 \, (x_2 - x_1^2)^2$
+	</p>
+
+	<!-- Surface 3D interactive (three.js) : glisser pour tourner, molette pour zoomer.
+			Figure paramétrée par les attributs data-* — voir l'en-tête de
+			assets/optimization_cem/objective_surface_3d.ts pour la liste complète. -->
+	<div class="r-stretch objective-surface-3d"
+			data-expression="(1 - x)**2 + 100 * (y - x**2)**2"
+			data-x-domain="-2 2"
+			data-y-domain="-2 2"
+			data-z-scale="linear"
+			data-color-scale="log"
+			data-colormap="plasma"
+			data-camera="-120 30"
+			data-optimum="1 1"></div>
+	<script type="module" src="assets/optimization_cem/objective_surface_3d.ts"></script>
+
+	<p style="font-size: 40%; color: #888888; margin: 0.4em 0 0 0;">
+		Drag to rotate, scroll to zoom — the global minimum $f(1, 1) = 0$ is shown in red
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+La fonction de Rosenbrock est une fonction test classique en optimisation : sa vallée en forme de banane, presque plate au fond, rend la descente vers le minimum global (1, 1) difficile.
+La surface est interactive : faire tourner la figure à la souris pour montrer la vallée, zoomer avec la molette.
+		</div>
+		<div class="en-notes">
+The Rosenbrock function is a classic test function in optimization: its banana-shaped valley, almost flat at the bottom, makes reaching the global minimum (1, 1) difficult.
+The surface is interactive: drag it with the mouse to show the valley, zoom with the scroll wheel.
+		</div>
+	</aside>
+</section>
+
 <section style="text-align: left; font-size: 65%;">
 	<h3 style="text-align: center;">Cross-Entropy Method</h3>
 
