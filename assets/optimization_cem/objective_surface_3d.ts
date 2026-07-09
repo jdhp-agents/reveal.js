@@ -49,6 +49,10 @@
 //                           zoom       même convention que data-zoom
 //                           target     [x, y] point visé par la caméra (coordonnées des
 //                                      données ; défaut : centre de la boîte)
+//                           flatten    0 à 1 — aplatit la surface sur le plan du sol
+//                                      (1 = carte 2D : combiné à une vue de dessus, le
+//                                      rendu coïncide avec un tracé 2D, sans distorsion
+//                                      de perspective ; défaut : 0 = relief normal)
 //                           duration   durée en secondes de la transition animée vers
 //                                      cette vue (défaut : 2 ; 0 = changement immédiat)
 //                         Quand data-views est présent, data-auto-rotate est ignoré
@@ -68,6 +72,7 @@ interface View {
 	camera?: [number, number];
 	zoom?: number;
 	target?: [number, number];
+	flatten?: number;
 	duration?: number;
 }
 
@@ -248,18 +253,32 @@ function setupFigure(container: HTMLElement): void {
 	surfaceGeometry.setIndex(new THREE.BufferAttribute(indices, 1));
 
 	const scene = new THREE.Scene();
-	scene.add(new THREE.Mesh(surfaceGeometry,
-		new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+	const surface = new THREE.Mesh(surfaceGeometry,
+		new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+	scene.add(surface);
 
 	// -- Point de l'optimum global (optionnel ; data-views peut le montrer/cacher)
 	let marker: THREE.Mesh | null = null;
+	let markerBaseZ = 0;
 	if (ds.optimum !== undefined) {
 		const [ox, oy] = parsePair(ds.optimum, [0, 0]);
 		marker = new THREE.Mesh(
 			new THREE.SphereGeometry(0.035, 24, 16),
 			new THREE.MeshBasicMaterial({ color: OPTIMUM_COLOR }));
-		marker.position.set(sxW(ox), syW(oy), zAxis.map(f(ox, oy)));
+		markerBaseZ = zAxis.map(f(ox, oy));
+		marker.position.set(sxW(ox), syW(oy), markerBaseZ);
 		scene.add(marker);
+	}
+
+	// Aplatissement de la surface sur le plan du sol (z = -HZ) : z' = -HZ + (z + HZ)·s
+	// avec s = 1 - flatten (s plancher à 0.001 pour ne pas devenir coplanaire au sol)
+	let flattenNow = 0;
+	function applyFlatten(v: number): void {
+		flattenNow = v;
+		const s = Math.max(1 - v, 0.001);
+		surface.scale.z = s;
+		surface.position.z = -HZ * (1 - s);
+		if (marker) marker.position.z = -HZ + (markerBaseZ + HZ) * s;
 	}
 
 	// -- Décor « matplotlib » (panneaux, quadrillage, graduations, étiquettes),
@@ -270,7 +289,7 @@ function setupFigure(container: HTMLElement): void {
 	const zLabel = ds.zLabel ?? 'f(x₁, x₂)';
 
 	function buildDecor(xFar: number, yFar: number, zFar: number,
-		ex: number, ey: number, hideZLabels: boolean): THREE.Group {
+		ex: number, ey: number, hideZLabels: boolean, hideWalls: boolean): THREE.Group {
 		const group = new THREE.Group();
 		// Les panneaux n'écrivent pas la profondeur et sont rendus avant le
 		// quadrillage (renderOrder) : les lignes passent toujours devant eux
@@ -278,16 +297,20 @@ function setupFigure(container: HTMLElement): void {
 			color: PANE_COLOR, side: THREE.DoubleSide, depthWrite: false
 		});
 
-		const paneX = new THREE.Mesh(new THREE.PlaneGeometry(2 * HZ, 2 * HY), paneMaterial);
-		paneX.rotation.y = Math.PI / 2;
-		paneX.position.x = xFar;
-		const paneY = new THREE.Mesh(new THREE.PlaneGeometry(2 * HX, 2 * HZ), paneMaterial);
-		paneY.rotation.x = Math.PI / 2;
-		paneY.position.y = yFar;
 		const paneZ = new THREE.Mesh(new THREE.PlaneGeometry(2 * HX, 2 * HY), paneMaterial);
 		paneZ.position.z = zFar;
-		paneX.renderOrder = paneY.renderOrder = paneZ.renderOrder = -2;
-		group.add(paneX, paneY, paneZ);
+		paneZ.renderOrder = -2;
+		group.add(paneZ);
+		if (!hideWalls) {
+			const paneX = new THREE.Mesh(new THREE.PlaneGeometry(2 * HZ, 2 * HY), paneMaterial);
+			paneX.rotation.y = Math.PI / 2;
+			paneX.position.x = xFar;
+			const paneY = new THREE.Mesh(new THREE.PlaneGeometry(2 * HX, 2 * HZ), paneMaterial);
+			paneY.rotation.x = Math.PI / 2;
+			paneY.position.y = yFar;
+			paneX.renderOrder = paneY.renderOrder = -2;
+			group.add(paneX, paneY);
+		}
 
 		const xTicksW = xTicks.map(t => sxW(t));
 		const yTicksW = yTicks.map(t => syW(t));
@@ -298,12 +321,14 @@ function setupFigure(container: HTMLElement): void {
 		// (fond de la vallée sur le sol, bords du domaine sur les murs)
 		const eps = 0.0015;
 		const grid: number[] = [];
-		const gx = xFar + Math.sign(xFar) * eps;
-		for (const t of yTicksW) grid.push(gx, t, -HZ, gx, t, HZ);
-		for (const t of zTicksW) grid.push(gx, -HY, t, gx, HY, t);
-		const gy = yFar + Math.sign(yFar) * eps;
-		for (const t of xTicksW) grid.push(t, gy, -HZ, t, gy, HZ);
-		for (const t of zTicksW) grid.push(-HX, gy, t, HX, gy, t);
+		if (!hideWalls) {
+			const gx = xFar + Math.sign(xFar) * eps;
+			for (const t of yTicksW) grid.push(gx, t, -HZ, gx, t, HZ);
+			for (const t of zTicksW) grid.push(gx, -HY, t, gx, HY, t);
+			const gy = yFar + Math.sign(yFar) * eps;
+			for (const t of xTicksW) grid.push(t, gy, -HZ, t, gy, HZ);
+			for (const t of zTicksW) grid.push(-HX, gy, t, HX, gy, t);
+		}
 		const gz = zFar + Math.sign(zFar) * eps;
 		for (const t of xTicksW) grid.push(t, -HY, gz, t, HY, gz);
 		for (const t of yTicksW) grid.push(-HX, t, gz, HX, t, gz);
@@ -311,13 +336,16 @@ function setupFigure(container: HTMLElement): void {
 		gridLines.renderOrder = -1;
 		group.add(gridLines);
 
-		// Arêtes des trois panneaux
+		// Arêtes des panneaux
 		const edges: number[] = [];
+		if (!hideWalls) {
+			edges.push(
+				xFar, -HY, -HZ, xFar, HY, -HZ, xFar, HY, -HZ, xFar, HY, HZ,
+				xFar, HY, HZ, xFar, -HY, HZ, xFar, -HY, HZ, xFar, -HY, -HZ,
+				-HX, yFar, -HZ, HX, yFar, -HZ, HX, yFar, -HZ, HX, yFar, HZ,
+				HX, yFar, HZ, -HX, yFar, HZ, -HX, yFar, HZ, -HX, yFar, -HZ);
+		}
 		edges.push(
-			xFar, -HY, -HZ, xFar, HY, -HZ, xFar, HY, -HZ, xFar, HY, HZ,
-			xFar, HY, HZ, xFar, -HY, HZ, xFar, -HY, HZ, xFar, -HY, -HZ,
-			-HX, yFar, -HZ, HX, yFar, -HZ, HX, yFar, -HZ, HX, yFar, HZ,
-			HX, yFar, HZ, -HX, yFar, HZ, -HX, yFar, HZ, -HX, yFar, -HZ,
 			-HX, -HY, zFar, HX, -HY, zFar, HX, -HY, zFar, HX, HY, zFar,
 			HX, HY, zFar, -HX, HY, zFar, -HX, HY, zFar, -HX, -HY, zFar);
 		const edgeLines = lineSegments(edges, EDGE_COLOR);
@@ -414,16 +442,20 @@ function setupFigure(container: HTMLElement): void {
 		const cornerA = new THREE.Vector3(xFar, -yFar, 0).project(camera);
 		const cornerB = new THREE.Vector3(-xFar, yFar, 0).project(camera);
 		const [ex, ey] = cornerA.x <= cornerB.x ? [xFar, -yFar] : [-xFar, yFar];
+		// Surface aplatie en carte 2D : les murs, qui encadreraient du vide,
+		// disparaissent (il ne reste que le sol et ses graduations x/y)
+		const hideWalls = flattenNow > 0.9;
 		// Au-delà de 75° d'élévation (vue plongeante), l'axe z est vu par la
-		// tranche : ses étiquettes sont masquées
+		// tranche : ses étiquettes sont masquées — de même sans murs
 		const offset = camera.position.clone().sub(controls.target);
-		const hideZLabels = Math.abs(offset.z) / offset.length() > Math.sin(75 * Math.PI / 180);
-		const key = `${xFar} ${yFar} ${zFar} ${ex} ${ey} ${hideZLabels}`;
+		const hideZLabels = hideWalls ||
+			Math.abs(offset.z) / offset.length() > Math.sin(75 * Math.PI / 180);
+		const key = `${xFar} ${yFar} ${zFar} ${ex} ${ey} ${hideZLabels} ${hideWalls}`;
 		if (key === decorKey) return;
 		decorKey = key;
 		scene.remove(decor);
 		disposeGroup(decor);
-		decor = buildDecor(xFar, yFar, zFar, ex, ey, hideZLabels);
+		decor = buildDecor(xFar, yFar, zFar, ex, ey, hideZLabels, hideWalls);
 		scene.add(decor);
 	}
 
@@ -524,12 +556,15 @@ function setupFigure(container: HTMLElement): void {
 			: fromElev;
 		const toDist = view.zoom !== undefined && view.zoom > 0
 			? BASE_DIST / view.zoom : fromDist;
+		const fromFlatten = flattenNow;
+		const toFlatten = THREE.MathUtils.clamp(view.flatten ?? 0, 0, 1);
 		let dAzim = (toAzim - fromAzim) % (2 * Math.PI);
 		if (dAzim > Math.PI) dAzim -= 2 * Math.PI;
 		if (dAzim < -Math.PI) dAzim += 2 * Math.PI;
 
 		const place = (u: number): void => {
 			const e = u < 0.5 ? 4 * u ** 3 : 1 - (2 - 2 * u) ** 3 / 2; // easeInOutCubic
+			applyFlatten(fromFlatten + (toFlatten - fromFlatten) * e);
 			const azim = fromAzim + dAzim * e;
 			const elev = fromElev + (toElev - fromElev) * e;
 			const d = fromDist + (toDist - fromDist) * e;
