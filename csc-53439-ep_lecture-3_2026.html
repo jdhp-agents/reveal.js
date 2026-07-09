@@ -1,0 +1,2750 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>CSC 53439 EP 2026 - Advanced RL Topics</title>
+
+		<meta name="description" content="Advanced RL Topics">
+		<meta name="author" content="Jérémie Decock">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+
+		<!-- Shared styling/behavior of the personal decks (draft highlighting,
+		     speaker-notes language filtering .fr-notes/.en-notes) -->
+		<link rel="stylesheet" href="jdhp.css">
+	</head>
+
+	<!--
+	# Hiearchical RL (~20 slides)
+
+	- [ ] Motivation and applications (~5 slides)
+	- Qu'est-ce que la HRL ? Pourquoi faire de la HRL ?
+	- Intuitive example
+	- Applications
+	- Advantages
+	- Drawbacks
+	- [ ] The Option Framework (~5 slides)
+	- [ ] Finding Subgoals and learning subpolicies
+	- [ ] Algorithmes
+	- [ ] Feudal Networks (~1 slide)
+	- [ ] Option-Critic (~1 slide)
+	- [ ] Hierarchical Actor-Critic (HAC) (~7 slides)
+
+	# RL and LLMs (~30 slides)
+
+	## Overview (1 slide)
+
+	- ***Pre-training***: self-supervised pretraining
+	- ***Instruction** Fine-Tuning* or Supervised fine-tuning (SFT): supervised fine-tuning
+	- Preference-based fine-tuning:
+	- RLHF (PPO) and DPO
+	- Reasoning-based fine-tuning:
+	- RLVR (GRPO and variants)
+
+	## RLHF (~15 slides)
+
+	- Motivation: Reasoning-based fine-tuning
+	- Context: InstructGPT and ChatGPT
+	- InstructGPT : https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf
+	- What is RLHF? (~10 slides)
+	- papers :
+		- https://openai.com/index/learning-from-human-preferences/
+		- https://openai.com/fr-FR/index/instruction-following/
+		- https://arxiv.org/abs/1706.03741
+		- https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf
+	- Learn from feedback: a generalization of the RL framework (1 slide)
+	- A quick intro to Reward model (RM) and IRL (see next week) (1 slide)
+	- Preference-based RL (~3 slides)
+	- RLHF (~5 slides)
+	- Application to GPT: RLHF + IRL + PbRL (~2 slides)
+	- Advatages and drawbacks
+	- Main alternatives: DPO (not RL-based by the way), RBRs
+
+	## RLVR (~15 slides)
+
+	- Motivation: Reasoning-based fine-tuning
+	- Context: the DeepSeek-R1, DeepSeekMath, OpenR1, Tülu3, ... models
+	- What is RLVR?
+	- GRPO algorithm (~10 slides)
+	- Similarities and differences with PPO
+		- GRPO paper (DeepSeekMath): https://arxiv.org/pdf/2402.03300
+		- DeepSeek-R1 paper: https://arxiv.org/pdf/2501.12948
+		- Tülu3 paper: https://arxiv.org/pdf/2411.15124
+	- GRPO variants
+	- Alternatives
+	- https://arxiv.org/pdf/2509.25454 (?)
+	- ...
+	- Conclusion (*)
+
+	## Practical opensource implementations (~2-3 slides)
+
+	- HuggingFace TRL
+	- https://huggingface.co/docs/trl/en/index
+	- Examples
+	- Experimentation on HuggingFace' "SmolLMs"
+
+	## Other subjects (?)
+
+	- https://icml.cc/virtual/2024/oral/35490
+	- ttps://neurips.cc/virtual/2024/oral/97985
+	- https://neurips.cc/virtual/2024/tutorial/99525
+	- https://neurips.cc/virtual/2024/poster/94945
+	- https://iclr.cc/virtual/2025/oral/31781
+	- https://icml.cc/virtual/2024/oral/35451
+	- ...
+
+
+	Not related but interesting :
+	- https://iclr.cc/virtual/2025/oral/31895
+	-->
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+				<!-- ------------------------------------------------------ -->
+				<!-- TITLE AND OUTLINE ------------------------------------ -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- Slide: Titre -->
+				<section>
+					<h1 style="font-size: 1.4em;">CSC 53439 EP</h1>
+					<h2 style="font-size: 0.8em;">Lecture 3 - Advanced RL Topics</h2>
+					<br>
+					<br>
+					<p style="font-size: 1em;"><small><a href="https://www.jdhp.org/">Jérémie Decock</a></small></p>
+					<p style="font-size: 1em;"><small>October 9, 2026</small></p>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+Hello everyone, and welcome to this third lecture.
+
+Today, we are going to look at two <b style="color:red">advanced topics</b> in reinforcement learning.
+
+Both are active research domains.
+						</div>
+					</aside>
+				</section>
+
+				<!-- Slide: Outline / links to the two dedicated decks -->
+				<section>
+					<h3>Outline</h3>
+
+					<ul>
+						<li><a href="#/part1-hierarchical">Hierarchical Reinforcement Learning</a></li>
+						<li><a href="#/part2-llm">Reinforcement Learning and LLMs</a></li>
+					</ul>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+So, here is the plan for today.
+
+We will cover two parts.
+
+<span style="color:blue">The first one, is about <b>hierarchical ("hi-rar-ki-cal") reinforcement learning</b>.</span>
+We will see how an agent can solve long and complex tasks, by breaking them into smaller subtasks.
+
+<span style="color:blue">The second part, is about <b>reinforcement learning and LLMs</b>.</span>
+Here we will see how RL is used to train large language models, like ChatGPT or DeepSeek-R1.
+
+As usual, my goal is to give you an <b style="color:red">overview</b>.
+For each method, I'll only focus on the <b style="color:red">main idea</b>.
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+				<!-- ------------------------------------------------------ -->
+				<!-- HIERARCHICAL REINFORCEMENT LEARNING ------------------ -->
+				<!-- ------------------------------------------------------ -->
+				<!-- #region -->
+
+				<section id="part1-hierarchical">
+					<h3>Part 1</h3>
+					<h4>Hierarchical Reinforcement Learning</h4>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+So, let's start with the first part: <b style="color:red">hierarchical RL</b>.
+
+Until now, our agents have picked one low-level action per time step.
+Humans, by contrast, plan over <b style="color:red">long horizons</b>.
+So how can agents do the same?
+						</div>
+					</aside>
+				</section>
+
+<!-- @preview /rl_hierarchical.html -->
+<!-- #region -->
+
+<!-- Slide: Intuitive Example -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>Introduction</h4>
+
+	<p style="font-size: 0.8em;">Human analogy: planning a trip vs. walking to the station</p>
+	
+	<img width="50%" src="assets/rl_hierarchical/trip.png" />
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Let's start with something we all do every day, without even thinking about it.
+
+As humans, we are good at <b style="color:red">breaking down a complex task</b> into smaller subtasks.
+We solve these subtasks one by one, and together, they solve the original problem.
+And what's interesting is that these subtasks live at <b style="color:red">different levels of abstraction</b>.
+
+For example, look at this picture: here we plan a trip from your home to a hotel, in a distant city.
+
+At the <b style="color:red">highest level</b>, you decide which flight to take, and which airport to land at.
+Then come the <b style="color:red">mid-level</b> decisions: from the airport, will you take the train or the bus?
+After that, there are <b style="color:red">lower-level</b> decisions, like taking a taxi for the last part of the trip.
+And at the very bottom, there are your steps and your body movements.
+
+A classical RL agent, by contrast, has none of this structure.
+It would plan the whole trip <b style="color:red">one footstep at a time</b>.
+And over millions of time steps, that's hopeless.
+
+Structuring decisions on several levels is exactly what <b style="color:red">hierarchical reinforcement learning</b> tries to capture.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Intuitive Example -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>Introduction</h4>
+
+	<img width="50%" src="assets/rl_hierarchical/robot.png" />
+
+	<!-- Placeholder: insert a diagram showing hierarchical decision-making (high-level vs. low-level actions).
+			Objective: illustrate how HRL decomposes tasks. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here is the same idea, this time for a robot.
+
+At the top, we have the <b style="color:red">high level</b>.
+It makes abstract decisions, like "go to the kitchen",
+so it doesn't care about motors or wheels.
+
+At the bottom, we have the <b style="color:red">low level</b>.
+It deals with the details on the way, like "avoid this obstacle".
+But it doesn't need to know why the robot goes to the kitchen.
+
+This way, each level solves a <b style="color:red">simpler problem</b>.
+The high level thinks in rooms, over a long time,
+while the low level thinks in small movements, over a short time.
+
+And that's the core idea of a <b style="color:red">hierarchy</b>: different levels work at different <b style="color:red">time scales</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide 2: What is Hierarchical RL? -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>What and Why?</h4>
+	<ul style="font-size: 0.8em;">
+		<li><b>Decompose complex tasks</b> into simpler subtasks</li>
+		<li>Learn policies at <b>multiple levels of abstraction</b></li>
+	</ul>
+
+	<p style="font-size: 0.8em;">Motivation: scalability, efficiency, transferability</p>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, what exactly is hierarchical RL?
+This slide sums it up in three ideas.
+
+First, we <b style="color:red">decompose</b> a complex task into simpler <b style="color:red">subtasks</b>.
+This works because many sequential decision problems have some structure, and we can exploit it.
+
+Second, we learn policies at <b style="color:red">multiple levels of abstraction</b>.
+A high-level policy chooses which subtask to do,
+and low-level policies solve each subtask with primitive actions.
+
+So, there are mainly three reasons to do this:
+The first one is <b style="color:red">scalability</b>: we can solve longer and harder tasks.
+The second one is <b style="color:red">efficiency</b>: we need fewer samples to learn.
+And the third one is <b style="color:red">transferability</b>: a skill learned for one task can be reused in another one.
+		</div>
+		<!-- TODO: p.263 -->
+	</aside>
+</section>
+
+<!-- Slide: Applications -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>Applications</h4>
+	<p style="font-size:0.8em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 3em;">Some problems have natural hierarchical structure</p>
+	<ul style="font-size: 0.8em; padding-left: 1em; display: block; margin-left: 3em;">
+		<li><b>Navigation tasks</b>: route planning + motor control</li>
+		<li><b>Multi-agent systems</b>: hierarchical team organization</li>
+		<li><b>Robotics</b>: task planning + low-level control</li>
+		<li><b>Game playing</b>: strategy + tactical execution</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			La HRL est utilisée en robotique, jeux, NLP, véhicules autonomes, etc.
+		</div>
+		<div class="en-notes">
+So, where is it useful in practice?
+
+Well, <span style="color:blue">some problems have <b>natural hierarchical structure</b>.</span>
+And when this structure is clear, it's easy to exploit.
+
+- <b style="color:red">Navigation</b> is a good example: we plan the route at a high level, and we control the motors at a low level.
+- In <b style="color:red">multi-agent systems</b>, agents can be organized in teams, with leaders and members, like in a company.
+- In <b style="color:red">robotics</b>, we first plan the task, for example "pick up the cup, then put it in the sink". Then a low-level controller moves the arm.
+- Finally, in <b style="color:red">games</b>, a strategy game is a good example. The player chooses a global strategy, and then executes it with many tactical actions.
+
+On other problems, however, the structure is less obvious.
+And then, finding the right hierarchy is much harder.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide 4: Advantages -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>Advantages</h4>
+	<div style="display: flex; align-items: center; justify-content: center;">
+		<ul style="font-size: 0.8em;">
+			<li>Improved sample efficiency</li>
+			<li>Better exploration</li>
+			<li>Transfer and reuse of subpolicies</li>
+			<li>Scalability to complex tasks</li>
+		</ul>
+
+		<img src="assets/rl_hierarchical/starcraft.png" style="width: 40%; margin-left: 1em;" />
+	</div>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, what do we gain with a hierarchy?
+
+The first gain is <b style="color:blue">sample efficiency</b>.
+This is because the high level makes far fewer decisions per episode.
+So its <b style="color:red">effective horizon</b> is much shorter, and credit assignment becomes easier.
+On top of that, the subpolicies are reused again and again.
+
+The second gain is <b style="color:blue">better exploration</b>.
+With random primitive actions, the agent mostly stays near its starting point.
+But with random subgoals, it travels far, to really new places.
+
+The third gain is <b style="color:blue">transfer</b>: a skill like "go through a door" can be reused in many tasks.
+
+Finally, a hierarchy brings <b style="color:blue">scalability</b>: we can tackle much larger problems.
+For instance, here in StarCraft, there is a huge number of possible actions, and games can be very long.
+So a <b style="color:red">hierarchy</b> of strategy, tactics and unit control is a natural way to handle it.
+		</div>
+		<!-- TODO: p.265 -->
+	</aside>
+</section>
+
+<!-- Slide: Drawbacks -->
+<!-- <section class="draft">
+	<h3>Hierarchical RL</h3>
+	<h4>Disadvantages</h4>
+	<ul>
+		<li>Works better when there is <em>domain knowledge</em> available about the structure of the problem</li>
+		<li>Increased algorithmic complexity</li>
+		<li>Subgoal discovery is non-trivial</li>
+		<li>Can miss the global optimum</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+TODO: p.266
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide:  -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>Challenges</h4>
+	<ul style="font-size: 0.8em; padding-left: 1em; display: block; margin-left: 3em;">
+		<li>Find <b>subgoals</b></li>
+		<li>Find a <b>meta-policy</b> over these subgoals</li>
+		<li>Find <b>subpolicies</b> for these subgoals</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So Hierarchical RL is powerful, but there is a catch.
+To build a hierarchy, we have to answer <b style="color:red">three questions</b>.
+
+The first question is: what are the good <b style="color:blue">subgoals</b>?
+In a building, for example, the doors are natural subgoals.
+
+The second question is: how do we choose between these subgoals?
+This is the role of the <b style="color:blue">meta-policy</b>, which is a policy over subgoals.
+
+And the third question is: how do we reach each subgoal?
+This is the job of the <b style="color:blue">subpolicies</b>.
+
+Each of these three problems is hard on its own.
+And ideally, we would like to <b style="color:red">learn each of them from experience</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: title (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<p style="font-size: 0.8em;">
+		Sutton, R. S., Precup, D., & Singh, S. (1999).
+		<a href="https://www.sciencedirect.com/science/article/pii/S0004370299000521" target="_blank">Between MDPs and semi-MDPs: A framework for temporal abstraction in reinforcement learning.</a>
+		<em>Artificial Intelligence, 112</em>(1-2), 181-211.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, how can we describe a hierarchy formally?
+For that, we need a framework where actions can <b style="color:red">last for different durations</b>.
+
+The most famous one is the <b style="color:red">options framework</b>.
+It was introduced by Sutton and collegues in 1999 <span style="color:gray">(nineteen ninety-nine)</span>.
+
+The idea is to add <b style="color:red">temporally extended actions</b>, called <b style="color:red">options</b>, to the standard MDP.
+
+An option is a subpolicy, with its own <b style="color:red">start and stop conditions</b>.
+This way, the agent can act at <b style="color:red">different time scales</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<h4>Motivation: Temporal Abstraction in RL</h4>
+
+	<ul style="font-size: 0.7em;">
+		<li>Standard MDPs only support <b>primitive actions</b> at each timestep.</li>
+		<li>Need: a way to represent and learn <b>temporally extended behaviors</b>.</li>
+		<li>Goal: extend RL framework minimally to include such <b>temporal abstractions</b>.</li>
+	</ul>
+
+	<p style="font-size: 0.7em;">
+		👉 Solution:
+		Extend standard MDPs to support <b>temporally extended actions</b> called <b>options</b>
+	</p>
+
+	<!-- <img width="30%" src="assets/rl_hierarchical/mdp-smdp.png" />
+	<figcaption style="font-size: 0.4em; text-align: center; margin-bottom: 3em;">
+		Source: Hutsebaut-Buysse M, Mets K, Latré S. <a href="https://www.sciencedirect.com/science/article/pii/S0004370299000521" target="_blank">Hierarchical Reinforcement Learning: A Survey and Open Research Challenges. Machine Learning and Knowledge Extraction.</a>,  2022; 4(1):172-221. https://doi.org/10.3390/make4010009.
+	</figcaption> -->
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So we need it because in a standard MDP, the agent only has <b style="color:red">primitive actions</b>.
+Each action lasts one time step, like moving one cell, or applying one torque.
+
+But we would like to represent <b style="color:red">temporally extended behaviors</b>,
+like "walk to the door", which takes many time steps.
+
+So the goal is to add these <b style="color:red">temporal abstractions</b> to the RL framework.
+And we want to do it in a <b style="color:red">minimal way</b>, so that we can keep our usual tools, like Q-learning.
+
+The solution is to extend the MDP with temporally extended actions, called <b style="color:red">options</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<h4>What is an Option?</h4>
+
+	<ul style="font-size: 0.65em;">
+		<li>Some states are designated as <b>subgoals</b> (e.g., doorways)</li>
+		<li>An <b>option</b> (macro-action) is a subpolicy that drives the agent towards a subgoal</li>
+		<li>Where an option is available, the agent can choose it instead of a <b>primitive action</b></li>
+		<li>Executing an option means following its subpolicy until it terminates (e.g., at the subgoal)</li>
+	</ul>
+
+	<img width="40%" src="assets/rl_hierarchical/mdp-smdp2.png" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+The idea of options is quite simple.
+
+First, some states are designated as <b style="color:red">subgoals</b>,
+for example the doorways between rooms.
+
+Then, an <b style="color:red">option</b>, or macro-action, is a subpolicy that drives the agent to one of these subgoals.
+
+You can see the difference <span style="color:blue">on the figure</span>.
+- On the left, with <b style="color:red">primitive actions</b>, the agent moves up, down, left or right, one cell at a time.
+- On the right, with an option, one single decision takes the agent all the way to the gray cell.
+
+<span style="color:blue">Now, where an option is available, the agent can choose it, instead of a primitive action.</span>
+And <span style="color:blue">executing an option means <b style="color:red">following its subpolicy</b> until it terminates,</span>
+usually at the subgoal.
+
+Note that an option is <b style="color:red">not a fixed sequence</b> of actions.
+In fact, the subpolicy looks at the current state at each step, so it can react to what happens.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<h4>What is an Option?</h4>
+
+	<p style="font-size: 0.7em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		An option $\omega$ is defined by a triple:
+		$$\omega = \langle I_{\omega}, \pi_{\omega}, \beta_{\omega} \rangle$$
+	</p>
+	<table style="font-size: 0.6em; border-collapse: collapse; width: 100%;">
+		<tr>
+			<td style="vertical-align: top; border: none; padding-right: 1em;">$I_{\omega}$</td>
+			<td style="vertical-align: top; border: none;">
+				The <b>initiation set</b> $I_{\omega} \subseteq \mathcal{S}$: the states where the option can be chosen.
+			</td>
+		</tr>
+		<tr>
+			<td style="vertical-align: top; border: none; padding-right: 1em;">$\pi_{\omega}(a|s)$</td>
+			<td style="vertical-align: top; border: none;">
+				The <b>subpolicy</b> $\pi_{\omega} : \mathcal{S} \times \mathcal{A} \rightarrow [0, 1]$ controls which primitive actions are taken while the option runs (here a stochastic policy).
+			</td>
+		</tr>
+		<tr>
+			<td style="vertical-align: top; border: none; padding-right: 1em;">$\beta_{\omega}(s)$</td>
+			<td style="vertical-align: top; border: none;">
+				The <b>termination condition</b> $\beta_{\omega} : \mathcal{S} \rightarrow [0, 1]$ gives the probability that $\omega$ terminates in $s$.
+			</td>
+		</tr>
+	</table>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+More formally, an option, omega, is defined by <b style="color:blue">three elements</b>.
+
+The first one is the <b style="color:red">initiation set</b>, I omega.
+It is the set of states where the option can be started,
+for example all the cells of one room.
+
+The second one is the <b style="color:red">subpolicy</b>, pi omega.
+It chooses the primitive actions while the option is running.
+Here, it's a stochastic policy, so it gives a probability for each action, in each state.
+
+The third one is the <b style="color:red">termination condition</b>, beta omega.
+For each state, it gives the probability that the option stops there.
+For example, beta can be one at the doorway, and zero everywhere else in the room.
+
+So, in short, an option tells the agent <b style="color:red">where to start</b>, <b style="color:red">how to act</b>, and <b style="color:red">when to stop</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<br>
+	<p>
+		The set of all options is denoted by $\Omega$.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Now, an agent usually has <b style="color:red">several options</b>,
+for example one option for each doorway.
+
+We call the set of all options <b style="color:red">capital omega</b>.
+
+Note that a primitive action can also be seen as a special option:
+an option that <b style="color:red">lasts exactly one step</b>.
+So the agent can mix options and primitive actions <b style="color:red">in the same framework</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<p style="font-size: 0.7em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		There are two kinds of policies in the options framework:
+	</p>
+	<ul style="font-size: 0.7em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>The <b>meta-policy</b> over options $\pi_{\Omega}(\omega|s)$, which, each time the current option terminates, selects the next option to execute among those whose initiation set contains the current state.</li>
+		<li>The <b>subpolicy</b> of each option $\pi_{\omega}(a|s)$, which defines the behavior while the option is being executed.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<span style="color:blue">So, there are <b>two kinds of policies</b> in the options framework.</span>
+
+At the top, there is the <b style="color:blue">meta-policy</b>, pi capital omega.
+It is a policy over options:
+each time the current option terminates, it selects the next option to run.
+But it can only choose options whose <b style="color:red">initiation set</b> contains the current state.
+
+At the bottom, there is the <b style="color:blue">subpolicy</b> of each option, pi omega.
+It chooses the primitive actions while the option is running.
+
+In other words, the meta-policy decides <b style="color:red">what to do</b>,
+and the subpolicy decides <b style="color:red">how to do it</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<br>
+	<p style="font-size: 0.8em;">
+		The <b>subpolicies</b> $\pi_{\omega}$ act like macros: they take the agent from a state of $I_{\omega}$ to a state where the option terminates (according to $\beta_{\omega}$).
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+You can see the subpolicies as <b style="color:red">macros</b>.
+It's like a macro in a text editor: you run one command, and many steps are executed.
+
+Here, a subpolicy starts in a state of its <b style="color:red">initiation set</b>.
+Then it brings the agent to a state where the option <b style="color:red">terminates</b>, according to beta.
+
+For the meta-policy, this whole trip counts as <b style="color:red">one single decision</b>.
+As a result, the top level makes <b style="color:red">far fewer decisions</b>, and each one is more meaningful.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+
+	<p style="font-size: 0.8em;">
+		"Temporal abstraction mix actions of different granularities, short and long, primitive actions and subpolicies.
+		They allow traveling from $I$ to $\beta$ without additional learning, using a previously provided or learned subpolicy."
+		(Plaat, 2022)
+	</p>
+
+	<img width="25%" src="assets/rl_hierarchical/plaat_book.webp" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here is a nice summary, from <span style="color:blue">this book</span> on deep reinforcement learning.
+
+It says that <b style="color:red">temporal abstraction</b> mixes actions of <b style="color:red">different granularities</b>,
+short and long,
+primitive actions and subpolicies.
+
+In other words, a subpolicy lets the agent go from I to beta,
+that is, from a start state to a stop state.
+
+And this needs <b style="color:red">no additional learning</b>,
+because it simply <b style="color:red">reuses</b> a subpolicy that was <b style="color:red">given, or learned before</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<h4>The rooms example</h4>
+
+	<img width="45%" src="assets/rl_hierarchical/options.png" />
+	<ul style="font-size: 0.65em;">
+		<li>A gridworld environment with stochastic cell-to-cell actions and room-to-room hallway options.</li>
+		<li>Two of the hallway options are suggested by the arrows labeled o1 and o2.</li>
+		<li>The labels G1 and G2 indicate two locations used as goals in the experiments of the paper.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here is the classic example from the options paper: the <b style="color:red">four rooms</b>.
+
+It is a gridworld with four rooms, connected by four <b style="color:red">hallways</b>.
+In this world, the agent has four primitive actions: up, down, left and right.
+But these actions are <b style="color:red">stochastic</b>: they fail one third of the time.
+
+The hallways are <b style="color:red">bottleneck states</b>, because you must go through them to change rooms.
+That's why they are natural <b style="color:red">subgoals</b>.
+
+So the authors define <b style="color:red">eight hallway options</b>: in each room, one option for each of its two hallways.
+<span style="color:blue">Two of the hallway options are suggested by the arrows labeled o1 and o2.</span>
+Option o1 takes the agent from anywhere in the bottom-left room to the hallway leading up.
+And option o2 takes it to the other hallway, the one leading to the bottom-right room.
+
+Finally, <span style="color:blue">the labels G1 and G2 indicate two locations used as goals in the experiments of the paper.</span>
+With these options, the agent can plan <b style="color:red">room by room</b>, instead of cell by cell.
+As a result, planning and learning become much <b style="color:red">faster</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Finding Subgoals and learning subpolicies (subtitle) -->
+<section>
+	<h3 style="font-size: 1.05em;">Finding subgoals and learning subpolicies</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<p style="font-size: 0.8em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		In the original options framework, these elements are given (designed by hand):
+	</p>
+	<ul style="font-size: 0.8em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Subgoals</li>
+		<li>Subpolicies (the options)</li>
+	</ul>
+	<p style="font-size: 0.8em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		Only the meta-policy is learned, with standard RL methods (e.g., SMDP Q-learning).
+	</p>
+	<p style="font-size: 0.8em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		But, in practice, subgoals and subpolicies often need to be learned too.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+In the original options framework, the structure of the problem is <b style="color:red">given</b>:
+the <b style="color:red">subgoals</b> and the <b style="color:red">subpolicies</b> are designed by hand.
+
+<span style="color:blue">So only the <b style="color:red">meta-policy</b> is learned.</span>
+For that, we can use standard RL methods,
+<span style="color:gray">like SMDP Q-learning.
+SMDP stands for semi-Markov decision process.
+It is just Q-learning, where an option is treated like an action that lasts several time steps.
+The only change is in the update:
+we use the rewards collected during the option, and we discount by gamma to the power k, where k is its duration.</span>
+
+<span style="color:blue">But, in practice, subgoals and subpolicies often need to be <b style="color:red">learned too</b>,</span>
+because, in real applications, nobody gives them to us.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Algorithms (subtitle) -->
+<section>
+	<h3 style="font-size: 1.05em;">Finding subgoals and learning subpolicies</h3>
+
+	<p style="font-size: 0.85em;">
+		👉 We need algorithms that can <b>find subgoals</b> and <b>learn subpolicies</b>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<span style="color:blue">So, we need algorithms that can <b style="color:red">find subgoals</b> and <b style="color:red">learn subpolicies</b>.</span>
+
+Ideally, they should do it automatically, from experience only.
+
+Let's look at some of them.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Algorithms (subtitle) -->
+<section>
+	<h3>Some algorithms</h3>
+	<h4>For large or continuous state spaces</h4>
+
+	<ul style="font-size: 0.8em;">
+		<li>Feudal Networks</li>
+		<li>Option-Critic</li>
+		<li>HIRO</li>
+		<li>Hierarchical Actor-Critic (HAC)</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<span style="color:blue">Here</span> are four important hierarchical RL algorithms.
+They all use <b style="color:red">deep neural networks</b>,
+so they work in <b style="color:red">large or continuous state spaces</b>, like images or robot sensors.
+
+The first two, <b style="color:red">Feudal Networks</b> and <b style="color:red">Option-Critic</b> were tested with discrete actions, for example on Atari games,
+while the last two, <b style="color:red">HIRO</b> and <b style="color:red">HAC</b> also handle <b style="color:red">continuous actions</b>, for robot control.
+
+I'll give a very short overview of each one.
+But I'll spend a bit more time on <b style="color:red">Hierarchical Actor-Critic</b>,
+since it is one of the most practical and effective methods.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Feudal Networks (subtitle) -->
+<section>
+	<h3>Feudal Networks</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Key Idea:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Inspired by <em>Feudal RL</em> (<a href="https://proceedings.neurips.cc/paper/1992/file/d14220ee66aeec73c49038385428ec4c-Paper.pdf" target="_blank">Dayan &amp; Hinton, 1992</a>): a <b>Manager–Worker hierarchy</b>.</li>
+		<li><b>Manager</b> sets abstract goals in a latent space.</li>
+		<li><b>Worker</b> executes primitive actions conditioned on these goals.</li>
+	</ul>
+
+	<!-- <p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Architecture (Vezhnevets et al., 2016 – FeUdal Networks)</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li><b>Manager</b>:
+			<ul>
+				<li>Receives state representation.</li>
+				<li>Outputs a <em>goal vector</em> in latent space (directional embedding).</li>
+				<li>Trained with a long-term extrinsic reward.</li>
+			</ul>
+		</li>
+		<li><b>Worker</b>:
+			<ul>
+				<li>Receives current state and goal vector.</li>
+				<li>Outputs primitive action.</li>
+				<li>Trained with <em>intrinsic reward</em>: cosine similarity between achieved state-change and Manager’s goal vector.</li>
+			</ul>
+		</li>
+	</ul> -->
+
+	<!-- <p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Training Signals</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Manager learns to propose meaningful abstract goals (long horizon).</li>
+		<li>Worker learns to follow goals locally (short horizon).</li>
+		<li>End-to-end differentiable; intrinsic reward provides stable credit assignment.</li>
+	</ul> -->
+
+	<!-- <p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Advantages</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Decomposes long-term tasks into subgoals.</li>
+		<li>Encourages exploration via high-level goals.</li>
+		<li>Mitigates vanishing reward signal in sparse-reward environments.</li>
+	</ul> -->
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Tested on (<a href="https://proceedings.mlr.press/v70/vezhnevets17a/vezhnevets17a.pdf" target="_blank">Vezhnevets et al., 2017</a>):</b> Atari games, DeepMind Lab (3D)</p>
+	<!-- <ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Atari games (sparse reward, long-term credit assignment).</li>
+		<li>Continuous control tasks.</li>
+	</ul> -->
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Achievements:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Learned effective <b>temporal abstractions</b> (macro-actions).</li>
+		<li>Showed <b>faster learning</b> and better <b>exploration</b> on hard sparse-reward environments (e.g., Montezuma's Revenge) compared to a flat deep RL baseline (LSTM agent trained with A3C).</li>
+		<li>Demonstrated that latent goal vectors can guide behavior without explicit subgoal supervision.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Let's start with <b style="color:red">Feudal Networks</b>.
+The idea comes from <b style="color:red">Feudal RL</b>, proposed by Dayan and Hinton in 1992.
+
+Here a <b style="color:red">Manager</b> gives orders to a <b style="color:red">Worker</b>.
+
+The Manager works at a slow time scale.
+It sets <b style="color:red">abstract goals</b>, as directions in a <b style="color:red">learned latent space</b>.
+The Worker, on the other hand, acts at every time step.
+It chooses primitive actions to follow the Manager's current goal,
+and it gets an intrinsic reward when the state moves in the direction asked by the Manager.
+
+In 2017, DeepMind tested this on Atari games, and on DeepMind Lab, a 3D environment.
+The agent learned useful <b style="color:red">temporal abstractions</b>.
+It also learned faster than a flat baseline, an LSTM agent trained with A3C,
+especially on hard games with <b style="color:red">sparse rewards</b>, like Montezuma's Revenge.
+And nobody told it what the subgoals should be.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Feudal Networks (subtitle) -->
+<section>
+	<h3>Feudal Networks</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Position Today:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Popularized the <b>goal-setting HRL</b> paradigm in deep RL.</li>
+		<!-- <li>Sparked follow-ups (e.g., Option-Critic, HIRO, HAC, H-DQN).</li> -->
+		<li>However: rarely used in practice now
+			<ul>
+				<li>Instability in training.</li>
+				<li>Limited scalability to very complex tasks.</li>
+			</ul>
+		</li>
+		<li><b>Key historical impact</b>: introduced <em>goals in a learned latent space</em>, with Manager and Worker <b>trained separately</b> (no gradient between levels), still influential in modern HRL research.</li>
+	</ul>
+
+	<!-- <p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Limitations / Assumptions of Feudal Networks</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li><b>Goal Space Design</b>: Assumes that useful subgoals can be represented as directions in a learned latent space.</li>
+		<li><b>Two-Level Hierarchy Only</b>: Fixed Manager–Worker structure, not easily generalizable to deeper hierarchies.</li>
+		<li><b>Intrinsic Reward Shaping</b>: Relies on cosine similarity between state-changes and goals — assumes this aligns with extrinsic objectives.</li>
+		<li><b>Training Stability</b>: Hierarchical credit assignment is still difficult; Manager may propose unhelpful or inconsistent goals.</li>
+		<li><b>Generalization</b>: Success mostly shown on Atari and simple continuous control; scaling to more complex, real-world environments remains challenging.</li>
+	</ul> -->
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>References:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>
+			<a href="https://proceedings.neurips.cc/paper/1992/file/d14220ee66aeec73c49038385428ec4c-Paper.pdf" target="_blank">
+				Dayan, P., & Hinton, G. E. (1992). Feudal reinforcement learning. Advances in neural information processing systems, 5.
+			</a>
+		</li>
+		<li>
+			<a href="https://proceedings.mlr.press/v70/vezhnevets17a/vezhnevets17a.pdf" target="_blank">
+				Vezhnevets, A. S., Osindero, S., Schaul, T., Heess, N., Jaderberg, M., Silver, D., & Kavukcuoglu, K. (2017). FeUdal networks for hierarchical reinforcement learning. In International Conference on Machine Learning (pp. 3540-3549). PMLR.
+			</a>
+		</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, where does it stand today?
+Feudal Networks <b style="color:red">popularized the goal-setting paradigm</b> in deep hierarchical RL:
+one level sets goals, and the level below tries to reach them.
+
+However, it is <b style="color:red">rarely used in practice</b> now,
+because training is <b style="color:red">unstable</b>, and it doesn't scale well to very complex tasks.
+
+Its main historical impact is the idea of <b style="color:red">goals in a learned latent space</b>.
+Also, the Manager and the Worker are <b style="color:red">trained separately</b>:
+no gradient flows from the Worker to the Manager, so each level has its own learning signal.
+This idea is still influential in modern hierarchical RL.
+
+The references are on the slide: Dayan and Hinton, 1992, and Vezhnevets and colleagues, 2017.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Option-Critic (subtitle) -->
+<section>
+	<h3>Option-Critic</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Key Idea:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>A <b>policy gradient</b> algorithm.</li>
+		<li>Learn <em>intra-option policies</em>, <em>termination functions</em>, and a <em>policy over options</em><!-- <b>end-to-end via gradient descent</b> -->.</li>
+		<!-- <li>The agent autonomously discovers useful temporal abstractions.</li> -->
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Tested on:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Four-room navigation domain</li>
+		<li>Atari 2600 (Arcade Learning Environment)</li>
+		<li>Pinball domain (continuous state space, discrete actions)</li>
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Achievements:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>First fully differentiable framework for learning options.</li>
+		<li>Demonstrated that options can <em>emerge naturally</em> without hand-crafted subgoals.</li>
+		<li>Faster recovery than flat RL baselines when the goal changes (four-room); outperformed DQN on 3 of the 4 Atari games tested.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Next comes <b style="color:red">Option-Critic</b>, by Bacon, Harb and Precup, in 2017.
+Doina Precup is also one of the authors of the options framework.
+Technically, Option-Critic is a <b style="color:red">policy gradient</b> method.
+
+Its key idea is to learn <b style="color:red">everything at once</b>:
+the intra-option policies, the <b style="color:red">termination functions</b>, and the policy over options.
+All of them are learned with policy gradients, <b style="color:red">end to end</b>,
+so there is no need to define subgoals by hand.
+
+It was tested on the four-rooms domain, on Atari games, and on Pinball,
+which has a continuous state space, with discrete actions.
+
+So, what were the results?
+It was the <b style="color:red">first fully differentiable framework</b> to learn options.
+It also showed that options can <b style="color:red">emerge naturally</b>, with no hand-crafted subgoals.
+In the four rooms, when the goal moves, it recovers faster than flat agents.
+And on Atari, it beat DQN on three of the four games they tested.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Option-Critic (subtitle) -->
+<section>
+	<h3>Option-Critic</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Position Today:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>A <b>foundational baseline</b> for HRL; many later works extend it (e.g., option discovery, regularization, diversity constraints).</li>
+		<li>Still conceptually influential, though modern state-of-the-art often favors <em>skill discovery methods</em> (e.g., DIAYN, VALOR) or <em>hierarchical RL with pretrained skills</em>.</li>
+	</ul>
+	
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>References:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>
+			<a href="https://ojs.aaai.org/index.php/AAAI/article/download/10916/10775" target="_blank">
+				Bacon, P. L., Harb, J., & Precup, D. (2017, February). The option-critic architecture. In Proceedings of the AAAI conference on artificial intelligence (Vol. 31, No. 1).
+			</a>
+		</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Today, Option-Critic is a <b style="color:red">foundational baseline</b> for hierarchical RL.
+<span style="color:blue">And many later works extend it,</span>
+for example to discover better options, to regularize them, or to make them more diverse.
+
+Why do we need to regularize them?
+Because, without constraints, the options tend to <b style="color:red">terminate at every step</b>, or one option ends up doing everything.
+In both cases, there is no real hierarchy anymore.
+
+Still, Option-Critic remains very influential as an idea.
+But modern methods often prefer <b style="color:red">skill discovery</b>, like DIAYN or VALOR.
+These methods first learn a set of diverse skills, <b style="color:red">without any reward</b>.
+Other methods use hierarchical RL with <b style="color:red">pretrained skills</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HIRO -->
+<section>
+	<h3>HIRO</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Key Idea:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<!-- <li>Two-level hierarchy:
+			<ul>
+				<li><b>High-level policy</b> outputs <em>goals</em> (desired relative changes in state).</li>
+				<li><b>Low-level policy</b> executes primitive actions to reach these goals.</li>
+			</ul>
+		</li> -->
+		<li>Off-policy correction: past high-level goals are <em>relabeled</em> with the goal that best explains the low-level actions actually taken, under the <em>current</em> low-level policy &rarr; both levels can be trained off-policy despite the changing low level &rarr; improves sample efficiency.</li>
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Tested on:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>MuJoCo Ant tasks (Ant Gather, Ant Maze, Ant Push, Ant Fall).</li>
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Achievements:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Demonstrated <em>significant gains in sample efficiency</em> vs. previous HRL methods (a flat agent makes almost no progress on these tasks).</li>
+		<li>Learned complex long-horizon behaviors (e.g., pushing a block out of the way to reach the goal).</li>
+		<!-- <li>Pioneered a <em>practical</em> method for hierarchical credit assignment.</li> -->
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Next comes <b style="color:red">HIRO</b>, by Nachum and colleagues, at Google, in 2018.
+The name stands for HIerarchical Reinforcement learning with Off-policy correction.
+It has two levels: a high-level policy proposes goals, and a low-level policy tries to reach them.
+
+Here, the challenge is to train both levels <b style="color:red">off-policy</b>, with a replay buffer, to be <b style="color:red">sample-efficient</b>.
+The problem is that the low-level policy keeps changing.
+So an old high-level transition is <b style="color:red">no longer valid</b>: the same goal would now produce different actions.
+
+To fix this, HIRO uses an <b style="color:red">off-policy correction</b>: it <b style="color:red">relabels</b> the old goals.
+Each old goal is replaced by the goal that best explains the low-level actions actually taken,
+<span style="color:blue">under the <b style="color:red">current</b> low-level policy.</span>
+
+It was tested on MuJoCo <b style="color:red">Ant</b> tasks: Ant Gather, Ant Maze, Ant Push and Ant Fall.
+There, it was much more sample-efficient than previous hierarchical methods.
+<span style="color:blue">By comparison, a flat agent makes almost no progress on these tasks.</span>
+Finally, HIRO learned complex <b style="color:red">long-horizon behaviors</b>, like pushing a block out of the way to reach the goal.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HIRO -->
+<section>
+	<h3>HIRO</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Position Today:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Considered a <b>foundational baseline</b> for HRL.</li>
+		<li>Later methods (e.g. HRAC, HIGL, HiPPO) refine stability, exploration, or scalability.</li>
+		<li>Still cited as one of the <em>most influential HRL approaches</em> for long-horizon continuous control.</li>
+	</ul>
+	
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>References:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>
+			<a href="https://proceedings.neurips.cc/paper/2018/file/e6384711491713d29bc63fc5eeb5ba4f-Paper.pdf" target="_blank">
+				Nachum, O., Gu, S. S., Lee, H., & Levine, S. (2018). Data-efficient hierarchical reinforcement learning. Advances in neural information processing systems, 31.
+			</a>
+		</li>
+		<li>
+			Related work: <a href="https://arxiv.org/pdf/1810.01257" target="_blank">
+				Nachum, O., Gu, S., Lee, H., & Levine, S. (2018). Near-optimal representation learning for hierarchical reinforcement learning. arXiv preprint arXiv:1810.01257.
+			</a>
+		</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Today, HIRO is considered a <b style="color:red">foundational baseline</b> for hierarchical RL.
+
+Since then, later methods have refined it, for example HRAC, HIGL, or HiPPO.
+They improve its <b style="color:red">stability</b>, its <b style="color:red">exploration</b>, or its <b style="color:red">scalability</b>.
+Even so, HIRO is still cited as one of the most influential approaches for <b style="color:red">long-horizon continuous control</b>.
+
+The main paper is on the slide: "Data-efficient hierarchical reinforcement learning", from 2018.
+The same authors also published a related paper, on how to learn a good <b style="color:red">representation</b> for the goals.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HAC -->
+<section>
+	<h3>Hierarchical Actor-Critic</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Key Idea:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Train multiple policy levels, each setting goals for the level below.</li>
+		<li>Use hindsight at every level: <em>hindsight action transitions</em> (the proposed subgoal is replaced by the state actually reached) to cope with non-stationarity, and <em>Hindsight Experience Replay</em> to cope with sparse rewards.</li>
+		<!-- <li>Enables learning of multi-level hierarchies <b>end-to-end</b>, without pre-defined subgoals.</li> -->
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Tested on:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>MuJoCo</li>
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Achievements:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Can learn more than two hierarchical levels.</li>
+		<li>Jointly learns multiple levels of policies in parallel (subproblems can be solved simultaneously).</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Finally, let's look at <b style="color:red">Hierarchical Actor-Critic</b>, or HAC, by Levy and colleagues.
+Its key idea is to train <b style="color:red">several levels</b> of policies,
+where each level sets <b style="color:red">goals</b> for the level below,
+and the lowest level outputs the actual actions.
+
+The difficulty is that all levels learn <b style="color:red">at the same time</b>.
+So, for a high level, the level below is non-stationary, because its behavior keeps changing.
+
+HAC solves this with <b style="color:red">hindsight</b>, at every level.
+The first trick is called <b style="color:red">hindsight action transitions</b>.
+When a high level proposed a subgoal, we replace it by the state that was <b style="color:red">actually reached</b>.
+This way, from the high level's point of view, the level below looks like an optimal and stable policy.
+The second trick is <b style="color:red">Hindsight Experience Replay</b>, against sparse rewards:
+a failed attempt becomes a success, for the goal that was actually reached.
+
+HAC was tested on MuJoCo tasks,
+and it can learn <b style="color:red">more than two levels</b>, all in parallel.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HAC -->
+<section>
+	<h3>Hierarchical Actor-Critic</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Position Today:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Pioneering work: first to learn 3-level hierarchies in parallel in tasks with continuous state and action spaces.</li>
+		<li>Inspired many follow-ups in hierarchical goal-conditioned RL.</li>
+		<!-- <li>Limitations: sample inefficiency, brittle in high-dimensional tasks; largely surpassed by recent methods (e.g., skill discovery, options with transformers, world models).</li> -->
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>References:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>
+			<a href="https://arxiv.org/pdf/1712.00948" target="_blank">
+				Levy, A., Konidaris, G., Platt, R., & Saenko, K. (2017). Learning multi-level hierarchies with hindsight. arXiv preprint arXiv:1712.00948
+			</a>
+		</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+HAC is a <b style="color:red">pioneering work</b>:
+it was the first method to learn <b style="color:red">three-level hierarchies</b> in parallel, in tasks with <b style="color:red">continuous</b> states and actions.
+
+It also inspired many follow-ups in <b style="color:red">hierarchical goal-conditioned RL</b>.
+Here, goal-conditioned means that the policy takes as input the state, and also the goal to reach.
+
+The reference is on the slide: Levy, Konidaris, Platt and Saenko.
+It was first posted on arXiv in 2017, and then published at ICLR in 2019.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HAC -->
+<section>
+	<h3>Hierarchical Actor-Critic</h3>
+
+	<img width="100%" src="assets/rl_hierarchical/hac.png" />
+	<figcaption style="font-size: 0.3em; text-align: center;">
+		Source: <a href="https://arxiv.org/pdf/1712.00948" target="_blank">Learning multi-level hierarchies with hindsight</a>, Levy et al., 2017.
+	</figcaption>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here is how it works, on a concrete task.
+An <b style="color:red">ant robot</b> must go through four rooms, to reach the <b style="color:red">yellow box</b>,
+which is the task goal.
+
+On the left, you can see the <b style="color:red">three levels</b>.
+Each policy takes as input the current state, that is, the joint angles theta and their velocities theta dot, plus a goal.
+The top level, pi two, gets the yellow goal, and outputs a subgoal: the <b style="color:red">green box</b>.
+Then the middle level, pi one, gets the green goal, and outputs a closer subgoal: the <b style="color:red">magenta box</b>.
+Finally, the bottom level, pi zero, gets the magenta goal, and outputs the <b style="color:red">joint torques</b>.
+
+This way, each level only has to solve a <b style="color:red">short-horizon</b> problem: reaching a goal that is close.
+And together, they solve a long task.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Video HAC -->
+<section>
+	<h3>Hierarchical Actor-Critic</h3>
+	<h4>Examples</h4>
+	<video src="assets/rl_hierarchical/hac.mp4" controls style="width: 80%; display: block; margin: 0 auto 1em auto;"></video>
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/pdf/1712.00948" target="_blank">Learning multi-level hierarchies with hindsight</a>, Levy et al., 2017.
+	</figcaption>
+	<!-- Levy, A., Konidaris, G., Platt, R., & Saenko, K. (2017). Learning multi-level hierarchies with hindsight. arXiv preprint arXiv:1712.00948. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Let's watch it in action, with the authors' video.
+
+<i style="color:gray">[play the video]</i>
+The colors are always the same in this video.
+Yellow is the <b style="color:red">task goal</b>,
+while green and magenta are the subgoals set by the higher levels.
+
+It starts with a grid world, then an inverted pendulum, and a robot arm.
+Each time, you first see a two-level agent, and then a three-level agent.
+
+Next comes <b style="color:red">Ant Reacher</b>, where the ant must reach the yellow box.
+At the end, look at the <b style="color:red">one-level agent</b>, the flat one: it barely moves.
+
+And finally, there is <b style="color:red">Ant Four Rooms</b>.
+Look at the subgoals: they are often placed near the <b style="color:red">doorways</b>.
+It's just like the hallway options of the four-rooms example, except that here, they are <b style="color:red">learned</b>, not given.
+And again, at the end, the flat agent does not reach the goal.
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->
+				<!-- endregion -->
+				<!-- ------------------------------------------------------ -->
+				<!-- REINFORCEMENT LEARNING AND LLMS ---------------------- -->
+				<!-- ------------------------------------------------------ -->
+				<!-- #region -->
+
+				<section id="part2-llm">
+					<h3>Part 2</h3>
+					<h4>Reinforcement Learning and LLMs</h4>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+OK, let's move on to the second part: <b style="color:red">RL and LLMs</b>.
+
+You all use chatbots like ChatGPT,
+and as you may know, <b style="color:red">reinforcement learning</b> is a key step in their training.
+
+So let's see where it comes in, and how it works.
+						</div>
+					</aside>
+				</section>
+
+<!-- @preview /rl_llm.html -->
+<!-- #region -->
+
+<!-- Slide: Overview (subtitle) -->
+<section data-transition="none">
+	<h3>Overview</h3>
+
+	<img width="80%" src="assets/rl_llm/llm_finetuning.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: Julia Turc
+	</figcaption>
+
+	<!-- Empty two-line text area, as on the next "Overview" slides (data-transition="none"):
+	     keeps the figure at exactly the same position from one slide to the next -->
+	<p style="font-size: 0.5em; height: 2.6em;"></p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, to begin with, here is the big picture of how a modern <b style="color:red">large language model</b> is trained.
+As you can see, there are several stages, from left to right.
+
+It starts with <b style="color:red">pre-training</b>, followed by <b style="color:red">instruction fine-tuning</b>.
+These two stages use self-supervised and supervised learning.
+Then come <b style="color:red">preference fine-tuning</b> and <b style="color:red">reasoning fine-tuning</b>.
+And if you look at the black area on the right, you see that these two stages use <b style="color:red">reinforcement learning</b>.
+
+Above each model, there is an example of what it answers.
+So let's go through these stages, one by one.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Overview (subtitle) -->
+<section data-transition="none">
+	<h3>Overview</h3>
+
+	<img width="80%" src="assets/rl_llm/llm_finetuning_1.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: Julia Turc
+	</figcaption>
+
+	<p style="font-size: 0.5em; height: 2.6em;">
+		The model is first trained using self-supervised learning on a massive amount of text data.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+It all starts with a <b style="color:red">randomly initialized model</b>.
+If you say "Hello!" to it, it answers random tokens.
+
+<span style="color:blue">So, the model is first trained using <b style="color:red">self-supervised learning</b> on a <b style="color:red">massive amount of text</b> data.</span>
+
+Its task is simple: it must <b style="color:red">predict the next token</b>.
+No labels are needed, because the text itself is the supervision.
+
+This stage is the <b style="color:red">pre-training</b>, and it is the most expensive one in compute.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Overview (subtitle) -->
+<section data-transition="none">
+	<h3>Overview</h3>
+
+	<img width="80%" src="assets/rl_llm/llm_finetuning_2.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: Julia Turc
+	</figcaption>
+
+	<p style="font-size: 0.5em; height: 2.6em;">
+		This produces a sophisticated auto-completer that cannot easily interact with humans.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+This produces a <b style="color:red">base model</b>, which is very good at <b style="color:red">completing text</b>.
+For example, if you write "It's raining cats and", the model continues with "dogs. I should get an umbrella."
+
+But it is essentially a sophisticated <b style="color:red">auto-completer</b>.
+It cannot reliably answer questions, or <b style="color:red">follow instructions</b>,
+and it cannot hold a natural <b style="color:red">conversation</b> either.
+In fact, if you ask it a question, it may just continue with more questions.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Overview (subtitle) -->
+<section data-transition="none">
+	<h3>Overview</h3>
+
+	<img width="80%" src="assets/rl_llm/llm_finetuning_3.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: Julia Turc
+	</figcaption>
+
+	<p style="font-size: 0.5em; height: 2.6em;">
+		To make the model more useful we apply <b>instruction fine-tuning</b> or <b>Supervised Fine-Tuning (SFT)</b>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<span style="color:blue">To make the model more useful, we apply <b style="color:red">instruction fine-tuning</b>, or <b style="color:red">supervised fine-tuning</b>, SFT.</span>
+In other words, we fine-tune it with <b style="color:red">supervised learning</b>.
+
+For that, we use a dataset of <b style="color:red">instructions</b>, paired with high-quality answers written by humans.
+Then we train the model to <b style="color:red">imitate</b> these answers.
+It is the same next-token prediction as before, but on carefully chosen data.
+This way, the model learns the format of a dialogue: a question, then a helpful answer.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Overview (subtitle) -->
+<section data-transition="none">
+	<h3>Overview</h3>
+
+	<img width="80%" src="assets/rl_llm/llm_finetuning_4.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: Julia Turc
+	</figcaption>
+
+	<p style="font-size: 0.5em; height: 2.6em;">
+		Now the model can follow instructions, answer questions, and chat more naturally.<br>
+		But it may still generate outputs that are misaligned with human preferences.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+The result is an <b style="color:red">instruction-tuned model</b>.
+<span style="color:blue">Now the model can <b style="color:red">follow instructions</b>, answer questions, and chat more naturally.</span>
+For example, if you ask it "What ice cream should I get?", it gives a real answer: "Vanilla is the best flavor in the world."
+
+<span style="color:blue">But it may still generate outputs that are <b style="color:red">misaligned with human preferences</b>.</span>
+These answers may be correct, but they are not the ones people prefer.
+Or they may be unhelpful, wrong, or even <b style="color:red">harmful</b>.
+And, as we'll see, SFT alone can't easily fix this.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Overview (subtitle) -->
+<section data-transition="none">
+	<h3>Overview</h3>
+
+	<img width="80%" src="assets/rl_llm/llm_finetuning_5.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: Julia Turc
+	</figcaption>
+
+	<p style="font-size: 0.5em; height: 2.6em;">
+		A second stage of fine-tuning is applied.
+		Historically, OpenAI used <b>PPO</b> within the <b>Reinforcement Learning from Human Feedback (or RLHF)</b> framework to achieve this.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<span style="color:blue">So, a second stage of fine-tuning is applied.</span>
+It is called <b style="color:red">preference fine-tuning</b>, and it is the first stage where <b style="color:red">reinforcement learning</b> comes in.
+
+Look at the example: it's the same question, but now the answer is "Chocolate is the best flavor".
+Why chocolate?
+Simply because, in our little example, that's what people <b style="color:red">prefer</b>.
+So the model now gives the answers that humans like best.
+
+Historically, OpenAI did this with <b style="color:red">PPO</b>, Proximal Policy Optimization,
+inside a framework called <b style="color:red">Reinforcement Learning from Human Feedback</b>, or RLHF.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!--
+## RLHF (~15 slides)
+
+- [x] Motivation: Reasoning-based fine-tuning
+- [x] Context: InstructGPT and ChatGPT
+- InstructGPT : https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf
+- What is RLHF? (~10 slides)
+- [x] Learn from feedback: a generalization of the RL framework (1 slide)
+- [x] A quick intro to Reward model (RM) and IRL (see next week) (1 slide)
+- [x] Preference-based RL (~3 slides)
+- [x] RLHF (~5 slides)
+- [x] Application to GPT: RLHF + IRL + PbRL (~2 slides)
+- [x] Advatages and drawbacks
+- [ ] Main alternatives: DPO (not RL-based by the way), RBRs
+-->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Preference-based fine-tuning (Motivations) -->
+<section>
+	<h3>Preference-based fine-tuning</h3>
+	<h4>Motivations</h4>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Why do we need a second stage of fine-tuning?</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li><b>Supervised fine-tuning</b> alone cannot guarantee outputs that are fully <b>aligned</b> with human preferences.</li>
+		<li>Collecting larger, high-quality human-labeled <b>datasets</b> is <b>too expensive</b> or <b>impractical</b>.</li>
+	</ul>
+
+	<p style="font-size: 0.65em;">
+		<b>Preference-based fine-tuning</b> only asks humans to <b>compare</b> model outputs (which answer is better?) instead of <b>writing</b> ideal answers → <b>much cheaper</b>.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, why do we need this second stage?
+There are mainly two reasons.
+
+<span style="color:blue">First, supervised fine-tuning alone cannot guarantee outputs that are fully <b style="color:red">aligned</b> with human preferences.</span>
+Second, there is the <b style="color:red">cost of data</b>.
+To go further with SFT, we would need larger datasets of high-quality answers, written by humans,
+and that's <b style="color:red">too expensive</b>, or just impractical.
+
+Preference fine-tuning, by contrast, uses another kind of human <b style="color:red">feedback</b>.
+Here, the annotator doesn't write the ideal answer.
+Instead, they just <b style="color:red">compare</b> a few answers generated by the model, and say which one is better.
+
+This is <b style="color:red">much cheaper</b>, and faster.
+It also works when people can <b style="color:red">recognize</b> a good answer more easily than they can write one.
+Think of a poem, or a good summary: it's easy to judge, but hard to write.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Preference-based fine-tuning (with RLHF/PPO) -->
+<section>
+	<h3>Preference-based fine-tuning</h3>
+	<h4>With RLHF/PPO</h4>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, let's see how preference fine-tuning works with <b style="color:red">RLHF</b> and <b style="color:red">PPO</b>.
+But first, we need to take a step back, and <b style="color:red">generalize</b> the RL framework a little bit.
+This is because, for a chatbot, there is <b style="color:red">no reward function</b> given by the environment.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Learn from feedback -->
+<section>
+	<h3>Learn from feedback</h3>
+	<h4>A generalization of the RL framework</h4>
+
+	<ul style="font-size: 0.55em;">
+		<li>RL agents need <b>feedback</b> to learn preferred behaviors</li>
+		<li>Usually provided by a reward function (maps states/actions to scalar values)</li>
+		<li><b>Explicit reward functions can be hard to design in real-world tasks</b></li>
+		<li>Alternative feedback sources (e.g., human preferences, demonstrations) can guide learning</li>
+		<li>This generalizes RL to "<b>learning from feedback</b>"</li>
+	</ul>
+
+	<img width="40%" src="assets/rl_llm/learn_from_feedback.png" />
+	<figcaption style="font-size: 0.3em; text-align: center;">
+		Source: Z. Xiao, Reinforcement Learning, <a href="https://doi.org/10.1007/978-981-19-4933-3_16" target="_blank">https://doi.org/10.1007/978-981-19-4933-3_16</a>
+	</figcaption>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+To learn, an RL agent needs <b style="color:red">feedback</b>, that is, some signal that tells it which behaviors are preferred.
+Usually, this feedback is a <b style="color:red">reward function</b>, which maps states and actions to a scalar value.
+
+But in many real-world tasks, an explicit reward function is very <b style="color:red">hard to design</b>.
+For example, what is the reward for a "good" answer of a chatbot?
+
+In such cases, we can use <b style="color:red">other kinds of feedback</b> to guide learning,
+like human preferences, or demonstrations.
+
+You can see this on the diagram.
+We still have the usual loop: the agent acts on the environment, and receives observations.
+But in the middle, there is a new box: the <b style="color:red">feedback provider</b>.
+It watches the observations and the actions, and it sends feedback to the agent.
+<span style="color:blue">So this generalizes RL to "<b style="color:red">learning from feedback</b>".</span>
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Reward Model (subtitle) -->
+<section>
+	<h3>Reward Model</h3>
+	<h4>A quick introduction</h4>
+
+	<ul style="font-size: 0.7em;">
+		<li>When a reward function is unavailable, we may learn a <b>reward model</b> from data (e.g., expert demonstrations, human preferences).</li>
+		<li>Use the reward model’s output as reward signals for RL algorithms.</li>
+		<li>Learning it from expert demonstrations is known as <b>Inverse Reinforcement Learning (IRL)</b>.</li>
+		<li>IRL will be covered in more detail next week.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, what can we do when no reward function is available?
+Well, we can <b style="color:red">learn</b> one.
+We train a <b style="color:red">reward model</b> from data,
+and then we use its output as the <b style="color:red">reward signal</b> for a standard RL algorithm.
+
+But what kind of data can we use?
+<span style="color:blue">For example, learning it from <b style="color:red">expert demonstrations</b> is known as <b style="color:red">Inverse Reinforcement Learning</b>,</span>
+or IRL for short.
+The idea is to infer the reward that the expert seems to optimize.
+We'll come back to IRL in more detail later in the course.
+
+In the next slides, though, the reward model is learned from another kind of data: <b style="color:red">human preferences</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: PbRL: Preference-based RL -->
+<section>
+	<h3>PbRL: Preference-based RL</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<p style="font-size: 0.65em; text-align: left; margin-bottom: 0em; margin-left: 1em; margin-top: 1em;"><b>Key Idea:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Instead of scalar rewards, use <b>preferences</b> over trajectory segments as feedback.</li>
+		<li>Train a <b>reward model</b> to predict which segment is preferred.</li>
+		<li>Use the learned reward model to provide reward signals for RL algorithms.</li>
+		<li>Enables learning from <b>comparative feedback</b> rather than absolute rewards.</li>
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em;">
+		👉 When the environment does not provide a <b>reward function</b>, but a <b>preference feedback</b>, we do <b>Preference-based RL</b> (PbRL).
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here is one example of feedback that is not a scalar reward: <b style="color:red">preferences</b>.
+
+The idea is to show two <b style="color:red">trajectory segments</b> to someone, and to ask which one they prefer.
+Then we train a <b style="color:red">reward model</b> to predict these preferences,
+so that the preferred segment gets a <b style="color:red">higher total reward</b>.
+Technically, the probability of preferring A over B is a sigmoid of the difference of their rewards.
+Finally, the learned reward model provides the reward signal for the RL algorithm.
+
+In other words, we learn from <b style="color:red">comparative feedback</b>, not from absolute rewards.
+This helps, because it's often easier to say "A is better than B" than to give a score, like 7 out of 10.
+
+<span style="color:blue">So, when the environment does not provide a reward function, but a <b style="color:red">preference feedback</b>, we do <b style="color:red">Preference-based RL</b>.</span>
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: RLHF -->
+<section>
+	<h3>RLHF</h3>
+	<h4 style="font-size: 0.9em;">Reinforcement Learning from Human Feedback</h4>
+
+	<img width="80%" src="assets/rl_llm/rlhf.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: <a href="https://openai.com/index/learning-from-human-preferences/" target="_blank">https://openai.com/index/learning-from-human-preferences/</a>
+	</figcaption>
+
+	<p style="font-size: 0.65em; margin-top: 1em;">
+		👉 When this <b>preference feedback</b> is provided by a human during training, we do <b>Reinforcement Learning from Human Feedback</b> (RLHF)
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<span style="color:blue">And when this preference feedback is provided by a <b style="color:red">human</b> during training, we do <b style="color:red">Reinforcement Learning from Human Feedback</b>,</span>
+or RLHF for short.
+
+Let's look at the diagram.
+At the bottom, there is the usual RL loop: the <b style="color:red">RL algorithm</b> sends actions to the environment, and gets observations.
+But this time, the reward does not come from the environment.
+Instead, it comes from a <b style="color:red">reward predictor</b>, in purple.
+This reward predictor is trained with <b style="color:red">human feedback</b>, on the right,
+and it gives a <b style="color:red">predicted reward</b> to the RL algorithm.
+
+All three processes run <b style="color:red">in parallel</b>, asynchronously:
+the agent acts, the human compares clips, and the reward predictor is updated.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: RLHF -->
+<section>
+	<h3>RLHF</h3>
+	<h4 style="font-size: 0.9em;">Reinforcement Learning from Human Feedback</h4>
+
+	<img width="35%" src="assets/rl_llm/LearningFromHumanPreferencesPoster.webp" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: <a href="https://openai.com/index/learning-from-human-preferences/" target="_blank">https://openai.com/index/learning-from-human-preferences/</a>
+	</figcaption>
+
+	<ul style="font-size: 0.5em; margin-top: 1em; margin-left: 1em;">
+		<li>RLHF introduced by OpenAI and DeepMind (2017) for simulated robots and Atari games.</li>
+		<li>First, agent acts randomly; human compares pairs of video clips and selects the one closer to the objective (e.g., backflip).</li>
+		<li>Algorithm learns a reward function that matches human preferences.</li>
+		<li>Uses RL to optimize agent behavior toward the learned goal.</li>
+		<li>Continually requests human feedback on uncertain trajectory pairs to refine the reward model.</li>
+		<li>High feedback efficiency: backflip task required less than 1000 bits of human feedback.</li>
+	</ul>
+
+	<!-- <p style="font-size: 0.65em; margin-top: 1em;">
+		👉 When this <b>preference feedback</b> is provided by a human during training, we do <b>Reinforcement Learning from Human Feedback</b> (RLHF)
+	</p> -->
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+RLHF was introduced in 2017, by <b style="color:red">OpenAI and DeepMind</b>.
+At first, it was not used for language at all, but for <b style="color:red">simulated robots</b> and Atari games.
+
+Here is how it works.
+In the beginning, the agent acts randomly.
+Then, periodically, a human watches <b style="color:red">two short video clips</b> of its behavior, like the two on the slide,
+and clicks on "left is better", or "right is better".
+The question is: which clip is closer to the objective?
+In this case, the objective is to do a <b style="color:red">backflip</b>.
+
+From these choices, the algorithm builds a model of the goal: the <b style="color:red">reward function</b> that best explains them.
+Then it uses RL to reach that goal.
+And as it improves, it asks for feedback on the pairs where it is <b style="color:red">most uncertain</b>.
+
+This makes it very <b style="color:red">efficient</b> in human feedback: the backflip needed only about 900 bits of feedback,
+where one bit is roughly one comparison, left or right.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: RLHF -->
+<section>
+	<h3>RLHF</h3>
+	<h4 style="font-size: 0.9em;">Reinforcement Learning from Human Feedback</h4>
+
+	<img width="40%" src="assets/rl_llm/humanfeedbackjump.webp" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: <a href="https://openai.com/index/learning-from-human-preferences/" target="_blank">https://openai.com/index/learning-from-human-preferences/</a>
+	</figcaption>
+
+	<!-- <p style="font-size: 0.65em; margin-top: 1em;">
+		👉 When this <b>preference feedback</b> is provided by a human during training, we do <b>Reinforcement Learning from Human Feedback</b> (RLHF)
+	</p> -->
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+And here is the result: a <b style="color:red">backflip</b>.
+It took <b style="color:red">less than an hour</b> of a human evaluator's time,
+and there was <b style="color:red">no explicit reward function</b> at all.
+
+Just try to write a reward function for a nice backflip by hand: it's really hard!
+Here, by contrast, the human just had to <b style="color:red">recognize</b> good attempts.
+
+To be fair, though, it's not cheap in <b style="color:red">interactions with the environment</b>:
+in the background, the agent collected about 70 hours of simulated experience.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: RLHF (Application to LLMs) -->
+<section>
+	<h3>RLHF</h3>
+	<h4>Application to LLMs</h4>
+
+	<img width="60%" src="assets/rl_llm/chatgpt_feedback.jpeg" />🤨
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: <a href="https://x.com/nathanlents/status/1735034140930572791" target="_blank">https://x.com/nathanlents/status/1735034140930572791</a>
+	</figcaption>
+
+	<ul style="font-size: 0.65em; margin-top: 1em; margin-left: 1em;">
+		<li>RLHF was first developed for training robots and Atari agents.</li>
+		<li>Quickly adapted for large language models (LLMs).</li>
+		<li>ChatGPT users regularly see feedback requests.</li>
+		<li>User feedback is leveraged to further align LLMs via RLHF.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<span style="color:blue">OK, so RLHF was first developed for training robots and Atari agents.</span>
+But it was quickly adapted to <b style="color:red">large language models</b>.
+
+In fact, you have probably seen this in <b style="color:red">ChatGPT</b>: "Which response do you prefer?"
+This is exactly a <b style="color:red">preference comparison</b>.
+And this free work from users can then be used to further <b style="color:red">align</b> the model.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: RLHF (Application to LLMs) -->
+<section>
+	<h3>RLHF</h3>
+	<h4>Application to LLMs</h4>
+
+	<img width="76%" src="assets/rl_llm/rlhf_1.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: <a href="https://proceedings.neurips.cc/paper_files/paper/2020/file/1f89885d556929e98d3ef9b86448f951-Paper.pdf" target="_blank">Stiennon, N., Ouyang, L., Wu, J., Ziegler, D., Lowe, R., Voss, C., ... & Christiano, P. F. (2020). Learning to summarize with human feedback. Advances in neural information processing systems, 33, 3008-3021.</a>
+	</figcaption>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+In 2020, OpenAI used RLHF to train models to <b style="color:red">summarize text</b>.
+This figure shows the three steps of RLHF.
+
+The first step is to <b style="color:red">collect human feedback</b>.
+We take a Reddit post, and several policies generate summaries of it.
+Then a human compares two of these summaries, and says which one is better: "j is better than k".
+
+The second step is to <b style="color:red">train a reward model</b>.
+This model gives a score r to each summary,
+and the loss pushes the score of the <b style="color:red">preferred summary</b> above the other one.
+More precisely, we maximize the log of a sigmoid of r j minus r k.
+
+The third step is to <b style="color:red">train the policy with PPO</b>.
+For a new post, the policy writes a summary, and the reward model scores it.
+Then PPO uses this score as the reward to update the policy.
+On top of that, a <b style="color:red">KL penalty</b> keeps the policy close to the initial model, to avoid reward hacking.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: RLHF (Application to LLMs) -->
+<section>
+	<h3>RLHF</h3>
+	<h4>Application to LLMs</h4>
+
+	<img width="76%" src="assets/rl_llm/rlhf_instruct_gpt.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: <a href="https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf" target="_blank">Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., ... & Lowe, R. (2022). Training language models to follow instructions with human feedback. Advances in neural information processing systems, 35, 27730-27744.</a>
+	</figcaption>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Then, in 2022, OpenAI used it to train <b style="color:red">InstructGPT</b>,
+a GPT-3 model fine-tuned to <b style="color:red">follow instructions</b> with human feedback.
+It is the direct predecessor of <b style="color:red">ChatGPT</b>.
+
+Here again, there are three steps.
+In step one, for a prompt like "explain the moon landing to a 6 year old", a labeler <b style="color:red">writes</b> the desired answer,
+and GPT-3 is fine-tuned on these answers: that's <b style="color:red">SFT</b>.
+In step two, the model generates several answers, and a labeler <b style="color:red">ranks</b> them, from best to worst.
+These rankings are used to train the <b style="color:red">reward model</b>.
+And in step three, <b style="color:red">PPO</b> optimizes the policy against this reward model.
+
+So this is exactly the full pipeline of the overview: SFT first, then preference fine-tuning with RL.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: RLHF (Results) -->
+<section>
+	<h3>RLHF</h3>
+	<h4>Application to LLMs</h4>
+
+	<img width="60%" src="assets/rl_llm/rlhf_instruct_gpt_results.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: <a href="https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf" target="_blank">Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., ... & Lowe, R. (2022). Training language models to follow instructions with human feedback. Advances in neural information processing systems, 35, 27730-27744.</a>
+	</figcaption>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, did it work?
+Yes: human evaluators clearly <b style="color:red">preferred InstructGPT</b> to GPT-3.
+
+On this plot, the y-axis is the <b style="color:red">win rate</b> against the 175-billion-parameter SFT model,
+that is, how often each model's answers were preferred to that model's answers.
+And the x-axis is the model size.
+
+At the bottom, the two GPT-3 curves, in blue, stay low, even with a good prompt.
+Above them, in green, are the SFT models.
+And at the top, there are the two RLHF models: <b style="color:red">PPO</b>, and <b style="color:red">PPO-ptx</b>, the actual InstructGPT.
+PPO-ptx also mixes some <b style="color:red">pretraining gradients</b> into the PPO updates,
+in order to limit regressions on standard NLP benchmarks.
+
+And here is the key result:
+the <b style="color:red">1.3 billion</b> InstructGPT is preferred to the <b style="color:red">175 billion</b> GPT-3,
+which is a model more than <b style="color:red">100 times</b> larger!
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: RLHF (Advantages and drawbacks) -->
+<section>
+	<h3>RLHF</h3>
+	<h4>Advantages and drawbacks</h4>
+
+	<p style="font-size: 0.65em; text-align: left; margin-bottom: 0em; margin-left: 1em; margin-top: 1em;"><b>Advantage:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; margin-left: 1em;">
+		<li>Compared to offline <b>preference fine-tuning</b> methods such as <b>Direct Preference Optimization</b> (DPO), the <b>Reward Model</b> can score <b>new</b> outputs generated by the policy during training → well-tuned RLHF often <b>performs better</b> with the same human feedback.</li>
+	</ul>
+
+	<p style="font-size: 0.65em; text-align: left; margin-bottom: 0em; margin-left: 1em; margin-top: 1em;"><b>Drawbacks:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; margin-left: 1em;">
+		<li>Training can be unstable; the <b>Reward Model</b> may be inaccurate, leading to misaligned or unintended behaviors.</li>
+		<li>The PPO policy may exploit <b>Reward Model</b> weakness (reward hacking).</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, why use RL here, and not something simpler?
+
+Well, RLHF has one big advantage over offline methods, like <b style="color:red">Direct Preference Optimization</b>, or DPO.
+DPO learns only from a <b style="color:red">fixed dataset</b> of compared answers.
+In RLHF, by contrast, the learned reward model can score <b style="color:red">new answers</b>, generated by the policy during training.
+So the same human feedback is exploited further,
+and, as a result, well-tuned RLHF with PPO often <b style="color:red">performs better</b> than DPO.
+
+But RLHF also has <b style="color:red">drawbacks</b>.
+<span style="color:blue">First, training can be <b style="color:red">unstable</b>.</span>
+<span style="color:blue">And the reward model may be inaccurate, leading to misaligned or unintended behaviors.</span>
+Worse, the policy may <b style="color:red">exploit the weaknesses</b> of the reward model.
+This is called <b style="color:red">reward hacking</b>.
+For example, reward models often prefer longer answers, so the model may learn to be verbose.
+		</div>
+		<!-- Sources:
+		- Xu et al. (2024), Is DPO Superior to PPO for LLM Alignment? A Comprehensive Study, ICML 2024
+		- Ivison et al. (2024), Unpacking DPO and PPO: Disentangling Best Practices for Learning from Preference Feedback, NeurIPS 2024
+		- Singhal et al. (2023), A Long Way to Go: Investigating Length Correlations in RLHF
+		-->
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: RLHF references -->
+<section>
+	<h3>RLHF</h3>
+	<h4>References</h4>
+
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>
+			<a href="https://proceedings.neurips.cc/paper_files/paper/2017/file/d5e2c0adad503c91f91df240d0cd4e49-Paper.pdf" target="_blank">
+				Christiano, P. F., Leike, J., Brown, T., Martic, M., Legg, S., & Amodei, D. (2017). Deep reinforcement learning from human preferences. Advances in neural information processing systems, 30.
+			</a>
+			(<a href="https://openai.com/index/learning-from-human-preferences/" target="_blank">OpenAI blog</a>)
+		</li>
+		<li>
+			<a href="https://proceedings.neurips.cc/paper_files/paper/2020/file/1f89885d556929e98d3ef9b86448f951-Paper.pdf" target="_blank">
+				Stiennon, N., Ouyang, L., Wu, J., Ziegler, D., Lowe, R., Voss, C., ... & Christiano, P. F. (2020). Learning to summarize with human feedback. Advances in neural information processing systems, 33, 3008-3021.
+			</a>
+			(<a href="https://openai.com/index/learning-to-summarize-with-human-feedback/" target="_blank">OpenAI blog</a>)
+		</li>
+		<li>
+			<a href="https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf" target="_blank">
+				Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., ... & Lowe, R. (2022). Training language models to follow instructions with human feedback. Advances in neural information processing systems, 35, 27730-27744.
+			</a>
+			(<a href="https://openai.com/fr-FR/index/instruction-following/" target="_blank">OpenAI blog</a>)
+		</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here are the three main references for RLHF.
+The first one is the <b style="color:red">original paper</b>, by Christiano and colleagues, in 2017, with the robots and the Atari games.
+The second one, by Stiennon and colleagues, in 2020, is about <b style="color:red">summarization</b>.
+And the third one, by Ouyang and colleagues, in 2022, is the <b style="color:red">InstructGPT</b> paper.
+Each one also comes with a blog post from OpenAI, which is a good place to start.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Overview (subtitle) -->
+<section data-transition="none">
+	<h3>Overview</h3>
+
+	<img width="80%" src="assets/rl_llm/llm_finetuning_6.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: Julia Turc
+	</figcaption>
+
+	<p style="font-size: 0.5em; height: 2.6em;">
+		RLHF/DPO produced a model more aligned with human preferences.<br>
+		But a third stage of fine-tuning can be applied to <b>improve reasoning skills</b>.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+OK, so RLHF, or DPO, gives us a <b style="color:red">preference-tuned model</b>,
+that is, a model more <b style="color:red">aligned with human preferences</b>.
+
+<span style="color:blue">But a third stage of fine-tuning can be applied, to <b style="color:red">improve reasoning skills</b>.</span>
+Look at the example on the right: it's a small math problem about the energy of an ice cream.
+To answer it, the model must <b style="color:red">reason step by step</b>, and compute 300 kilocalories.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Overview (subtitle) -->
+<section data-transition="none">
+	<h3>Overview</h3>
+
+	<img width="80%" src="assets/rl_llm/llm_finetuning_7.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: Julia Turc
+	</figcaption>
+
+	<p style="font-size: 0.5em; height: 2.6em;">
+		This was popularized by the open-source model DeepSeek-R1 in January 2025 with the <b>GRPO</b> algorithm
+		within the <b>Reinforcement Learning with Verifiable Rewards (RLVR)</b> framework.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<span style="color:blue">This was popularized by the open-source model <b style="color:red">DeepSeek-R1</b> in <b style="color:red">January 2025</b>.</span>
+Of course, OpenAI's o1 came a few months earlier, but its training recipe was not public.
+
+DeepSeek-R1 uses an algorithm called <b style="color:red">Group Relative Policy Optimization</b>, or GRPO,
+inside a framework called <b style="color:red">Reinforcement Learning with Verifiable Rewards</b>, or RLVR.
+Its goal is to improve the <b style="color:red">reasoning</b> capabilities of the LLM.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!--
+## RLVR (~15 slides)
+
+- [x] Motivation: Reasoning-based fine-tuning
+- [ ] Context: the DeepSeek-R1, DeepSeekMath, OpenR1, Tülu3, ... models
+- [ ] What is RLVR?
+- [ ] GRPO algorithm (~10 slides)
+- Similarities and differences with PPO
+- GRPO paper (DeepSeekMath): https://arxiv.org/pdf/2402.03300
+- DeepSeek-R1 paper: https://arxiv.org/pdf/2501.12948
+- Tülu3 paper: https://arxiv.org/pdf/2411.15124
+- GRPO variants
+- Alternatives
+- https://arxiv.org/pdf/2509.25454 (?)
+- ...
+- Conclusion (*)
+-->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Reasoning-based fine-tuning (With RLVR/GRPO) -->
+<section>
+	<h3>Reasoning-based fine-tuning</h3>
+	<h4>With RLVR/GRPO</h4>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, let's see how reasoning fine-tuning works, with <b style="color:red">RLVR</b> and <b style="color:red">GRPO</b>.
+And here is the good news: this time, we don't even need <b style="color:red">humans</b> to give the reward.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Reasoning-based fine-tuning (context - DeepSeek) -->
+<section>
+	<h3>Reasoning-based fine-tuning</h3>
+	<h4>Context</h4>
+
+	<ul style="font-size: 0.7em; margin-left: 1em;">
+		<li>Many <b>reasoning tasks</b> (math, coding, logic) have answers that can be automatically verified (e.g., final answer check, unit tests).</li>
+		<li>Unlike creative tasks, no human feedback is needed for evaluation.</li>
+		<li>Enables automatic, scalable assessment of LLM outputs.</li>
+		<li>DeepSeek-R1 adds a fine-tuning stage dedicated to reasoning, using RL with verifiable rewards.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+There is a special class of problems called <b style="color:red">reasoning tasks</b>,
+which includes math, programming, logic, and so on.
+
+Unlike open-ended or creative tasks, many reasoning tasks have an answer that can be <b style="color:red">checked automatically</b>.
+For a math problem, for example, we compare the final answer with the <b style="color:red">reference answer</b>.
+And for code, we run <b style="color:red">unit tests</b>.
+
+This means that we can evaluate the LLM's answers automatically, <b style="color:red">without human feedback</b>.
+And this is <b style="color:red">scalable</b>: we can use millions of problems, with no annotators.
+
+<span style="color:blue">That's why DeepSeek-R1 adds a fine-tuning stage dedicated to reasoning, using RL with <b style="color:red">verifiable rewards</b>.</span>
+
+But be careful: the overview diagram is a <b style="color:red">simplification</b>.
+In practice, the order of the stages varies.
+For instance, DeepSeek-R1 alternates several SFT and RL stages:
+its first RL stage is for reasoning, and its last one also aligns the model with human preferences.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Reasoning-based fine-tuning (context - DeepSeek) -->
+<section>
+	<h3>RLVR</h3>
+	<h4 style="font-size: 0.9em;">Reinforcement Learning with Verifiable Rewards</h4>
+
+	<img width="55%" src="assets/rl_llm/rlvr.png" />
+	<figcaption style="font-size: 0.3em; text-align: center;">
+		Source: Julia Turc
+	</figcaption>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So here, RL is used to fine-tune the LLM, with a reward that is <b style="color:red">computed automatically</b>.
+This reward simply says whether the <b style="color:red">final answer is correct</b>.
+
+Let's look at the example at the bottom.
+Natalia sold 48 clips in April, and half as many in May: how many did she sell in total?
+The model reasons step by step, and ends with 72.
+Then the environment checks it: 72 is correct, so the reward <b style="color:red">R equals one</b>.
+
+As you can see, the reasoning task fits well in the <b style="color:red">RL framework</b>.
+The <b style="color:red">agent</b> is the LLM, and its policy outputs a probability for every token of the vocabulary.
+Each <b style="color:red">action</b> is one token, and the episode ends when the model outputs the end token.
+The <b style="color:red">state</b> is the current context, that is, the prompt plus the tokens generated so far.
+And the <b style="color:red">reward</b> comes only at the end: it is one if the answer is correct, and zero otherwise.
+That's why, in the box on the right, all the intermediate rewards are zero.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<!-- Slide: Reasoning-based fine-tuning (context - DeepSeek) -->
+	<!-- <section>
+		<h3>Reasoning-based fine-tuning</h3>
+		<h4>Group Relative Policy Optimization (GRPO)</h4>
+
+		...
+	
+		<aside class="notes">
+			<div class="fr-notes">
+			</div>
+			<div class="en-notes">
+
+			</div>
+		</aside>
+	</section> -->
+
+	<!-- ------------------------------------------------------ -->
+	
+	<!-- Slide: Reasoning-based fine-tuning (context - DeepSeek) -->
+	<section>
+		<h3>Reasoning-based fine-tuning</h3>
+		<h4>Group Relative Policy Optimization (GRPO)</h4>
+
+		<img width="90%" src="assets/rl_llm/grpo_7.png" />
+		<figcaption style="font-size: 0.3em; text-align: center;">
+			Source: Julia Turc
+		</figcaption>
+	
+		<aside class="notes">
+			<div class="fr-notes">
+			</div>
+			<div class="en-notes">
+The RL algorithm used in DeepSeek-R1 is called <b style="color:red">Group Relative Policy Optimization</b>, or GRPO.
+It was introduced about one year earlier, in the DeepSeekMath paper,
+and it is very close to <b style="color:red">PPO</b>, with <b style="color:red">two differences</b>.
+
+On the left, you can see the usual loop: the LLM outputs a distribution over tokens, samples one, and gets a reward.
+On the right, you can see how the advantage A t is computed.
+
+At the top, PPO uses a <b style="color:red">critic</b>, the value network V phi, in red, to estimate the advantage.
+But in LLMs, this critic is usually as large as the policy itself, so it costs a lot of memory and compute.
+
+At the bottom, GRPO gets rid of it: that's the first difference, <b style="color:red">no critic</b>.
+Instead, for each prompt, it generates a <b style="color:red">group of answers</b>, here four of them,
+and it computes the advantage by comparing each answer to the others in the group.
+
+The second difference is the <b style="color:red">KL penalty</b>, which keeps the policy close to the reference model.
+In GRPO, it is added directly to the loss, instead of being subtracted from the reward, like in RLHF with PPO.
+			</div>
+		</aside>
+	</section>
+
+	<!-- ------------------------------------------------------ -->
+	
+	<!-- Slide: Reasoning-based fine-tuning (context - DeepSeek) -->
+	<section>
+		<h3>Reasoning-based fine-tuning</h3>
+		<h4>GRPO</h4>
+
+		$$
+		\theta \leftarrow \theta + \alpha \sum_{t=0}^{T-1} \nabla_{\theta} \log \pi_{\theta}(a_t \mid s_t) \cdot \bigl(G_t - b(s_t)\bigr)
+		$$
+	
+		<aside class="notes">
+			<div class="fr-notes">
+			</div>
+			<div class="en-notes">
+Let's see where the GRPO advantage comes from.
+We start with an update rule you already know: <b style="color:red">REINFORCE with a baseline</b>.
+
+It increases the log-probability of each action a t, in state s t,
+and it weights this increase by G t minus b of s t.
+Here, G t is the <b style="color:red">return</b> from time t, and b is a <b style="color:red">baseline</b>.
+So, if the return is better than the baseline, the action becomes <b style="color:red">more likely</b>.
+And if it's worse, it becomes <b style="color:red">less likely</b>.
+
+The baseline doesn't change the expected gradient, but it <b style="color:red">reduces the variance</b>.
+In actor-critic methods, and in PPO, this baseline is the <b style="color:red">value function</b>, learned by the critic.
+			</div>
+		</aside>
+	</section>
+
+	<!-- ------------------------------------------------------ -->
+	
+	<!-- Slide: Reasoning-based fine-tuning (context - DeepSeek) -->
+	<section data-transition="none">
+		<h3>Reasoning-based fine-tuning</h3>
+		<h4>GRPO</h4>
+
+		<img width="90%" src="assets/rl_llm/grpo_1.png" />
+		<figcaption style="font-size: 0.3em; text-align: center;">
+			Source: Julia Turc
+		</figcaption>
+	
+		<aside class="notes">
+			<div class="fr-notes">
+			</div>
+			<div class="en-notes">
+Now, how does GRPO get its baseline, <b style="color:red">without a critic</b>?
+
+Let's start with the top row.
+The prompt is the Natalia problem,
+and the LLM generates one answer, token by token: "To", "find", "out", and so on.
+Each token is an action, and each circle is a state.
+And as we saw, the reward comes only at the very end.
+
+Now, here is the trick: for the <b style="color:red">same prompt</b>, we sample <b style="color:red">several answers</b>.
+In this figure, we have a <b style="color:red">group</b> of four.
+Since the policy is stochastic, the four answers are different,
+and the environment gives each of them a reward: r g one, to r g four.
+			</div>
+		</aside>
+	</section>
+
+	<!-- ------------------------------------------------------ -->
+	
+	<!-- Slide: Reasoning-based fine-tuning (context - DeepSeek) -->
+	<section data-transition="none">
+		<h3>Reasoning-based fine-tuning</h3>
+		<h4>GRPO</h4>
+
+		<img width="90%" src="assets/rl_llm/grpo_2.png" style="aspect-ratio: 1358 / 670; object-fit: cover; object-position: bottom;" />
+		<figcaption style="font-size: 0.3em; text-align: center;">
+			Source: Julia Turc
+		</figcaption>
+	
+		<aside class="notes">
+			<div class="fr-notes">
+			</div>
+			<div class="en-notes">
+And here is the GRPO <b style="color:red">baseline</b>:
+B is simply the <b style="color:red">mean reward of the group</b>.
+
+Intuitively, B tells us how hard this prompt is for the current model.
+So, if an answer does <b style="color:red">better than the group average</b>, we push it up.
+And if it does worse, we push it down.
+
+This way, there is no critic network to train: we just <b style="color:red">sample more answers</b>, and we compare them.
+In other words, the other answers of the group play the role of the critic.
+			</div>
+		</aside>
+	</section>
+
+	<!-- ------------------------------------------------------ -->
+	
+	<!-- Slide: Reasoning-based fine-tuning (context - DeepSeek) -->
+	<section>
+		<h3>Reasoning-based fine-tuning</h3>
+		<h4>GRPO</h4>
+
+		<p style="font-size: 0.5em; margin-top: 1em; margin-bottom: 0em;">
+		$$
+		\theta \leftarrow \theta + \alpha \sum_{t=0}^{T-1} \nabla_{\theta} \log \pi_{\theta}(a_t \mid s_t) \cdot \bigl(G_t - b(s_t)\bigr)
+		$$
+
+		Becomes...
+		$$
+		\theta \leftarrow \theta + \alpha \sum_{t=0}^{T-1} \nabla_{\theta} \log \pi_{\theta}(a_t \mid s_t) \cdot (R - B)
+		$$
+		
+		$$
+		\theta \leftarrow \theta + \alpha \sum_{t=0}^{T-1} \nabla_{\theta} \log \pi_{\theta}(a_t \mid s_t) \cdot A_t
+		$$
+		
+		$$
+		A_t = \frac{R - \mathrm{mean}(r_{g_1}, \dots, r_{g_G})}{\mathrm{std}(r_{g_1}, \dots, r_{g_G})}
+		$$
+		</p>
+		
+		<aside class="notes">
+			<div class="fr-notes">
+			</div>
+			<div class="en-notes">
+So, let's update our formula.
+
+First, the reward is given only at the end, and we don't discount.
+So the return G t is the <b style="color:red">same for every token</b>: it is the final reward, capital R.
+And the baseline b becomes the group mean, capital B.
+That's why we get <b style="color:red">R minus B</b>.
+
+Then, GRPO also divides by the <b style="color:red">standard deviation</b> of the group rewards.
+This gives the advantage A t: the reward minus the group mean, divided by the group standard deviation.
+This <b style="color:red">normalization</b> keeps the gradient scale stable, from one prompt to another.
+
+Let's take a quick example, with four answers whose rewards are one, zero, zero, and one.
+The mean is one half,
+so the <b style="color:red">correct answers</b> get a positive advantage, and the wrong ones get a negative advantage, of the same size.
+And if all four answers are correct, all advantages are <b style="color:red">zero</b>, so this prompt teaches nothing.
+			</div>
+		</aside>
+	</section>
+
+	<!-- ------------------------------------------------------ -->
+	
+	<!-- Slide: Reasoning-based fine-tuning (context - DeepSeek) -->
+	<section>
+		<h3>Reasoning-based fine-tuning</h3>
+		<h4>GRPO</h4>
+
+		<p style="font-size: 0.5em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		$$
+		\begin{align}
+		L^{PPO} &= \sum_{t=0}^{T-1} \min \Bigl( \rho_t(\theta) \cdot A_t,\; \mathrm{clip}(\rho_t(\theta), 1 - \epsilon, 1 + \epsilon) \cdot A_t \Bigr) \\[6pt]
+		\rho_t(\theta) &= \frac{\pi_{\theta}(a_t \mid s_t)}{\pi_{\theta_{\text{old}}}(a_t \mid s_t)} \\[6pt]
+		L^{GRPO} &= L^{PPO} - \beta \, D_{KL}\!\left[\pi_{\theta} \,\|\, \pi_{\text{ref}}\right]
+		\end{align}
+		$$
+		</p>
+		
+		<aside class="notes">
+			<div class="fr-notes">
+			</div>
+			<div class="en-notes">
+Finally, GRPO plugs this advantage into the <b style="color:red">PPO</b> objective.
+
+You know this one already: L PPO.
+Rho t is the <b style="color:red">probability ratio</b> between the new policy and the old one, for action a t.
+We multiply it by the advantage, and we <b style="color:red">clip</b> the ratio between one minus epsilon and one plus epsilon.
+Then we take the minimum of the two terms.
+This way, one update cannot move the policy <b style="color:red">too far</b> from the old one.
+
+On top of that, GRPO subtracts a <b style="color:red">KL divergence</b> term, weighted by beta.
+This term measures how far the policy pi theta is from the <b style="color:red">reference model</b> pi ref, usually the SFT model.
+So it prevents the model from drifting too far, and from forgetting what it learned before.
+
+To sum up, GRPO is <b style="color:red">PPO without a critic</b>, with a group-based advantage, and a KL penalty in the loss.
+			</div>
+		</aside>
+	</section>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: RLHF (Results) -->
+<section>
+	<h3>DeepSeek-R1-Zero</h3>
+	<h4>Results</h4>
+
+	<img width="50%" src="assets/rl_llm/deepseek_r1_zero_results.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: <a href="https://arxiv.org/pdf/2501.12948" target="_blank">Guo, D., Yang, D., Zhang, H., Song, J., Zhang, R., Xu, R., ... & He, Y. (2025). Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948.</a>
+	</figcaption>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So, does it work?
+Here are the results of <b style="color:red">DeepSeek-R1-Zero</b>.
+This model made a lot of noise, because it was trained with <b style="color:red">pure RL</b>,
+directly from the base model, without any supervised fine-tuning.
+And yet, it reached a performance <b style="color:red">comparable to OpenAI's o1</b> reasoning model.
+
+On the plot, you can see the accuracy on <b style="color:red">AIME 2024</b>, a hard math competition, during training.
+The blue curve is pass at one: it goes from about 16 percent to <b style="color:red">71 percent</b>.
+The red curve uses <b style="color:red">majority voting</b> over several samples, and it reaches about 87 percent.
+For comparison, the dashed lines show o1-0912: 74 percent, and 83 percent with majority voting.
+
+In the table, you can also see that R1-Zero is better on some benchmarks, like MATH-500, and worse on others, like coding.
+
+And here is a fascinating detail: during training, its answers got <b style="color:red">longer and longer</b>.
+In other words, the model learned by itself to think longer, and to re-check its work.
+		</div>
+		<!-- Sources:
+		- Guo et al. (2025), DeepSeek-R1, arXiv:2501.12948: Table 2, Figure 2 (AIME accuracy), Figure 3 (response length)
+		-->
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: GRPO/DeepSeek-R1 references -->
+<section>
+	<h3>GRPO / DeepSeek-R1</h3>
+	<h4>References</h4>
+
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>
+			<a href="https://arxiv.org/pdf/2402.03300" target="_blank">
+				Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., ... & Guo, D. (2024). Deepseekmath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300.
+			</a>
+		</li>
+		<li>
+			<a href="https://arxiv.org/pdf/2501.12948" target="_blank">
+				Guo, D., Yang, D., Zhang, H., Song, J., Zhang, R., Xu, R., ... & He, Y. (2025). Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948.
+			</a>
+		</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here are two references for this part.
+The first one is the <b style="color:red">DeepSeekMath</b> paper, from 2024, which introduced GRPO.
+The second one is the <b style="color:red">DeepSeek-R1</b> paper, from 2025.
+Both are on arXiv, and the links are on the slide.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Hugging Face TRL -->
+<section>
+	<h3 style="font-size: 1.1em;">Practical open-source implementations</h3>
+	<h4>🤗 Hugging Face TRL</h4>
+				
+	<img width="100%" src="assets/rl_llm/trl_banner_dark.png" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Now, how can you try all this yourself?
+A very popular open-source library for that is <b style="color:red">TRL</b>, from <b style="color:red">Hugging Face</b>.
+Its name stands for <b style="color:red">Transformer Reinforcement Learning</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HuggingFace Open-R1 -->
+<section>
+	<h3 style="font-size: 1.1em;">Practical open-source implementations</h3>
+	<h4>🤗 Hugging Face TRL</h4>
+
+	<p style="font-size: 0.7em;">
+		"TRL is a full stack library where we provide a set of tools to train transformer language models with methods like <b>Supervised Fine-Tuning (SFT)</b>,
+		<b>Group Relative Policy Optimization (GRPO)</b>,
+		<b>Direct Preference Optimization (DPO)</b>,
+		Reward Modeling, and more.
+		The library is integrated with 🤗 transformers."<br>
+		<a href="https://huggingface.co/docs/trl/en/index" target="_blank">https://huggingface.co/docs/trl/</a>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+TRL is a <b style="color:red">full-stack library</b> to fine-tune language models,
+and it implements most of the methods we saw today.
+For example, it has <b style="color:red">SFT</b> for supervised fine-tuning,
+<b style="color:red">DPO</b> for preference fine-tuning without RL,
+and <b style="color:red">GRPO</b> for RL with verifiable rewards.
+It also supports reward modeling, and more.
+
+<span style="color:blue">Also, the library is integrated with <b style="color:red">transformers</b>,</span>
+so you can fine-tune most open models with a few lines of Python.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Practical opensource implementations -->
+<section>
+	<h3 style="font-size: 1.1em;">Practical open-source implementations</h3>
+				
+	<img width="70%" src="assets/rl_llm/open_r1.png" />
+
+	<p style="font-size: 0.7em;">
+		<a href="https://huggingface.co/blog/open-r1" target="_blank">https://huggingface.co/blog/open-r1</a>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here is a great example of what you can do with it: <b style="color:red">Open-R1</b>.
+When DeepSeek-R1 came out, the model weights were open, but the <b style="color:red">training data and code</b> were not.
+So Hugging Face started a project to build a <b style="color:red">fully open reproduction</b> of DeepSeek-R1,
+using TRL and its <b style="color:red">GRPO</b> trainer.
+
+If you want to see how this works in practice, it's a good place to start.
+The blog post on the slide explains their plan, step by step.
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->
+				<!-- endregion -->
+				<!-- ------------------------------------------------------ -->
+				<!-- CONCLUSION ------------------------------------------- -->
+				<!-- ------------------------------------------------------ -->
+				<!-- #region -->
+
+				<!-- Slide: Conclusion -->
+				<section>
+					<h3>Conclusion</h3>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+OK, let's wrap up.
+Today, we looked at two advanced topics.
+
+The first one was <b style="color:red">hierarchical RL</b>.
+Its idea is to <b style="color:red">decompose</b> a long task into subtasks, at several levels of abstraction.
+To formalize this, the <b style="color:red">options framework</b> defines subpolicies with start and stop conditions.
+Then, deep methods like Feudal Networks, Option-Critic, HIRO and <b style="color:red">HAC</b> learn the subgoals and the subpolicies themselves.
+
+The second topic was <b style="color:red">RL and LLMs</b>.
+We saw that, after pre-training and supervised fine-tuning, RL is used in two more stages.
+First comes <b style="color:red">RLHF</b>: it learns a reward model from human preferences, to align the model with what people want.
+Then comes <b style="color:red">RLVR</b>: it uses GRPO and automatically checked answers, to improve <b style="color:red">reasoning</b>.
+
+So, RL is not only for games and robots.
+It has become a key part of how the most advanced AI models are built.
+						</div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+			</div>
+
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/zoom.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/search.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="dist/plugin/math.js"></script>
+
+		<script>
+
+			// Also available as an ES module, see:
+			// https://revealjs.com/initialization/
+			Reveal.initialize({
+				// Display presentation control arrows
+				controls: true,
+
+				// Help the user learn the controls by providing hints, for example by
+				// bouncing the down arrow when they first encounter a vertical slide
+				controlsTutorial: true,
+
+				// Determines where controls appear, "edges" or "bottom-right"
+				controlsLayout: 'bottom-right',
+
+				// Visibility rule for backwards navigation arrows; "faded", "hidden"
+				// or "visible"
+				controlsBackArrows: 'faded',
+
+				// Display a presentation progress bar
+				progress: true,
+
+				// Vertical centering of slides
+				center: true,
+
+				hash: true,
+				slideNumber: 'h.v',
+
+				// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+				maxScale: 4.0,
+				mathjax2: {
+					//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+					//mathjax: 'mathjax/MathJax.js',
+					config: 'TeX-AMS_HTML-full',
+					// pass other options into `MathJax.Hub.Config()`
+					TeX: {
+						Macros: {
+							R: '\\mathbb{R}',
+							set: ['\\left\\{#1 \\; ; \\; #2\\right\\}', 2]
+						}
+					}
+				},
+
+				// There are three typesetters available
+				// RevealMath.MathJax2 (default)
+				// RevealMath.MathJax3
+				// RevealMath.KaTeX
+				//
+				// More info at https://revealjs.com/math/
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2]
+
+				// // Reveal.js plugins
+				// dependencies: [
+				// 	{ src: 'revealjs/plugin/reveald3.js' },
+				// ]
+			});
+
+		</script>
+
+		<!-- Assurez-vous que jdhp.js est référencé après tous les autres scripts -->
+		<script src="jdhp.js"></script>
+
+	</body>
+
+</html>

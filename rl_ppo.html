@@ -1,0 +1,1460 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Proximal Policy Optimization</title>
+
+		<meta name="description" content="Proximal Policy Optimization (PPO): from TD actor-critic to PPO, one ingredient at a time">
+		<meta name="author" content="Jérémie Decock">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+
+		<!-- Shared styling/behavior of the personal decks (draft highlighting,
+		     speaker-notes language filtering .fr-notes/.en-notes) -->
+		<link rel="stylesheet" href="jdhp.css">
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+				<!-- ------------------------------------------------------ -->
+				<!-- TITLE AND OUTLINE ------------------------------------ -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- Slide: Titre -->
+				<section>
+					<h1 style="font-size: 1.4em;">Proximal Policy Optimization</h1>
+					<p style="font-size: 0.9em; color: #666;">From TD Actor-Critic to PPO, one ingredient at a time</p>
+					<br>
+					<p style="font-size: 1em;"><small><a href="https://www.jdhp.org/">Jérémie Decock</a></small></p>
+					<p style="font-size: 1em;"><small>October 8, 2026</small></p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+Aujourd'hui : PPO, l'algorithme de gradient de politique le plus utilisé (robotique, jeux, RLHF des LLM). On le construit pas à pas à partir de TD actor-critic, en ajoutant un ingrédient à la fois.
+						</div>
+						<div class="en-notes">
+Hello everyone.
+Today, we are going to study <b style="color:red">Proximal Policy Optimization</b>, or PPO.
+It is probably the most widely used <b style="color:red">policy gradient</b> algorithm today.
+It trains robots, it plays video games, and it was used to fine-tune ChatGPT.
+You already know <b style="color:red">TD actor-critic</b>.
+So we will start from there, and add <b style="color:red">one ingredient at a time</b>, until we get PPO.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				<!-- PROXIMAL POLICY OPTIMIZATION ------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+<!-- @preview /rl_ppo.html -->
+<!-- #region -->
+
+<!-- Les figures de ce chapitre sont dessinées à la volée avec d3.js (assets/rl_ppo/*.ts).
+     Tout est recalculé au chargement de la page avec des seeds fixées (ppo_config.json) :
+     le « couloir » (TD actor-critic, GAE, PPO complet) et le « bandit gaussien » (ratio,
+     clipping, entropie). Les slides « pas à pas » sont pilotées par une liste de frames
+     (data-frames, un jeton par fragment) ; les fragments correspondants sont créés par
+     frame_steps.js. Voir assets/rl_ppo/README.md.
+     Notations : Sutton & Barto, 2e éd. (S_t, A_t, R_{t+1}, π(a|s,θ), v̂(s,w), δ_t, ρ_t) ;
+     avantage noté Adv (A_t est l'action). Couleurs des ingrédients : vert = rollouts/GAE,
+     orange = réutilisation du lot (ratio), violet = clipping, bleu foncé = entropie. -->
+
+<!-- Slide: Outline -->
+<section id="ppo-outline" style="text-align: left; font-size: 72%;">
+	<h3 style="text-align: center;">Outline</h3>
+
+	<div class="ppo-roadmap" data-step="all" style="font-size: 62%;"></div>
+	<script type="module" src="assets/rl_ppo/roadmap.js"></script>
+
+	<ol style="display: block; margin: 0.6em 0 0 2em;">
+		<li>Starting point: TD Actor-Critic, and its four weaknesses</li>
+		<li>Better advantages: rollouts and GAE</li>
+		<li>Reusing the batch: the importance ratio</li>
+		<li>Clipping: small policy steps</li>
+		<li>The full loss, PPO step by step, and PPO in practice (including LLMs)</li>
+	</ol>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Plan : on part de TD actor-critic, on identifie quatre faiblesses, et chacune appelle un ingrédient (GAE, réutilisation du lot, clipping, entropie). À la fin : PPO complet, PPO en pratique et dans les LLM.
+		</div>
+		<div class="en-notes">
+Here is the plan, and the road we will follow.
+
+We start from <b style="color:red">TD actor-critic</b>.
+We will see that it has <b style="color:red">four weaknesses</b>.
+
+Each weakness calls for one new ingredient, with its own color.
+In green, <b style="color:red">rollouts and GAE</b>, to get better advantage estimates.
+In orange, <b style="color:red">data reuse</b>, with an importance ratio.
+In purple, <b style="color:red">clipping</b>, to keep each policy step small.
+In dark blue, an <b style="color:red">entropy bonus</b>, to keep exploring.
+
+Put the four together, and you get PPO.
+Finally, we will see PPO in practice, including in large language models.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+<!-- STARTING POINT: TD ACTOR-CRITIC ---------------------- -->
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: TD actor-critic step by step -->
+<section id="ppo-td-actor-critic" style="font-size: 58%;">
+	<h3>Starting point: one-step TD Actor-Critic</h3>
+
+	<div style="display: grid; grid-template-columns: 47% 53%; align-items: center;">
+		<div class="ppo-code ppo-tdac-code" style="padding-left: 2em; font-size: 92%;">
+			<div data-ln="1"><span class="kw">Input:</span> policy $\pi(a|s,\bth)$, critic $\vhat(s,\bw)$</div>
+			<div data-ln="2">Initialize $\bth$ and $\bw$ (e.g. to $0$)</div>
+			<div data-ln="3"><span class="kw">Loop</span> for each episode:</div>
+			<div data-ln="4" class="i1">$S \leftarrow$ first state of episode ; $I \leftarrow 1$</div>
+			<div data-ln="5" class="i1"><span class="kw">Loop while</span> $S$ is not terminal:</div>
+			<div data-ln="6" class="i2">$A \sim \pi(\cdot|S,\bth)$</div>
+			<div data-ln="7" class="i2">Take action $A$, observe $S', R$</div>
+			<div data-ln="8" class="i2">$\delta \leftarrow R + \gamma \vhat(S',\bw) - \vhat(S,\bw)$</div>
+			<div data-ln="9" class="i2">$\bw \leftarrow \bw + \alpha^{\bw} \, \delta \, \nabla \vhat(S,\bw)$</div>
+			<div data-ln="10" class="i2">$\bth \leftarrow \bth + \alpha^{\bth} I \, \delta \, \nabla \ln \pi(A|S,\bth)$</div>
+			<div data-ln="11" class="i2">$I \leftarrow \gamma I$ ; $S \leftarrow S'$</div>
+			<p style="font-size: 72%; color: #888; margin: 0.8em 0 0 0; white-space: normal;">
+				Sutton &amp; Barto (2018), §13.5. Here: tabular, $\vhat(s,\bw) = w_s$, $\pi(\cdot|s,\bth) = \operatorname{softmax}(\theta_{s,\cdot})$,
+				$\alpha^{\bth} = 1$, $\alpha^{\bw} = 0.5$, $\gamma = 0.9$.
+			</p>
+		</div>
+
+		<div>
+			<svg class="ppo-fig ppo-tdac" width="500" height="330"
+					data-initial-frame="init"
+					data-frames="1:act 1:step 1:delta 1:critic 1:actor 1:next
+						2:act 2:step 2:delta 2:critic 2:actor 2:next
+						3:all 4:all long"></svg>
+		</div>
+	</div>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/td_actor_critic.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Rappel de TD actor-critic (Sutton &amp; Barto) sur un couloir : petite récompense proche à gauche (+0.5), grande récompense loin à droite (+1). Premier pas : δ = 0, rien n'est appris. Deuxième pas : la récompense arrive, δ = 0.5. Épisode 2 : l'information ne remonte que d'une case par visite. Après 1000 pas, l'agent est piégé à gauche.
+		</div>
+		<div class="en-notes">
+Let's start with what you know: <b style="color:red">one-step TD actor-critic</b>, as in Sutton and Barto.
+Our toy problem is a <b style="color:red">corridor</b>.
+On the left, a small reward, plus 0.5, close to the start.
+On the right, a big reward, plus 1, but further away.
+The arrows show the policy, and the numbers below show the critic.
+
+<i style="color:gray">[click × 6: first transition]</i>
+We go left, from 2 to 1, with no reward.
+The critic knows nothing yet, so <b style="color:red">delta is zero</b>: nothing is learned.
+
+<i style="color:gray">[click × 6: second transition]</i>
+Now we reach the left goal: delta is 0.5.
+The critic of state 1 goes up, and the policy in state 1 prefers left.
+
+<i style="color:gray">[click × 2: next episode]</i>
+In the next episode, delta is positive in state 2: the information moved back <b style="color:red">one state only</b>.
+
+<i style="color:gray">[click]</i>
+After a thousand steps, the agent is <b style="color:red">trapped</b> by the small reward on the left.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: delta is an advantage estimate -->
+<section id="ppo-delta-advantage" style="text-align: left; font-size: 62%;">
+	<h3 style="text-align: center;">$\delta_t$ is an estimate of the advantage</h3>
+
+	<p>
+		<b>Advantage</b> of action $a$ in state $s$: how much better $a$ is than what $\pi$ does on average
+		$$\Adv_\pi(s,a) \doteq q_\pi(s,a) - v_\pi(s)$$
+	</p>
+
+	<p class="fragment" data-fragment-index="0">
+		If the critic is exact ($\vhat = v_\pi$), the TD error is an <em>unbiased</em> estimate of it:
+		$$\E_\pi\big[\delta_t \mid S_t = s, A_t = a\big] = \underbrace{\E_\pi\big[R_{t+1} + \gamma v_\pi(S_{t+1}) \mid s, a\big]}_{q_\pi(s,a)} - \, v_\pi(s) = \Adv_\pi(s,a)$$
+	</p>
+
+	<p class="fragment" data-fragment-index="1">
+		The actor update is a stochastic gradient step on $J(\bth)$, with the policy gradient theorem (with baseline):
+		$$\nabla J(\bth) \propto \E_\pi\big[\Adv_\pi(S_t,A_t) \, \nabla \ln \pi(A_t|S_t,\bth)\big] \qquad \text{TD AC: } \Adv_\pi(S_t,A_t) \approx \delta_t$$
+	</p>
+
+	<div class="fragment" data-fragment-index="2" style="font-size: 85%; border-left: 0.25em solid #ccc; padding: 0.3em 0 0.3em 0.8em; margin-top: 0.8em;">
+		<b>Notation.</b> $\hAdv_t$ = any estimate of $\Adv_\pi(S_t,A_t)$; $\delta_t$ is the simplest one.
+		We write $\Adv$, not $A$: in Sutton &amp; Barto, $A_t$ is the action.
+		<span style="color: #888;">(The PPO paper writes $\hat{A}_t$ for $\hAdv_t$, and $r_t(\theta)$ for the ratio $\rho_t(\bth)$ we will meet soon.)</span>
+	</div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+L'avantage Adv = q − v ; si le critique est exact, δ_t en est un estimateur sans biais ; l'acteur fait donc une montée de gradient stochastique avec le théorème du gradient de politique avec ligne de base. Notation : Adv et non A (A_t est l'action chez Sutton &amp; Barto).
+		</div>
+		<div class="en-notes">
+Before we improve this algorithm, let's look at delta from a different angle.
+
+The <b style="color:red">advantage</b> of an action is how much better it is than what the policy does on average.
+It is q minus v.
+
+<i style="color:gray">[click]</i>
+If the critic were exact, the expected TD error would be exactly the advantage.
+So delta is a one-sample <b style="color:red">estimate of the advantage</b>.
+
+<i style="color:gray">[click]</i>
+And the actor update is a stochastic gradient step, from the <b style="color:red">policy gradient theorem</b>.
+The advantage tells us in which direction to push the probability of each action.
+
+<i style="color:gray">[click]</i>
+A word on notation.
+We write Adv hat for any advantage estimate, because capital A is already the action.
+The PPO paper uses A hat and r of theta: be careful when you read it.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: four weaknesses -->
+<section id="ppo-weaknesses" style="font-size: 60%;">
+	<h3>Four weaknesses of TD Actor-Critic</h3>
+
+	<table style="font-size: 92%; width: 100%;">
+		<thead>
+			<tr><th style="width: 58%;">Weakness</th><th>Ingredient of PPO</th></tr>
+		</thead>
+		<tbody>
+			<tr class="fragment" data-fragment-index="0">
+				<td>$\delta_t$ looks <b>one step</b> ahead: biased when $\vhat \neq v_\pi$, and rewards propagate back one state per visit</td>
+				<td><b class="ppo-c-gae">Rollouts and GAE</b>: look further ahead, tune bias vs variance</td>
+			</tr>
+			<tr class="fragment" data-fragment-index="1">
+				<td>Each transition is used for <b>one</b> gradient step, then thrown away</td>
+				<td><b class="ppo-c-reuse">Data reuse</b>: several epochs on each batch, with an importance ratio</td>
+			</tr>
+			<tr class="fragment" data-fragment-index="2">
+				<td>Nothing but $\alpha^{\bth}$ limits how much the policy changes in one update</td>
+				<td><b class="ppo-c-clip">Clipping</b>: keep the new policy close to the old one</td>
+			</tr>
+			<tr class="fragment" data-fragment-index="3">
+				<td>The policy can become deterministic <b>too early</b> and stop exploring</td>
+				<td><b class="ppo-c-ent">Entropy bonus</b>: keep the policy stochastic</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<p class="fragment" data-fragment-index="4" style="margin-top: 0.8em;">
+		Each ingredient fixes one weakness, and each one is <em>simple</em>: PPO = TD Actor-Critic + 4 small changes.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Quatre faiblesses de TD actor-critic, chacune associée à un ingrédient de PPO (code couleur conservé dans tout le deck).
+		</div>
+		<div class="en-notes">
+So what is wrong with TD actor-critic? I see four weaknesses, one per ingredient of PPO.
+
+<i style="color:gray">[click]</i>
+First, delta looks only <b style="color:red">one step ahead</b>.
+It is biased when the critic is wrong, and rewards travel back very slowly: we just saw it.
+
+<i style="color:gray">[click]</i>
+<span style="color:blue">Second, each transition is used for one gradient step, then <b style="color:red">thrown away</b>.</span>
+
+<i style="color:gray">[click]</i>
+Third, only the step size limits how much the policy changes.
+This will become a real problem when we reuse data.
+
+<i style="color:gray">[click]</i>
+Fourth, the policy can become deterministic <b style="color:red">too early</b>, like our agent stuck on the left.
+
+<i style="color:gray">[click]</i>
+<span style="color:blue">Each ingredient fixes one weakness, and each one is simple.</span>
+PPO is TD actor-critic plus <b style="color:red">four small changes</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+<!-- PART 1: ROLLOUTS AND GAE ----------------------------- -->
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Part 1 -->
+<section id="ppo-part1">
+	<h3>Part 1</h3>
+	<h4 style="color: #009e73;">Better advantages: rollouts and GAE</h4>
+	<div class="ppo-roadmap" data-step="1" style="font-size: 45%;"></div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Partie 1 : de meilleurs estimateurs de l'avantage.
+		</div>
+		<div class="en-notes">
+Part one: how to get <b style="color:red">better advantage estimates</b> than delta.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: n-step advantages -->
+<section id="ppo-nstep" style="font-size: 58%;">
+	<h3>Looking further ahead: $n$-step advantages</h3>
+
+	<p style="margin: 0.2em 0;">
+		$\hAdv^{(n)}_t \doteq G_{t:t+n} - \vhat(S_t,\bw) = \sum_{l=0}^{n-1} \gamma^l \delta_{t+l}$
+		<span style="font-size: 80%; color: #666;">
+			&nbsp; with $G_{t:t+n} \doteq R_{t+1} + \gamma R_{t+2} + \dots + \gamma^{n-1} R_{t+n} + \gamma^n \vhat(S_{t+n},\bw)$ (telescoping sum)
+		</span>
+	</p>
+
+	<svg class="ppo-fig ppo-adv-timeline" data-mode="nstep" width="900" height="370"
+			data-initial-frame="0" data-frames="1 2 3 inf"></svg>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/advantage_timeline.js"></script>
+
+	<p style="font-size: 75%; color: #888; margin: 0;">
+		One trajectory in the corridor, $\pi(\rightarrow|s) = 0.7$; the critic lags behind: $\vhat$ = values of the uniform policy.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Estimateurs à n pas : somme des n premiers δ actualisés = retour à n pas moins v̂(S_t). n = 1 : TD ; n = ∞ : Monte Carlo. Sur cette trajectoire, δ_0 est négatif alors que l'action était bonne : l'estimateur à un pas se trompe de signe.
+		</div>
+		<div class="en-notes">
+So how can we look further ahead?
+Here is one trajectory in the corridor: we start in 2, we go right, and after six steps we reach the big reward.
+Below each transition, the bar is its TD error, <b style="color:red">delta t</b>.
+
+<i style="color:gray">[click]</i>
+With n equal to one, the advantage estimate is just delta zero.
+It is slightly <b style="color:red">negative</b>: TD says this action was bad.
+
+<i style="color:gray">[click × 2]</i>
+With n equal to two, then three, we add the next deltas, discounted by gamma.
+This sum telescopes into the <b style="color:red">n-step return</b>, minus the value of S t.
+
+<i style="color:gray">[click]</i>
+With n equal to infinity, we use the whole return: this is <b style="color:red">Monte Carlo</b>.
+Now the estimate is clearly positive: going right was a good idea.
+The one-step estimate even got the <b style="color:red">sign wrong</b>, because the critic is out of date.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: from online updates to rollouts -->
+<section id="ppo-rollouts" style="text-align: left; font-size: 58%;">
+	<h3 style="text-align: center;">From online updates to rollouts</h3>
+
+	<p style="margin: 0.2em 0;">
+		To compute $\hAdv^{(n)}_t$ at time $t$, we need $R_{t+1}, \dots, R_{t+n}$ and $S_{t+n}$: <b>rewards from the future</b>.
+	</p>
+
+	<svg class="ppo-fig ppo-online-batch" width="900" height="310"
+			data-initial-frame="online" data-frames="batch backward reuse"></svg>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/online_vs_batch.js"></script>
+
+	<ul style="margin: 0.2em 0 0 1em;">
+		<li class="fragment" data-fragment-index="1"><b class="ppo-c-gae">It makes GAE possible</b>: when we compute the advantages, all the future $\delta$'s of the batch are known.</li>
+		<li class="fragment" data-fragment-index="2"><b class="ppo-c-reuse">It provides a batch</b>, collected by one fixed policy $\pi(\cdot|\cdot,\thold)$, that we could <b>reuse</b> (Part 2).</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Passer de l'online au batch (rollouts de T pas, comme A2C) : c'est ce qui rend GAE possible (il faut connaître les δ futurs), et c'est aussi ce qui fournit le lot à réutiliser (partie 2).
+		</div>
+		<div class="en-notes">
+But there is a practical problem.
+To look n steps ahead, we need <b style="color:red">rewards from the future</b>.
+In TD actor-critic, we update after every transition, so the future is not known yet.
+
+<i style="color:gray">[click]</i>
+The solution: <b style="color:red">rollouts</b>.
+We run the current policy for T steps, and we store everything in a buffer.
+This is how <b style="color:red">A2C</b> works, often with several copies of the environment in parallel.
+
+<i style="color:gray">[click]</i>
+Then we compute all the advantages <b style="color:red">backwards</b>, from the end of the buffer.
+It makes GAE possible: when we compute the advantages, all the future deltas of the batch are known.
+
+<i style="color:gray">[click]</i>
+And there is a second benefit, the key to PPO.
+We now have a <b style="color:red">whole batch</b>, collected by one fixed policy, theta old.
+Why use it only once? This is Part 2.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: GAE -->
+<section id="ppo-gae" style="font-size: 58%;">
+	<h3>Generalized Advantage Estimation: GAE($\lambda$)</h3>
+
+	<p style="margin: 0.1em 0;">
+		$\hAdv_t \doteq (1-\lambda) \sum_{n \ge 1} \lambda^{n-1} \hAdv^{(n)}_t = \sum_{l \ge 0} (\gamma\lambda)^l \, \delta_{t+l} = G^\lambda_t - \vhat(S_t,\bw)$
+		<span style="font-size: 75%; color: #666;">&nbsp; (S&amp;B ch. 12)</span>
+	</p>
+	<p style="margin: 0.1em 0; font-size: 90%;">
+		In practice, one backward pass over the batch: &nbsp;
+		<span class="ppo-c-gae">$\hAdv_t = \delta_t + \gamma\lambda \, \hAdv_{t+1}$</span>
+		<span style="font-size: 85%; color: #666;">&nbsp; (reset at the end of an episode)</span>
+	</p>
+
+	<svg class="ppo-fig ppo-adv-timeline" data-mode="gae" width="900" height="350"
+			data-initial-frame="0" data-frames="1 0.95"></svg>
+	<div class="ppo-slider-row" style="width: 55%;">
+		<span class="lbl ppo-lambda-label"></span>
+		<input type="range" class="ppo-slider ppo-lambda-slider" min="0" max="1" step="0.01">
+	</div>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/advantage_timeline.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+GAE(λ) : moyenne exponentielle des estimateurs à n pas = somme des δ pondérés par (γλ)^l = λ-retour moins v̂. Calcul : une passe arrière sur le lot. λ = 0 : TD ; λ = 1 : Monte Carlo ; PPO : λ = 0.95. Le curseur permet de faire varier λ.
+		</div>
+		<div class="en-notes">
+Which n should we choose?
+GAE answers: don't choose, take an <b style="color:red">exponential average</b> of all of them.
+It is exactly the <b style="color:red">lambda-return</b> of Sutton and Barto, minus the value of the state.
+And the weights on the deltas are simply gamma lambda to the power l.
+
+In practice, we compute it with <b style="color:red">one backward pass</b> over the batch: one line of code.
+
+Here lambda is zero: we get delta zero, the TD estimate.
+
+<i style="color:gray">[click]</i>
+Lambda equal to one: all the deltas count, we get <b style="color:red">Monte Carlo</b>.
+
+<i style="color:gray">[click]</i>
+The PPO paper uses <b style="color:red">lambda equal to 0.95</b>: almost Monte Carlo, but the far future is damped.
+You can move the slider to see the weights change.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: bias-variance -->
+<section id="ppo-gae-bias-variance" style="font-size: 58%;">
+	<h3>$\lambda$ trades bias for variance</h3>
+
+	<p style="margin: 0.1em 0; font-size: 90%;">
+		2000 episodes starting with $(S_0, A_0) = (2, \rightarrow)$, same policy and lagging critic as before.
+		Target: $q_\pi(S_0,A_0) - \vhat(S_0,\bw)$ <span style="color: #888;">(a baseline that depends only on the state does not bias the policy gradient)</span>
+	</p>
+
+	<svg class="ppo-fig ppo-gae-bv" width="900" height="380"
+			data-initial-frame="0" data-frames="1 0.75"></svg>
+	<div class="ppo-slider-row" style="width: 55%;">
+		<span class="lbl ppo-lambda-label"></span>
+		<input type="range" class="ppo-slider ppo-lambda-slider" min="0" max="1" step="0.01">
+	</div>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/gae_bias_variance.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Biais–variance de GAE sur 2000 épisodes : λ = 0 sans variance ici (transitions déterministes) mais biaisé (et même de mauvais signe) car le critique est en retard ; λ = 1 sans biais mais très variable ; l'erreur quadratique est minimale autour de λ ≈ 0.75 sur cet exemple.
+		</div>
+		<div class="en-notes">
+Why not always use Monte Carlo?
+Let's measure it: two thousand episodes, all starting with the same state and the same action.
+On the left, the histogram of the advantage estimates; the black line is the target.
+
+With lambda equal to zero, there is <b style="color:red">no variance</b> at all here: transitions are deterministic.
+But the estimate is <b style="color:red">biased</b>, because the critic is wrong.
+It is even on the wrong side of zero.
+
+<i style="color:gray">[click]</i>
+With lambda equal to one, the bias disappears, but the estimates are spread out: <b style="color:red">high variance</b>.
+
+<i style="color:gray">[click]</i>
+On the right, the bias, the standard deviation, and the total error.
+The best compromise is <b style="color:red">in between</b>: here around 0.75.
+With neural networks and long episodes, people use 0.9 to 0.97.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: algorithm so far: A2C + GAE -->
+<section id="ppo-algo-a2c" style="font-size: 60%;">
+	<h3>Algorithm so far: actor-critic with rollouts and GAE</h3>
+
+	<div class="ppo-code" style="padding-left: 2em; font-size: 95%; display: inline-block;">
+		<div data-ln="1">Initialize $\bth$ and $\bw$ ; $S_0 \leftarrow$ first state</div>
+		<div data-ln="2"><span class="kw">Loop</span> for each iteration:</div>
+		<div data-ln="3" class="i1 add-gae"><span class="kw">for</span> $t = 0, \dots, T-1$ <span class="kw">do</span> &nbsp; <span class="cm">▷ rollout with the current policy</span></div>
+		<div data-ln="4" class="i2 add-gae">$A_t \sim \pi(\cdot|S_t,\bth)$ ; take $A_t$, observe $R_{t+1}, S_{t+1}$ &nbsp; <span class="cm">▷ new episode if terminal</span></div>
+		<div data-ln="5" class="i1 add-gae">$\delta_t \leftarrow R_{t+1} + \gamma \vhat(S_{t+1},\bw) - \vhat(S_t,\bw)$ &nbsp; for all $t$</div>
+		<div data-ln="6" class="i1 add-gae">$\hAdv_t \leftarrow \delta_t + \gamma\lambda\,\hAdv_{t+1}$ &nbsp; for $t = T-1, \dots, 0$ ; &nbsp; $\Vtarg_t \leftarrow \hAdv_t + \vhat(S_t,\bw)$</div>
+		<div data-ln="7" class="i1">$\bth \leftarrow \bth + \alpha^{\bth} \, \frac{1}{T} \sum_t \hAdv_t \, \nabla \ln \pi(A_t|S_t,\bth)$</div>
+		<div data-ln="8" class="i1">$\bw \leftarrow \bw + \alpha^{\bw} \, \frac{1}{T} \sum_t \big(\Vtarg_t - \vhat(S_t,\bw)\big) \nabla \vhat(S_t,\bw)$</div>
+	</div>
+
+	<ul style="text-align: left; font-size: 85%; margin: 1em 0 0 1em;">
+		<li>$\delta \rightarrow \hAdv_t$, and the critic regresses on $\Vtarg_t$ (the $\lambda$-return) instead of $R + \gamma \vhat(S')$</li>
+		<li>The factor $I = \gamma^t$ is dropped, as in all practical implementations</li>
+		<li>With $N$ parallel environments, this is <b>A2C</b> (Mnih et al., 2016)</li>
+		<li>Still <b>one</b> gradient step per batch: the batch is then thrown away</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+L'algorithme à ce stade (lignes vertes = rollouts + GAE) : c'est A2C avec GAE. Le facteur I est abandonné, comme dans toutes les implémentations. Un seul pas de gradient par lot.
+		</div>
+		<div class="en-notes">
+Let's write down the algorithm so far.
+The green lines are new.
+
+We collect a rollout of T steps, compute the deltas, then the advantages with one <b style="color:red">backward pass</b>.
+The critic now regresses on a better target: the <b style="color:red">lambda-return</b>.
+Note that we drop the I factor, like every practical implementation.
+
+With several environments in parallel, this algorithm is called <b style="color:red">A2C</b>.
+
+But look at the last two lines.
+We still do <b style="color:red">one gradient step</b>, and then the batch is thrown away.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+<!-- PART 2: DATA REUSE ----------------------------------- -->
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Part 2 -->
+<section id="ppo-part2">
+	<h3>Part 2</h3>
+	<h4 style="color: #e69f00;">Reusing the batch: the importance ratio</h4>
+	<div class="ppo-roadmap" data-step="2" style="font-size: 45%;"></div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Partie 2 : réutiliser le lot.
+		</div>
+		<div class="en-notes">
+Part two: how to <b style="color:red">reuse</b> each batch several times.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: one gradient step per batch is wasteful -->
+<section id="ppo-reuse" style="text-align: left; font-size: 60%;">
+	<h3 style="text-align: center;">One gradient step per batch is wasteful</h3>
+
+	<ul style="margin: 0 0 0 1em;">
+		<li>Collecting data is the expensive part (simulator, robot, text generation by an LLM…)</li>
+		<li class="fragment" data-fragment-index="0">Idea: do <b class="ppo-c-reuse">$K$ epochs</b> of minibatch gradient steps on the same batch</li>
+		<li class="fragment" data-fragment-index="1">Problem: after the first step, $\bth \neq \thold$. The batch was sampled by $\pi(\cdot|\cdot,\thold)$, not by the policy we are improving:
+			$\frac{1}{T}\sum_t \hAdv_t \nabla \ln \pi(A_t|S_t,\bth)$ is no longer the policy gradient at $\bth$</li>
+	</ul>
+
+	<div class="fragment" data-fragment-index="2" style="display: flex; justify-content: center; align-items: stretch; gap: 0.5em; margin: 1em 0 0.6em 0; font-size: 90%; text-align: center;">
+		<div style="border: 0.12em solid #e69f00; border-radius: 0.4em; padding: 0.4em 0.6em; width: 22%;">reuse the batch<br>($K$ epochs)</div>
+		<div style="align-self: center; color: #999;">→</div>
+		<div style="border: 0.12em solid #e69f00; border-radius: 0.4em; padding: 0.4em 0.6em; width: 22%;">off-policy data:<br>importance ratio $\rho_t(\bth)$</div>
+		<div style="align-self: center; color: #999;">→</div>
+		<div class="fragment" data-fragment-index="3" style="border: 0.12em solid #ee6a6a; border-radius: 0.4em; padding: 0.4em 0.6em; width: 22%;">maximizing the new objective makes the policy <b>diverge</b></div>
+		<div class="fragment" data-fragment-index="3" style="align-self: center; color: #999;">→</div>
+		<div class="fragment" data-fragment-index="4" style="border: 0.12em solid #cc79a7; border-radius: 0.4em; padding: 0.4em 0.6em; width: 22%;">clip $\rho_t(\bth)$</div>
+	</div>
+
+	<p class="fragment" data-fragment-index="5" style="font-size: 90%;">
+		<b>Why not clip TD Actor-Critic directly?</b> Each transition is used <em>once</em>, at $\bth = \thold$:
+		the ratio is always $\rho_t = 1$, and the clip would do nothing. Clipping only makes sense <em>with data reuse</em>.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Réutiliser le lot sur K époques. Problème : après le premier pas, les données viennent de l'ancienne politique. D'où l'enchaînement : réutiliser → ratio d'importance → l'objectif obtenu fait diverger la politique → clip. Dans TD AC, chaque transition sert une seule fois à θ = θ_old : le ratio vaut 1 et le clip ne ferait rien.
+		</div>
+		<div class="en-notes">
+Collecting data is the <b style="color:red">expensive</b> part: a simulator, a real robot, or an LLM generating text.
+
+<i style="color:gray">[click]</i>
+So the idea is natural: do <b style="color:red">K epochs</b> of gradient steps on the same batch.
+
+<i style="color:gray">[click]</i>
+But after the first step, the data come from the <b style="color:red">old policy</b>, not from the one we improve.
+
+<i style="color:gray">[click]</i>
+Here is the whole story of PPO: we reuse the batch, so we need an <b style="color:red">importance ratio</b>.
+
+<i style="color:gray">[click]</i>
+<span style="color:blue">But maximizing the new objective makes the policy <b style="color:red">diverge</b>.</span>
+
+<i style="color:gray">[click]</i>
+So we <b style="color:red">clip</b> the ratio.
+
+<i style="color:gray">[click]</i>
+In TD actor-critic, each transition is used once, by the old policy itself.
+The ratio is always one: the clip would do <b style="color:red">nothing</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: surrogate objective -->
+<section id="ppo-surrogate" style="text-align: left; font-size: 60%;">
+	<h3 style="text-align: center;">Importance sampling: the surrogate objective</h3>
+
+	<p style="margin: 0.2em 0;">
+		Importance sampling: &nbsp; $\E_{A \sim \pi(\cdot|s,\bth)}\big[f(A)\big] = \E_{A \sim \pi(\cdot|s,\thold)}\Big[\frac{\pi(A|s,\bth)}{\pi(A|s,\thold)} \, f(A)\Big]$
+	</p>
+
+	<p class="fragment" data-fragment-index="0" style="margin: 0.4em 0;">
+		<b class="ppo-c-reuse">Importance ratio</b> (Sutton &amp; Barto, ch. 5 and 7): &nbsp;
+		$\rho_t(\bth) \doteq \dfrac{\pi(A_t|S_t,\bth)}{\pi(A_t|S_t,\thold)}$, &nbsp; with $\rho_t(\thold) = 1$
+	</p>
+
+	<p class="fragment" data-fragment-index="1" style="margin: 0.4em 0;">
+		<b>Surrogate objective</b> ("conservative policy iteration", Kakade &amp; Langford, 2002), $\Ehat_t$ = average over the batch:
+		$$\Lcpi(\bth) \doteq \Ehat_t\big[\rho_t(\bth) \, \hAdv_t\big]$$
+	</p>
+
+	<p class="fragment" data-fragment-index="2" style="margin: 0.4em 0;">
+		At $\bth = \thold$: &nbsp; $\nabla \rho_t(\bth)\big|_{\thold} = \dfrac{\nabla \pi(A_t|S_t,\thold)}{\pi(A_t|S_t,\thold)} = \nabla \ln \pi(A_t|S_t,\thold)$
+		$$\Rightarrow \quad \nabla \Lcpi(\thold) = \Ehat_t\big[\hAdv_t \, \nabla \ln \pi(A_t|S_t,\thold)\big] \quad \text{(the A2C gradient)}$$
+	</p>
+
+	<p class="fragment" data-fragment-index="3" style="margin: 0.4em 0;">
+		The first step on $\Lcpi$ is exactly the A2C step; the next steps <em>correct</em> for the change of policy…
+		but only for the <b>actions</b>, not for the <b>states</b>: the next states would also change.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Échantillonnage préférentiel : ratio ρ_t(θ) (notation Sutton &amp; Barto ; r_t(θ) dans le papier PPO). Objectif de substitution L^CPI. Au point θ_old, son gradient est exactement celui d'A2C. Il corrige le changement de loi des actions, pas celui des états.
+		</div>
+		<div class="en-notes">
+The classic tool for off-policy data is <b style="color:red">importance sampling</b>.
+An expectation under the new policy is an expectation under the old one, reweighted by the ratio of probabilities.
+
+<i style="color:gray">[click]</i>
+This ratio is called rho t, the <b style="color:red">importance ratio</b>, as in Sutton and Barto.
+At theta old, it is equal to one.
+
+<i style="color:gray">[click]</i>
+So we maximize the average of rho times the advantage: the <b style="color:red">surrogate objective</b>.
+The name CPI comes from Kakade and Langford, in 2002.
+
+<i style="color:gray">[click]</i>
+Look at its gradient at theta old.
+The gradient of rho is the gradient of log pi.
+So the first step is <b style="color:red">exactly the A2C step</b>.
+
+<i style="color:gray">[click]</i>
+<span style="color:blue">The next steps correct for the change of policy, but only for the <b style="color:red">actions</b>.</span>
+The <b style="color:red">states</b> would also change with a new policy, and the surrogate ignores it.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Kakade & Langford -->
+<section id="ppo-kakade-langford" style="text-align: left; font-size: 60%;">
+	<h3 style="text-align: center;">The surrogate is only valid near $\thold$</h3>
+
+	<p style="margin: 0.2em 0;">
+		<b>Performance difference lemma</b> (Kakade &amp; Langford, 2002), for any two policies:
+		$$J(\bth) - J(\thold) = \E_{\pi_{\bth}}\Big[\sum_{t \ge 0} \gamma^t \Adv_{\pi_{\thold}}(S_t, A_t)\Big]$$
+		<span style="font-size: 85%; color: #666;">Proof: $\Adv_{\pi_{\thold}}(S_t,A_t) = \E\big[R_{t+1} + \gamma v_{\pi_{\thold}}(S_{t+1}) - v_{\pi_{\thold}}(S_t)\big]$, and the sum telescopes to $G_0 - v_{\pi_{\thold}}(s_0)$.</span>
+	</p>
+
+	<p class="fragment" data-fragment-index="0" style="margin: 0.5em 0;">
+		With importance sampling on the actions only:
+		$$J(\bth) - J(\thold) = \sum_{t \ge 0} \gamma^t \, \E_{\color{#ee6a6a}{S_t \sim \pi_{\bth}}} \, \E_{A_t \sim \pi_{\thold}}\big[\rho_t(\bth) \, \Adv_{\pi_{\thold}}(S_t,A_t)\big]$$
+	</p>
+
+	<p class="fragment" data-fragment-index="1" style="margin: 0.5em 0;">
+		The surrogate replaces ${\color{#ee6a6a}{S_t \sim \pi_{\bth}}}$ by $S_t \sim \pi_{\thold}$ — the states we have — and drops $\gamma^t$ (like $I$):
+		$$J(\bth) - J(\thold) \approx \Lcpi(\bth) \qquad \text{good approximation only if } \pi_{\bth} \text{ stays close to } \pi_{\thold}$$
+	</p>
+
+	<p class="fragment" data-fragment-index="2" style="margin: 0.5em 0;">
+		Far from $\thold$, the surrogate can promise an improvement that does not exist.
+		<b>How far can we go?</b> &nbsp; → trust regions (TRPO), then clipping (PPO).
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Lemme de différence de performance (Kakade &amp; Langford) : trajectoires de la nouvelle politique, avantages de l'ancienne. L'objectif de substitution remplace la loi des états de la nouvelle politique par celle de l'ancienne : il n'est valable que près de θ_old.
+		</div>
+		<div class="en-notes">
+How wrong is the surrogate? There is an exact answer.
+
+The <b style="color:red">performance difference lemma</b> says: the gain of a new policy is the sum of the advantages of the old policy, along trajectories of the new one.
+The proof is short: the sum of TD errors telescopes.
+
+<i style="color:gray">[click]</i>
+With importance sampling, we can sample the actions from the old policy.
+But the <b style="color:red">states</b>, in red, still come from the new policy.
+
+<i style="color:gray">[click]</i>
+The surrogate simply uses the states we have, from the old policy.
+So it is a good approximation only if the new policy stays <b style="color:red">close to the old one</b>.
+
+<i style="color:gray">[click]</i>
+Far away, it can promise an improvement that <b style="color:red">does not exist</b>.
+So, how far can we go? Let's look at a concrete example.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: maximizing the surrogate: what goes wrong -->
+<section id="ppo-surrogate-diverges" style="font-size: 58%;">
+	<h3>Maximizing the surrogate: what goes wrong</h3>
+
+	<p style="margin: 0.1em 0; font-size: 85%;">
+		One-state toy problem: action $a \in \R$, policy $\pi(a|\bth) = \mathcal{N}(\mu, \sigma^2)$ with $\bth = (\mu, \ln\sigma)$.
+		12 actions from $\pi(\cdot|\thold) = \mathcal{N}(0,1)$, noisy rewards, $\hAdv_i = r_i - \overline{r}$.
+		10 epochs of gradient ascent on $\Lcpi$.
+	</p>
+
+	<svg class="ppo-fig ppo-bandit-update" data-objective="cpi" width="900" height="410"
+			data-initial-frame="0" data-frames="1 2 3 4 5 6 7 8 9 10"></svg>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/bandit_update.js"></script>
+
+	<p class="fragment" data-fragment-index="10" style="margin: 0.1em 0; font-size: 90%;">
+		$\Lcpi$ is <b>unbounded</b>: all the probability on the best sample gives $\rho \to \infty$.
+		$\sigma$ collapses, the gradients explode, the policy jumps away: $J$ ends <b>below</b> its starting value.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Bandit gaussien à un état : 10 époques de montée de gradient sur L^CPI, sur un même lot de 12 actions. J s'améliore d'abord, puis σ s'effondre, les ratios explosent, la politique saute loin et J finit sous sa valeur initiale.
+		</div>
+		<div class="en-notes">
+To see the problem, we use the simplest possible example: a problem with <b style="color:red">one state</b>.
+The action is a real number, and the policy is a Gaussian.
+In gray, the old policy, and the twelve actions it sampled.
+Each sample has an advantage: blue if positive, red if negative.
+In yellow, the true mean reward, that the agent does not know.
+
+<i style="color:gray">[click × 7: epochs 1 to 7]</i>
+At first, all is well: the policy moves right, toward the good samples, and the true gain J increases.
+But sigma shrinks, the ratios explode, and the surrogate promises <b style="color:red">much more</b> than the true gain.
+
+<i style="color:gray">[click]</i>
+At epoch 8, the gradient <b style="color:red">explodes</b>, and the policy jumps far away.
+
+<i style="color:gray">[click × 2]</i>
+Now the true gain is <b style="color:red">negative</b>: we are worse than before the update.
+
+<i style="color:gray">[click]</i>
+The surrogate is unbounded.
+Putting all the probability on the best sample makes rho go to <b style="color:red">infinity</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+<!-- PART 3: CLIPPING ------------------------------------- -->
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Part 3 -->
+<section id="ppo-part3">
+	<h3>Part 3</h3>
+	<h4 style="color: #cc79a7;">Clipping: small policy steps</h4>
+	<div class="ppo-roadmap" data-step="3" style="font-size: 45%;"></div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Partie 3 : le clipping.
+		</div>
+		<div class="en-notes">
+Part three: how to keep each policy step <b style="color:red">small</b>, with clipping.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: TRPO -->
+<section id="ppo-trpo" style="text-align: left; font-size: 60%;">
+	<h3 style="text-align: center;">Stay close to $\thold$: trust regions (TRPO)</h3>
+
+	<p style="margin: 0.2em 0;">
+		<b>Lower bound</b> (Schulman et al., 2015): with $C = \frac{4\gamma \max_{s,a}|\Adv_{\pi_{\thold}}(s,a)|}{(1-\gamma)^2}$,
+		$$J(\bth) \;\ge\; J(\thold) + \underbrace{\mathcal{L}_{\thold}(\bth)}_{\text{surrogate gain}} - \; C \, \max_s \KL\big(\pi(\cdot|s,\thold) \,\|\, \pi(\cdot|s,\bth)\big)$$
+		<span style="font-size: 85%; color: #666;">Maximizing the right-hand side at each iteration gives a monotonic improvement (in theory).</span>
+	</p>
+
+	<p class="fragment" data-fragment-index="0" style="margin: 0.5em 0;">
+		<b>TRPO</b>, the practical version: a hard constraint on the <em>average</em> KL divergence,
+		$$\max_{\bth} \; \Lcpi(\bth) \quad \text{s.t.} \quad \Ehat_t\Big[\KL\big(\pi(\cdot|S_t,\thold) \,\|\, \pi(\cdot|S_t,\bth)\big)\Big] \le \kappa \qquad (\kappa \approx 0.01)$$
+	</p>
+
+	<ul class="fragment" data-fragment-index="1" style="margin: 0.3em 0 0 1em;">
+		<li>Solved with a natural gradient step: Fisher matrix, conjugate gradient, line search</li>
+		<li>Second-order and complex; does not fit well with shared actor-critic networks or dropout</li>
+	</ul>
+
+	<p class="fragment" data-fragment-index="2" style="margin: 0.6em 0 0 0;">
+		<b class="ppo-c-clip">PPO's question</b>: the same effect, with plain first-order SGD (Adam) on an <em>unconstrained</em> objective?
+		<span style="color: #888;">The paper proposes an adaptive KL penalty and a clipped objective; the clipped one is the PPO everybody uses.</span>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Borne inférieure de TRPO : gain de substitution moins C fois le KL maximal. TRPO : contrainte de KL moyen, résolue au second ordre (gradient naturel, gradient conjugué, recherche linéaire). PPO cherche le même effet avec un simple SGD.
+		</div>
+		<div class="en-notes">
+The theory gives a precise answer.
+Schulman and colleagues proved a <b style="color:red">lower bound</b> on the true performance.
+It is the surrogate gain, minus a penalty on the <b style="color:red">KL divergence</b> between the old and the new policy.
+If we maximize this bound at each iteration, the performance can only improve.
+
+<i style="color:gray">[click]</i>
+<b style="color:red">TRPO</b> turns this into a constraint: maximize the surrogate, but keep the average KL below a small threshold.
+This region around theta old is the <b style="color:red">trust region</b>.
+
+<i style="color:gray">[click]</i>
+It works well, but it is a second-order method: Fisher matrix, conjugate gradient, line search.
+It is complex, and hard to combine with modern network architectures.
+
+<i style="color:gray">[click]</i>
+So PPO asks a simple question: can we get the same effect with <b style="color:red">plain SGD</b>?
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: the clipped objective -->
+<section id="ppo-clip-objective" style="font-size: 58%;">
+	<h3>The clipped objective</h3>
+
+	<p style="margin: 0.1em 0;">
+		$\Lclip(\bth) \doteq \Ehat_t\Big[\min\big(\rho_t(\bth) \, \hAdv_t, \; {\color{#cc79a7}{\clip\big(\rho_t(\bth), 1-\varepsilon, 1+\varepsilon\big)}} \, \hAdv_t\big)\Big]$
+		<span style="font-size: 85%; color: #666;">&nbsp; ($\varepsilon = 0.2$)</span>
+	</p>
+
+	<svg class="ppo-fig ppo-clip-objective" width="900" height="330"
+			data-initial-frame="none" data-frames="unclipped clipped min zero"></svg>
+	<div class="ppo-slider-row" style="width: 45%;">
+		<span class="lbl ppo-eps-label"></span>
+		<input type="range" class="ppo-slider ppo-eps-slider" min="0.05" max="0.5" step="0.01" value="0.2">
+	</div>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/clip_objective.js"></script>
+
+	<ul style="text-align: left; font-size: 85%; margin: 0.3em 0 0 1em;">
+		<li class="fragment" data-fragment-index="3">Beyond $1 \pm \varepsilon$ in the good direction: the term is flat, its gradient is zero → <b>no incentive</b> to move further</li>
+		<li class="fragment" data-fragment-index="3">In the bad direction, the $\min$ keeps the full penalty: a <b>pessimistic</b> bound, $\Lclip \le \Lcpi$, equal near $\rho = 1$</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+L^CLIP = min(ρ Adv, clip(ρ, 1−ε, 1+ε) Adv). Avantage positif : aucun gain au-delà de 1+ε ; négatif : aucun gain en dessous de 1−ε. Le min rend l'objectif pessimiste : la pénalité reste entière si ρ part dans le mauvais sens. Curseur pour ε.
+		</div>
+		<div class="en-notes">
+Here is PPO's answer: the <b style="color:red">clipped objective</b>.
+Each term of the surrogate is a function of the ratio rho.
+On the left, a sample with a positive advantage; on the right, a negative one.
+
+<i style="color:gray">[click]</i>
+Without clipping, the term is a line: rho times the advantage.
+For a good action, it grows without limit.
+
+<i style="color:gray">[click]</i>
+The clipped term, in purple, stops at <b style="color:red">one plus epsilon</b>, or one minus epsilon.
+
+<i style="color:gray">[click]</i>
+PPO takes the <b style="color:red">minimum</b> of the two: the thick black curve.
+
+<i style="color:gray">[click]</i>
+In the gray zones, the curve is flat: the gradient is zero.
+Once the probability of a good action has grown by twenty percent, there is <b style="color:red">no incentive</b> to push further.
+But if the ratio went the wrong way, the full penalty stays: the objective is <b style="color:red">pessimistic</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: clipping in action -->
+<section id="ppo-clip-in-action" style="font-size: 58%;">
+	<h3>Clipping in action</h3>
+
+	<p style="margin: 0.1em 0; font-size: 85%;">
+		Same batch, same optimizer, same 10 epochs; only the objective changes: $\Lclip$ instead of $\Lcpi$.
+		A hollow sample is clipped: it no longer contributes to the gradient.
+	</p>
+
+	<svg class="ppo-fig ppo-bandit-update" data-objective="clip" width="900" height="410"
+			data-initial-frame="0" data-frames="1 2 3 4 5 6 7 8 9 10"></svg>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/bandit_update.js"></script>
+
+	<p class="fragment" data-fragment-index="10" style="margin: 0.1em 0; font-size: 80%;">
+		A smaller but <b>safe</b> step: the next batch will continue. (Not a hard constraint: other samples can push a ratio out of the band; Wang et al., 2019.)<br>
+		PPO paper, MuJoCo, normalized score: no clipping $-0.39$; clipping with $\varepsilon = 0.2$: $0.82$.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Même lot, même optimiseur, même nombre d'époques, avec L^CLIP : les échantillons clippés (évidés) ne contribuent plus au gradient. Pas plus petit mais sûr. Le clip n'est pas une contrainte dure. Table 1 du papier PPO : −0.39 sans clip, 0.82 avec ε = 0.2.
+		</div>
+		<div class="en-notes">
+Now the same experiment: same batch, same optimizer, same ten epochs.
+Only the objective changes: we use the <b style="color:red">clipped</b> one.
+
+<i style="color:gray">[click]</i>
+The first epoch is identical: the ratios are all equal to one.
+
+<i style="color:gray">[click × 9: epochs 2 to 10]</i>
+Now look at the samples that become <b style="color:red">hollow</b>.
+Their ratio left the band, in the good direction: they stop pushing.
+The policy moves a little, then almost stops: the clipped surrogate becomes <b style="color:red">flat</b>.
+The true gain stays <b style="color:red">positive</b>, and the policy keeps its spread.
+
+<i style="color:gray">[click]</i>
+It is a smaller step, but a <b style="color:red">safe</b> one: the next batch will continue the work.
+And on real benchmarks, the difference is huge.
+In the PPO paper, without clipping the normalized score is minus 0.39: worse than the random initial policy.
+With clipping, it is 0.82.
+		</div>
+		<!-- Sources:
+		- Schulman et al. 2017, Table 1 (7 MuJoCo environments, 3 seeds, score normalized: random = 0, best = 1)
+		-->
+	</aside>
+</section>
+
+<!-- Slide: why the clip needs data reuse -->
+<section id="ppo-clip-needs-reuse" style="font-size: 58%;">
+	<h3>Why clipping only matters with data reuse</h3>
+
+	<p style="margin: 0.1em 0; font-size: 85%;">
+		Ratios $\rho_t(\bth)$ of the 16 transitions of one batch in the corridor, at the start of each PPO epoch ($\varepsilon = 0.2$).
+	</p>
+
+	<svg class="ppo-fig ppo-ratio-epochs" width="900" height="330"
+			data-initial-frame="1" data-frames="2 3 4 end"></svg>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/ratio_epochs.js"></script>
+
+	<ul style="text-align: left; font-size: 85%; margin: 0.2em 0 0 1em;">
+		<li>First epoch: $\bth = \thold$, so all $\rho_t = 1$ and $\clip(\rho_t) = \rho_t$ — this is all that TD Actor-Critic and A2C ever see</li>
+		<li class="fragment" data-fragment-index="3">The clip acts only from the second pass over the same data: it is the <b>safeguard of data reuse</b></li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Ratios des 16 transitions d'un lot du couloir au début de chaque époque : à la première époque, tous valent 1 (c'est tout ce que voient TD AC et A2C) ; le clip n'agit qu'à partir de la deuxième passe sur les mêmes données.
+		</div>
+		<div class="en-notes">
+Let's come back to the corridor, to see when the clip really acts.
+Each column is one transition of a batch, each row is one epoch of PPO.
+The color is the ratio rho: white means one.
+
+At the first epoch, all the ratios are <b style="color:red">exactly one</b>.
+This is all that TD actor-critic and A2C ever see: the clip would do nothing.
+
+<i style="color:gray">[click × 2: epochs 2 and 3]</i>
+From the second epoch, the ratios move away from one.
+A circled cell is <b style="color:red">clipped</b>: its gradient is zero.
+
+<i style="color:gray">[click × 2]</i>
+The more we reuse the batch, the more samples are clipped.
+So the clip is the <b style="color:red">safeguard of data reuse</b>.
+The two ingredients go together.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+<!-- PART 4: THE FULL LOSS -------------------------------- -->
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Part 4 -->
+<section id="ppo-part4">
+	<h3>Part 4</h3>
+	<h4 style="color: #0072b2;">The full loss, and PPO step by step</h4>
+	<div class="ppo-roadmap" data-step="4" style="font-size: 45%;"></div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Partie 4 : la fonction objectif complète, puis PPO pas à pas.
+		</div>
+		<div class="en-notes">
+Part four: the <b style="color:red">full objective</b> of PPO, and then the whole algorithm, step by step.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: three terms -->
+<section id="ppo-three-terms" style="text-align: left; font-size: 60%;">
+	<h3 style="text-align: center;">One objective, three terms</h3>
+
+	<p style="margin: 0.2em 0;">
+		$$L(\bth, \bw) = \Ehat_t\Big[\, {\color{#cc79a7}{\Lclip_t(\bth)}} \; - \; c_1 \, {\color{#555}{\big(\vhat(S_t,\bw) - \Vtarg_t\big)^2}} \; + \; c_2 \, {\color{#0072b2}{\mathcal{H}\big(\pi(\cdot|S_t,\bth)\big)}} \,\Big]$$
+	</p>
+
+	<ul style="margin: 0.2em 0 0 1em;">
+		<li class="fragment" data-fragment-index="0"><b class="ppo-c-clip">Actor</b>: the clipped surrogate, just seen</li>
+		<li class="fragment" data-fragment-index="1"><b>Critic</b>: the squared error on $\Vtarg_t = \hAdv_t + \vhat(S_t,\bw_{\text{old}})$ — already in TD Actor-Critic.
+			Written as a loss so that one optimizer can train a network <em>shared</em> by the actor and the critic.
+			With two separate networks, $c_1$ is irrelevant.</li>
+		<li class="fragment" data-fragment-index="2"><b class="ppo-c-ent">Entropy bonus</b>: $\mathcal{H}(\pi(\cdot|s)) = -\sum_a \pi(a|s) \ln \pi(a|s)$ rewards stochastic policies → keeps exploring</li>
+	</ul>
+
+	<p class="fragment" data-fragment-index="3" style="font-size: 88%; margin-top: 0.8em; color: #555;">
+		PPO paper: $c_1 = 1$, $c_2 = 0.01$ on Atari; on MuJoCo, separate networks and <b>no entropy bonus</b> ($c_2 = 0$).
+		The paper maximizes $L$; libraries minimize $-L$.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Objectif complet : terme clippé (acteur), erreur quadratique du critique (déjà dans TD AC, écrite comme une perte pour un réseau partagé), bonus d'entropie. Papier : c₁ = 1, c₂ = 0.01 sur Atari ; pas d'entropie sur MuJoCo.
+		</div>
+		<div class="en-notes">
+In practice, PPO optimizes one objective with <b style="color:red">three terms</b>.
+
+<i style="color:gray">[click]</i>
+The first one is the <b style="color:red">clipped surrogate</b>, for the actor.
+
+<i style="color:gray">[click]</i>
+The second one is the <b style="color:red">critic</b>: a squared error on the lambda-return.
+This is nothing new: the critic was already in TD actor-critic.
+We write it as a loss because, very often, the actor and the critic <b style="color:red">share</b> the same network.
+
+<i style="color:gray">[click]</i>
+The third one is new: an <b style="color:red">entropy bonus</b>.
+It rewards policies that stay random, so that the agent keeps exploring.
+
+<i style="color:gray">[click]</i>
+How important is it?
+In the PPO paper, it is used on Atari, but <b style="color:red">not at all</b> on MuJoCo.
+So it is a secondary ingredient. But let's see what it can do.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: entropy bonus -->
+<section id="ppo-entropy" style="font-size: 58%;">
+	<h3>Entropy bonus: keep exploring</h3>
+
+	<p style="margin: 0.1em 0; font-size: 85%;">
+		Same one-state problem, but the reward has <b>two modes</b>: a small one nearby, a big one far away.
+		PPO (clip), 60 iterations of 16 actions; for a Gaussian, $\mathcal{H} = \ln\sigma + \text{const}$.
+	</p>
+
+	<svg class="ppo-fig ppo-entropy" width="900" height="405"
+			data-initial-frame="0" data-frames="0.05 0.2"></svg>
+	<div class="ppo-slider-row" style="width: 55%;">
+		<span class="lbl ppo-c2-label"></span>
+		<input type="range" class="ppo-slider ppo-c2-slider" min="0" step="1">
+	</div>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/entropy_bonus.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Bonus d'entropie sur un bandit à deux modes (100 seeds par valeur de c₂) : sans entropie, σ s'effondre sur le mode local ; avec c₂ = 0.05, la plupart des exécutions trouvent le mode global ; avec c₂ trop grand, σ diverge et la politique ne s'engage jamais. Curseur pour c₂.
+		</div>
+		<div class="en-notes">
+Back to our one-state problem, with a harder reward: a <b style="color:red">small mode</b> nearby, and a <b style="color:red">big mode</b> far away.
+On the left, one run of PPO: each row is the policy at one iteration, from top to bottom.
+On the right, the results of a hundred runs for each value of c 2.
+
+Without entropy bonus, sigma shrinks fast, and the policy is <b style="color:red">trapped</b> on the small mode.
+Only about one run in five finds the big one.
+
+<i style="color:gray">[click]</i>
+With c 2 equal to 0.05, the policy stays wide long enough to <b style="color:red">discover</b> the big mode.
+Now most runs find it.
+
+<i style="color:gray">[click]</i>
+But too much entropy is bad too: sigma grows without limit, and the policy <b style="color:red">never commits</b>.
+So c 2 is a real hyperparameter, with a sweet spot.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: PPO step by step -->
+<section id="ppo-step-by-step" style="font-size: 52%;">
+	<h3>PPO, step by step</h3>
+
+	<div style="display: grid; grid-template-columns: 49% 51%; align-items: start;">
+		<div class="ppo-code ppo-sbs-code" style="padding-left: 2em; font-size: 82%; margin-top: 0.5em;">
+			<div data-ln="1">Initialize $\bth$ and $\bw$ ; $S_0 \leftarrow$ first state</div>
+			<div data-ln="2"><span class="kw">for</span> iteration $= 1, 2, \dots$ <span class="kw">do</span></div>
+			<div data-ln="3" class="i1 add-reuse">$\thold \leftarrow \bth$</div>
+			<div data-ln="4" class="i1 add-gae"><span class="kw">for</span> $t = 0, \dots, T-1$ <span class="kw">do</span></div>
+			<div data-ln="5" class="i2 add-gae">$A_t \sim \pi(\cdot|S_t,\thold)$ ; observe $R_{t+1}, S_{t+1}$</div>
+			<div data-ln="6" class="i1 add-gae">$\delta_t \leftarrow R_{t+1} + \gamma \vhat(S_{t+1},\bw) - \vhat(S_t,\bw)$</div>
+			<div data-ln="7" class="i1 add-gae">$\hAdv_t \leftarrow \delta_t + \gamma\lambda\,\hAdv_{t+1}$ &nbsp; <span class="cm">▷ $t = T-1, \dots, 0$</span></div>
+			<div data-ln="7" class="i1 add-gae cont">$\Vtarg_t \leftarrow \hAdv_t + \vhat(S_t,\bw)$</div>
+			<div data-ln="8" class="i1 add-reuse"><span class="kw">for</span> epoch $= 1, \dots, K$ <span class="kw">do</span></div>
+			<div data-ln="9" class="i2 add-reuse"><span class="kw">for</span> each minibatch $B$ <span class="kw">do</span></div>
+			<div data-ln="10" class="i3 add-reuse">$\rho_t \leftarrow \pi(A_t|S_t,\bth) \,/\, \pi(A_t|S_t,\thold)$</div>
+			<div data-ln="11" class="i3 add-clip">$\Lclip \leftarrow \Ehat_B\big[\min\big(\rho_t \hAdv_t, \clip(\rho_t, 1 \pm \varepsilon)\hAdv_t\big)\big]$</div>
+			<div data-ln="12" class="i3 add-ent">$L \leftarrow \Lclip - c_1 \Ehat_B\big[\big(\vhat(S_t,\bw) - \Vtarg_t\big)^2\big]$</div>
+			<div data-ln="12" class="i3 add-ent cont">$\phantom{L \leftarrow} + \, c_2 \Ehat_B\big[\mathcal{H}\big(\pi(\cdot|S_t,\bth)\big)\big]$</div>
+			<div data-ln="13" class="i3">$(\bth, \bw) \leftarrow (\bth, \bw) + \alpha \nabla L$ &nbsp; <span class="cm">▷ Adam in practice</span></div>
+			<p style="font-size: 78%; color: #888; margin: 0.7em 0 0 0; white-space: normal;">
+				Here: tabular actor and critic, $T = 8$, $\lambda = 0.95$, $K = 3$ epochs of 2 minibatches, $\varepsilon = 0.2$, $c_2 = 0$, plain SGD.
+			</p>
+		</div>
+
+		<div>
+			<svg class="ppo-fig ppo-sbs" width="470" height="440" data-initial-frame="init"
+					data-frames="old c1 c2 c3 c4 c5 c6 c7 c8 delta gae
+						e1m1 e1m2 e2m1 e2m2 e3m1 e3m2 next after"></svg>
+		</div>
+	</div>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/ppo_step_by_step.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+PPO complet, pas à pas sur le couloir (T = 8, K = 3 époques de 2 minibatches, ε = 0.2) : collecte, δ, GAE à rebours (le signal de récompense remonte toute la trajectoire en une passe), puis les époques avec ratios et échantillons clippés, puis nouvelle itération.
+		</div>
+		<div class="en-notes">
+Here is the complete algorithm, with the colors of the four ingredients.
+On the right, it runs on the corridor, with a buffer of only <b style="color:red">eight steps</b>.
+
+<i style="color:gray">[click × 9: rollout]</i>
+First, the rollout: we play the old policy for eight steps, and we fill the buffer.
+
+<i style="color:gray">[click × 2]</i>
+Then the deltas, and the advantages, computed <b style="color:red">backwards</b>.
+Look: the reward signal goes back along the <b style="color:red">whole trajectory</b> in one pass, not one state per visit.
+
+<i style="color:gray">[click × 6: three epochs of two minibatches]</i>
+Then the epochs: at the first minibatch, all the ratios are one.
+Then they move away, and some samples get <b style="color:red">clipped</b>.
+The arrows of the policy change a little at each step.
+
+<i style="color:gray">[click]</i>
+Then theta old becomes theta, the batch is thrown away, and we start a <b style="color:red">new iteration</b>.
+
+<i style="color:gray">[click]</i>
+After thirty iterations, the agent <b style="color:red">goes right</b>: it found the big reward.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: PPO on the corridor -->
+<section id="ppo-learning-curves" style="font-size: 58%;">
+	<h3>Does it work? Four variants on the corridor</h3>
+
+	<p style="margin: 0.1em 0; font-size: 85%;">
+		True performance $J(\bth) = v_{\pi_{\bth}}(S_0)$ during learning, for 30 of 100 seeds (thin lines) and the mean over 100 seeds (thick line).
+		Same rollouts ($T = 16$, GAE $\lambda = 0.95$), same step size.
+	</p>
+
+	<svg class="ppo-fig ppo-curves" width="900" height="430"
+			data-initial-frame="a2c" data-frames="naive ppo ppoent"></svg>
+	<script src="assets/rl_ppo/frame_steps.js"></script>
+	<script type="module" src="assets/rl_ppo/learning_curves.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Courbes d'apprentissage sur 100 seeds : A2C (une époque) lent ; réutilisation naïve (10 époques sans clip) rapide mais souvent piégée à gauche ; PPO (clip) plus fiable ; PPO + entropie presque toujours à droite.
+		</div>
+		<div class="en-notes">
+Does all this work? Let's compare four variants on the corridor, with one hundred seeds each.
+The y axis is the true performance; the top line is the optimum, going right, and the lower line is the trap, going left.
+
+First, <b style="color:red">A2C</b>: one gradient step per batch.
+It learns, but <b style="color:red">slowly</b>.
+
+<i style="color:gray">[click]</i>
+Now <b style="color:red">naive reuse</b>: ten epochs per batch, without clipping.
+It learns much faster, but many runs get <b style="color:red">stuck</b> on the left.
+
+<i style="color:gray">[click]</i>
+With <b style="color:red">clipping</b>: just as fast, and fewer runs get stuck.
+
+<i style="color:gray">[click]</i>
+And with a small <b style="color:red">entropy bonus</b>, almost every run finds the big reward.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+<!-- CONCLUSION ------------------------------------------- -->
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: in practice -->
+<section id="ppo-in-practice" style="text-align: left; font-size: 52%;">
+	<h3 style="text-align: center;">PPO in practice</h3>
+
+	<div style="display: grid; grid-template-columns: 46% 51%; gap: 1em; align-items: start;">
+		<div>
+			<p style="margin: 0 0 0.3em 0;"><b>Hyperparameters</b> of the PPO paper</p>
+			<table style="font-size: 85%;">
+				<thead><tr><th></th><th>MuJoCo</th><th>Atari</th></tr></thead>
+				<tbody>
+					<tr><td>Parallel actors $N$</td><td>—</td><td>8</td></tr>
+					<tr><td>Horizon $T$</td><td>2048</td><td>128</td></tr>
+					<tr><td>Epochs $K$</td><td>10</td><td>3</td></tr>
+					<tr><td>Minibatch size</td><td>64</td><td>32 × 8</td></tr>
+					<tr><td>Adam step size</td><td>$3 \times 10^{-4}$</td><td>$2.5 \times 10^{-4} \times \alpha$</td></tr>
+					<tr><td>$\gamma$, $\lambda$</td><td>0.99, 0.95</td><td>0.99, 0.95</td></tr>
+					<tr><td>$\varepsilon$</td><td>0.2</td><td>$0.1 \times \alpha$</td></tr>
+					<tr><td>$c_1$, $c_2$</td><td>—, 0</td><td>1, 0.01</td></tr>
+				</tbody>
+			</table>
+			<p style="font-size: 75%; color: #888; margin: 0.3em 0 0 0;">$\alpha$: linearly annealed from 1 to 0 during training.</p>
+		</div>
+		<div>
+			<p style="margin: 0 0 0.3em 0;"><b>Implementation details that matter</b></p>
+			<ul style="margin: 0 0 0 1em; font-size: 92%;">
+				<li>Normalize the advantages in each minibatch</li>
+				<li>Normalize observations (and scale rewards)</li>
+				<li>Clip the gradient norm (e.g. 0.5); anneal the step size</li>
+				<li>Orthogonal initialization, small last layer for the policy</li>
+				<li>Optionally clip the value loss too</li>
+				<li>Monitor the KL and the fraction of clipped samples</li>
+			</ul>
+			<p style="font-size: 85%; margin-top: 0.6em;">
+				Engstrom et al. (2020): a large part of PPO's advantage over TRPO comes from such code-level choices.
+				Huang et al. (2022) list <em>37 implementation details</em>.
+			</p>
+		</div>
+	</div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Hyperparamètres du papier PPO (MuJoCo / Atari) et détails d'implémentation qui comptent (normalisation des avantages, des observations, clip de la norme du gradient, initialisation orthogonale…). Engstrom et al. 2020 ; Huang et al. 2022 (37 détails).
+		</div>
+		<div class="en-notes">
+A few words about PPO in practice.
+On the left, the hyperparameters of the original paper.
+Notice the <b style="color:red">long rollouts</b> on MuJoCo, and the <b style="color:red">ten epochs</b> per batch.
+Epsilon is 0.2, lambda is 0.95.
+
+On the right, the details that are not in the pseudo-code, but that matter a lot.
+For example, we usually <b style="color:red">normalize the advantages</b> in each minibatch.
+
+A study from MIT, by Engstrom and colleagues, showed that a large part of PPO's success comes from these <b style="color:red">code-level details</b>.
+And a famous blog post lists thirty-seven of them.
+So, in practice, start from a well-tested library.
+		</div>
+		<!-- Sources:
+		- Schulman et al. 2017, Tables 3 and 5
+		- Engstrom et al., Implementation matters in deep policy gradients, ICLR 2020
+		- Huang et al., The 37 implementation details of PPO, ICLR Blog Track 2022
+		-->
+	</aside>
+</section>
+
+<!-- Slide: PPO and LLMs -->
+<section id="ppo-llm" style="text-align: left; font-size: 60%;">
+	<h3 style="text-align: center;">PPO and large language models</h3>
+
+	<ul style="margin: 0 0 0 1em;">
+		<li><b>RLHF</b> (InstructGPT, Ouyang et al., 2022): the LLM is the policy
+			<ul>
+				<li>state = prompt + tokens generated so far; action = next token</li>
+				<li>reward = reward-model score at the end, minus a per-token penalty $\beta \ln \frac{\pi(A_t|S_t,\bth)}{\pi_{\text{ref}}(A_t|S_t)}$ that keeps the model close to the reference one</li>
+				<li>PPO with a value head as critic, GAE, clipping</li>
+			</ul>
+		</li>
+		<li class="fragment" data-fragment-index="0"><b>GRPO</b> (Shao et al., 2024; DeepSeek-R1): PPO <em>without a critic</em>
+			<ul>
+				<li>sample $G$ answers for the same prompt; $\hAdv_i = (r_i - \operatorname{mean}(r)) / \operatorname{std}(r)$</li>
+				<li>keeps the clipped ratio, with a KL term to $\pi_{\text{ref}}$ in the objective</li>
+				<li>the group baseline is exactly what our Gaussian toy problem used: $\hAdv_i = r_i - \overline{r}$</li>
+			</ul>
+		</li>
+	</ul>
+
+	<p class="fragment" data-fragment-index="1" style="margin-top: 0.8em;">
+		More in the deck <a href="rl_llm.html">Reinforcement Learning and LLMs</a>.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+PPO dans les LLM : RLHF (InstructGPT) avec pénalité KL par token vers le modèle de référence ; GRPO supprime le critique et utilise une ligne de base de groupe, comme notre bandit.
+		</div>
+		<div class="en-notes">
+PPO is also at the heart of the training of <b style="color:red">large language models</b>.
+In <b style="color:red">RLHF</b>, as in InstructGPT, the language model is the policy.
+The state is the prompt plus the tokens generated so far, and the action is the next token.
+The reward comes from a reward model, with a <b style="color:red">KL penalty</b> that keeps the model close to the original one.
+
+<i style="color:gray">[click]</i>
+More recently, <b style="color:red">GRPO</b>, used for DeepSeek R1, removes the critic.
+For each prompt, it samples a group of answers, and uses the mean reward of the group as baseline.
+This is exactly what our Gaussian toy problem did.
+And it keeps the <b style="color:red">clipped ratio</b> of PPO.
+
+<i style="color:gray">[click]</i>
+We cover this in detail in the deck on reinforcement learning and LLMs.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: take-home messages -->
+<section id="ppo-take-home" style="font-size: 58%;">
+	<h3>Take-home messages</h3>
+
+	<table style="font-size: 92%; width: 100%;">
+		<thead><tr><th>Ingredient</th><th>Problem it solves</th><th>How</th></tr></thead>
+		<tbody>
+			<tr><td>TD Actor-Critic</td><td>starting point</td><td>$\delta_t$ estimates $\Adv_\pi(S_t,A_t)$</td></tr>
+			<tr><td><b class="ppo-c-gae">Rollouts + GAE</b></td><td>$\delta_t$ is myopic and biased</td><td>$\hAdv_t = \sum_l (\gamma\lambda)^l \delta_{t+l}$, one backward pass</td></tr>
+			<tr><td><b class="ppo-c-reuse">Data reuse</b></td><td>one gradient step per batch</td><td>$K$ epochs on $\Ehat_t[\rho_t(\bth)\hAdv_t]$</td></tr>
+			<tr><td><b class="ppo-c-clip">Clipping</b></td><td>the surrogate makes the policy diverge</td><td>$\min\big(\rho_t\hAdv_t, \clip(\rho_t, 1 \pm \varepsilon)\hAdv_t\big)$</td></tr>
+			<tr><td><b class="ppo-c-ent">Entropy</b></td><td>premature convergence</td><td>$+\, c_2 \, \mathcal{H}(\pi(\cdot|S_t,\bth))$</td></tr>
+		</tbody>
+	</table>
+
+	<p style="margin-top: 0.9em; text-align: left;">
+		The key chain: rollouts give a batch → we <b class="ppo-c-reuse">reuse</b> it → data are off-policy, so we need $\rho_t(\bth)$ →
+		maximizing the surrogate makes the policy diverge → we <b class="ppo-c-clip">clip</b> $\rho_t(\bth)$.
+		Without data reuse, $\rho_t = 1$ and clipping does nothing.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Messages à retenir : chaque ingrédient, le problème qu'il résout, et comment. L'enchaînement clé : réutiliser le lot → ratio → divergence → clip ; sans réutilisation, le clip ne fait rien.
+		</div>
+		<div class="en-notes">
+To conclude, PPO is TD actor-critic plus four ingredients.
+<b style="color:red">Rollouts and GAE</b> give better advantage estimates, with one backward pass.
+<b style="color:red">Data reuse</b> gives several epochs per batch, thanks to the importance ratio.
+<b style="color:red">Clipping</b> keeps each policy step small and safe.
+And an <b style="color:red">entropy bonus</b> keeps the policy exploring.
+
+The most important idea is the chain in the middle.
+We reuse the batch, so we need a ratio, so we need a clip.
+Without data reuse, rho t = 1 and clipping does nothing.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: references -->
+<section id="ppo-references" style="text-align: left; font-size: 46%;">
+	<h3 style="text-align: center;">References</h3>
+
+	<ul style="display: block; margin: 0 0 0 1em;">
+		<li>R. S. Sutton, A. G. Barto. <em>Reinforcement Learning: An Introduction</em>, 2nd edition. MIT Press, 2018.</li>
+		<li>S. Kakade, J. Langford. <em>Approximately optimal approximate reinforcement learning</em>. ICML, 2002.</li>
+		<li>J. Schulman, S. Levine, P. Moritz, M. Jordan, P. Abbeel. <em>Trust region policy optimization</em>. ICML, 2015.</li>
+		<li>J. Schulman, P. Moritz, S. Levine, M. Jordan, P. Abbeel. <em>High-dimensional continuous control using generalized advantage estimation</em>. ICLR, 2016.</li>
+		<li>V. Mnih et al. <em>Asynchronous methods for deep reinforcement learning</em>. ICML, 2016.</li>
+		<li>J. Schulman, F. Wolski, P. Dhariwal, A. Radford, O. Klimov. <em>Proximal policy optimization algorithms</em>. arXiv:1707.06347, 2017.</li>
+		<li>L. Engstrom, A. Ilyas, S. Santurkar, D. Tsipras, F. Janoos, L. Rudolph, A. Madry. <em>Implementation matters in deep policy gradients: a case study on PPO and TRPO</em>. ICLR, 2020.</li>
+		<li>Y. Wang, H. He, X. Tan. <em>Truly proximal policy optimization</em>. UAI, 2019.</li>
+		<li>S. Huang, R. F. J. Dossa, A. Raffin, A. Kanervisto, W. Wang. <em>The 37 implementation details of proximal policy optimization</em>. ICLR Blog Track, 2022.</li>
+		<li>L. Ouyang et al. <em>Training language models to follow instructions with human feedback</em>. NeurIPS, 2022.</li>
+		<li>Z. Shao et al. <em>DeepSeekMath: pushing the limits of mathematical reasoning in open language models</em>. arXiv:2402.03300, 2024.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Références.
+		</div>
+		<div class="en-notes">
+Here are the references, if you want to go further.
+Start with the <b style="color:red">PPO paper</b> itself: it is short and very readable.
+Then the <b style="color:red">GAE paper</b>, and the blog post on the thirty-seven implementation details.
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->
+
+			</div>
+
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/zoom.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/search.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="dist/plugin/math.js"></script>
+
+		<script>
+
+			// Also available as an ES module, see:
+			// https://revealjs.com/initialization/
+			Reveal.initialize({
+				// Display presentation control arrows
+				controls: true,
+
+				// Help the user learn the controls by providing hints, for example by
+				// bouncing the down arrow when they first encounter a vertical slide
+				controlsTutorial: true,
+
+				// Determines where controls appear, "edges" or "bottom-right"
+				controlsLayout: 'bottom-right',
+
+				// Visibility rule for backwards navigation arrows; "faded", "hidden"
+				// or "visible"
+				controlsBackArrows: 'faded',
+
+				// Display a presentation progress bar
+				progress: true,
+
+				// Vertical centering of slides
+				center: true,
+
+				hash: true,
+				slideNumber: 'h.v',
+
+				// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+				maxScale: 4.0,
+				mathjax2: {
+					//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+					//mathjax: 'mathjax/MathJax.js',
+					config: 'TeX-AMS_HTML-full',
+					// pass other options into `MathJax.Hub.Config()`
+					TeX: {
+						Macros: {
+							R: '\\mathbb{R}',
+							set: ['\\left\\{#1 \\; ; \\; #2\\right\\}', 2],
+							E: '\\mathbb{E}',
+							Ehat: '\\hat{\\mathbb{E}}',
+							bth: '\\boldsymbol{\\theta}',
+							thold: '\\boldsymbol{\\theta}_{\\text{old}}',
+							bw: '\\mathbf{w}',
+							vhat: '\\hat{v}',
+							Adv: '\\mathrm{Adv}',
+							hAdv: '\\widehat{\\mathrm{Adv}}',
+							clip: '\\operatorname{clip}',
+							KL: '\\mathrm{KL}',
+							Lcpi: 'L^{\\text{CPI}}',
+							Lclip: 'L^{\\text{CLIP}}',
+							Vtarg: 'V^{\\text{targ}}'
+						}
+					}
+				},
+
+				// There are three typesetters available
+				// RevealMath.MathJax2 (default)
+				// RevealMath.MathJax3
+				// RevealMath.KaTeX
+				//
+				// More info at https://revealjs.com/math/
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2]
+
+				// // Reveal.js plugins
+				// dependencies: [
+				// 	{ src: 'revealjs/plugin/reveald3.js' },
+				// ]
+			});
+
+		</script>
+
+		<!-- Assurez-vous que jdhp.js est référencé après tous les autres scripts -->
+		<script src="jdhp.js"></script>
+
+	</body>
+
+</html>

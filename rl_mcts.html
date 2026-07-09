@@ -1,0 +1,1349 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Monte Carlo Tree Search</title>
+
+		<meta name="description" content="Monte Carlo Tree Search">
+		<meta name="author" content="Jérémie Decock">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+
+		<!-- Shared styling/behavior of the personal decks (draft highlighting,
+		     speaker-notes language filtering .fr-notes/.en-notes) -->
+		<link rel="stylesheet" href="jdhp.css">
+	</head>
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+				<!-- ------------------------------------------------------ -->
+				<!-- TITLE AND OUTLINE ------------------------------------ -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- Slide: Titre -->
+				<section>
+					<h1 style="font-size: 1.4em;">Monte Carlo Tree Search</h1>
+					<br>
+					<br>
+					<p style="font-size: 1em;"><small><a href="https://www.jdhp.org/">Jérémie Decock</a></small></p>
+					<p style="font-size: 1em;"><small>October 8, 2026</small></p>
+
+					<!-- Macros definition -->
+					$$
+					\newcommand{\vs}[1]{\boldsymbol{#1}} % vector symbol (\boldsymbol, \textbf or \vec)
+					\newcommand{\ms}[1]{\boldsymbol{#1}} % matrix symbol (\boldsymbol, \textbf)
+					$$
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes">
+Hello everyone.
+Today, we are going to talk about <b style="color:red">Monte Carlo Tree Search</b>, or MCTS.
+It is the planning algorithm behind <b style="color:red">AlphaGo</b> and AlphaZero.
+The idea is simple.
+To choose an action, we <b style="color:red">simulate</b> many possible futures.
+And we spend more time on the <b style="color:red">most promising</b> ones.
+We will run it step by step on two small examples, to see exactly what each line of the algorithm does.
+						</div>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				<!-- MONTE CARLO TREE SEARCH ------------------------------ -->
+				<!-- ------------------------------------------------------ -->
+
+<!-- @preview /rl_mcts.html -->
+<!-- #region -->
+
+<!-- Les figures de ce chapitre sont dessinées à la volée avec d3.js (assets/rl_mcts/*.ts) ;
+     les deux variantes de MCTS sont exécutées au chargement de la page par mcts.ts, avec
+     une seed fixée (mcts_config.json) : les figures sont parfaitement reproductibles.
+     Les slides « pas à pas » sont pilotées par une liste de frames (data-frames, un jeton
+     par fragment) ; les fragments correspondants sont créés par frame_steps.js.
+     Voir assets/rl_mcts/README.md. -->
+
+<!-- Slide: Outline -->
+<section style="text-align: left; font-size: 80%;">
+	<h3 style="text-align: center;">Outline</h3>
+
+	<ol style="display: block; margin: 0 0 0 2em;">
+		<li>Planning with a simulator: why tree search, why Monte Carlo, why bandits</li>
+		<li>MCTS on a <em>stochastic</em> environment: FrozenLake</li>
+		<li>MCTS on a <em>deterministic two-player zero-sum</em> game: tic-tac-toe</li>
+		<li>Synthesis, theory and modern variants (AlphaZero, MuZero)</li>
+	</ol>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Plan : le cadre (planifier avec un simulateur), MCTS sur un environnement stochastique (FrozenLake), puis sur un jeu à deux joueurs à somme nulle (tic-tac-toe), enfin synthèse, théorie et variantes modernes.
+		</div>
+		<div class="en-notes">
+Here is the plan.
+
+First, the setting: <b style="color:red">planning with a simulator</b>.
+We will see why we need a tree, Monte Carlo simulations, and bandits.
+
+Then, we run MCTS step by step on a <b style="color:red">stochastic environment</b>: FrozenLake.
+
+Then on a <b style="color:red">two-player zero-sum game</b>: tic-tac-toe.
+It is the same algorithm, but some details change.
+These <b style="color:red">differences</b> are the heart of this lecture.
+
+Finally, a synthesis, the <b style="color:red">theory</b>, and modern variants like <b style="color:red">AlphaZero</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+<!-- PLANNING WITH A SIMULATOR ---------------------------- -->
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Planning with a simulator -->
+<section id="mcts-planning" style="text-align: left; font-size: 66%;">
+	<h3 style="text-align: center;">Planning with a simulator</h3>
+
+	<p>
+		A Markov decision process $(\mathcal{S}, \mathcal{A}, P, R, \gamma)$.
+		We do not need $P$ explicitly, only a <em>generative model</em> (a simulator):
+	</p>
+	$$ (s, a) \;\longmapsto\; (s', r) \qquad \text{with } s' \sim P(\cdot \mid s, a), \;\; r = R(s, a, s') $$
+
+	<div class="fragment" data-fragment-index="0">
+		<p style="margin-bottom: 0.2em;"><b>Online planning</b> (receding horizon): at each real time step $t$,</p>
+		<ol style="display: block; margin: 0 0 0 2em;">
+			<li>spend a budget of $n$ simulations <em>starting from the current state</em> $s_t$,</li>
+			<li>play $a_t \approx \arg\max_a Q^*(s_t, a)$ in the real environment,</li>
+			<li>observe $s_{t+1}$ and start again.</li>
+		</ol>
+	</div>
+
+	<p class="fragment" data-fragment-index="1">
+		No value function or policy over the whole state space: only the states reachable from $s_t$ matter.
+	</p>
+	<p class="fragment" data-fragment-index="2" style="font-size: 85%; color: #666;">
+		Examples: Go and chess (AlphaGo, AlphaZero), Atari games with an emulator, robot motion planning,
+		combinatorial optimization, …
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Cadre : un MDP dont on ne connaît pas forcément P, mais qu'on peut simuler (modèle génératif). Planification en ligne : à chaque pas de temps réel, on dépense n simulations depuis l'état courant pour choisir l'action, on la joue, et on recommence.
+		</div>
+		<div class="en-notes">
+Let's start with the setting.
+We have a Markov decision process, but we don't need its transition probabilities.
+We only need a <b style="color:red">simulator</b>, also called a generative model.
+We give it a state and an action, and it returns a next state and a reward.
+
+<i style="color:gray">[click]</i>
+We use it for <b style="color:red">online planning</b>.
+At each real time step, we run n simulations from the <b style="color:red">current state</b>.
+Then we play the best action we found, in the real environment.
+We observe the new state, and we start again.
+
+<i style="color:gray">[click]</i>
+So we never compute a policy for the whole state space.
+Only the states <b style="color:red">reachable from here</b> matter.
+
+<i style="color:gray">[click]</i>
+This is how AlphaGo plays Go, and how AlphaZero plays chess.
+It also works for Atari games with an emulator, for robot motion planning, or for combinatorial optimization.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Exhaustive search does not scale -->
+<section id="mcts-exhaustive" style="font-size: 62%;">
+	<h3>Exhaustive search does not scale</h3>
+
+	<p style="margin: 0.2em 0;">
+		$\displaystyle V^*(s) = \max_{a} Q^*(s,a), \qquad
+		Q^*(s,a) = \sum_{s'} P(s' \mid s, a)\, \big[ R(s,a,s') + \gamma\, V^*(s') \big]$
+	</p>
+	<p style="margin: 0.2em 0; text-align: left;">
+		Unrolling this recursion over a horizon $H$ costs $O\big( (|\mathcal{A}| \cdot |\mathcal{S}'|)^H \big)$ nodes,
+		with $|\mathcal{S}'|$ the number of possible next states.
+		Go: about $250$ moves per position, games of $150$ moves $\Rightarrow$ $250^{150} \approx 10^{360}$.
+	</p>
+
+	<svg class="tree-explosion" width="800" height="400" data-iterations="200"
+			data-initial-frame="0" data-frames="1"></svg>
+	<script src="assets/rl_mcts/frame_steps.js"></script>
+	<script type="module" src="assets/rl_mcts/tree_explosion.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+La récursion de Bellman (expectimax) développée sur un horizon H explose exponentiellement. Figure : depuis la position de tic-tac-toe utilisée plus loin, l'arbre de jeu complet (à gauche) et l'arbre construit par MCTS en 200 itérations (à droite), asymétrique.
+		</div>
+		<div class="en-notes">
+Why not just compute the best action exactly?
+The Bellman equation is a recursion: a max over the actions, then an average over the next states, and again.
+
+If we unroll it over a horizon H, the tree grows <b style="color:red">exponentially</b> with H.
+For Go, with about 250 moves per position and 150 moves per game, that's ten to the power 360 nodes.
+
+On the left, a tiny example: a tic-tac-toe position with only six empty cells.
+We will come back to it in the second part.
+The <b style="color:red">exhaustive tree</b> already has more than a thousand nodes, for 520 possible games.
+
+<i style="color:gray">[click]</i>
+On the right, the tree built by MCTS after 200 iterations: only 188 nodes.
+It is <b style="color:red">asymmetric</b>: deep on the promising moves, shallow elsewhere.
+The size of a node shows how often it was <b style="color:red">visited</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Monte Carlo and bandits -->
+<section id="mcts-bandit" style="font-size: 52%;">
+	<h3>Monte Carlo evaluation and the bandit problem</h3>
+
+	<div style="display: grid; grid-template-columns: 50% 50%; align-items: center; text-align: left;">
+		<div>
+			<p style="margin-top: 0;">
+				<b>Monte Carlo:</b> estimate the value of an action by the mean return of
+				simulated episodes (<em>rollouts</em>) — no need to expand the whole tree.
+			</p>
+			<p>
+				<b>How to share the budget</b> between the actions? A <em>multi-armed bandit</em>:
+				$K$ arms with unknown mean rewards $\mu_a$; pull arms to maximize the total reward
+				$\Rightarrow$ exploration vs exploitation.
+			</p>
+			<p>
+				<b>UCB1</b> (Auer, Cesa-Bianchi &amp; Fischer, 2002):
+			</p>
+			$$ a_t = \arg\max_a \; \underbrace{\bar{X}_a}_{\text{exploitation}} \; + \;
+			\underbrace{c \sqrt{\frac{\ln t}{N_a}}}_{\text{exploration}} $$
+			<p style="margin-bottom: 0;">
+				For rewards in $[0, 1]$ and $c = \sqrt{2}$, each suboptimal arm is pulled only
+				$O(\ln n)$ times in $n$ pulls: the regret grows logarithmically.
+			</p>
+		</div>
+		<div>
+			<svg class="ucb-bandit" width="480" height="313"
+					data-initial-frame="0" data-frames="4 5 6 7 8 30 300 3000"></svg>
+		</div>
+	</div>
+	<script src="assets/rl_mcts/frame_steps.js"></script>
+	<script type="module" src="assets/rl_mcts/ucb_bandit.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Évaluation Monte Carlo par moyenne de rollouts ; répartition du budget = problème de bandit. UCB1 : moyenne empirique + bonus d'exploration qui décroît avec N_a et croît (lentement) avec t. La figure déroule UCB1 sur 4 bras de Bernoulli (vraies moyennes en pointillés rouges).
+		</div>
+		<div class="en-notes">
+Instead of expanding the whole tree, we can <b style="color:red">sample</b>.
+The value of an action is estimated by the mean return of random simulations, called <b style="color:red">rollouts</b>.
+
+But which action should we simulate next?
+This is the <b style="color:red">multi-armed bandit</b> problem: exploration versus exploitation.
+The classic answer is <b style="color:red">UCB1</b>: the empirical mean, plus an <b style="color:red">exploration bonus</b>.
+The bonus is large when an arm was rarely pulled.
+
+On the right, four arms, with their true means in dashed red, unknown to the algorithm.
+
+<i style="color:gray">[click]</i>
+First, each arm is pulled once: dark blue is the mean, light blue is the bonus.
+The framed arm is the one UCB1 pulls next.
+
+<i style="color:gray">[click × 4]</i>
+Look at arm 3: its mean is zero, but its bonus grows with time, so it gets a second chance.
+
+<i style="color:gray">[click × 3]</i>
+After 3,000 pulls, the bonuses are small, and the best arm, arm 2, gets most of the pulls.
+In theory, each bad arm is pulled only a <b style="color:red">logarithmic</b> number of times.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: The four phases -->
+<section id="mcts-phases" style="font-size: 62%;">
+	<h3>MCTS: the four phases of an iteration</h3>
+
+	<svg class="mcts-phases" width="900" height="396" data-initial-frame="1" data-frames="2 3 4 5"></svg>
+	<script src="assets/rl_mcts/frame_steps.js"></script>
+	<script type="module" src="assets/rl_mcts/mcts_phases.js"></script>
+
+	<p class="fragment" data-fragment-index="3" style="text-align: left; margin-top: 0.3em; font-size: 88%;">
+		<b>Tree policy</b>: inside the tree, each node is a bandit, solved with UCB1 —
+		<em>UCT, Upper Confidence bounds applied to Trees</em> (Kocsis &amp; Szepesvári, 2006).<br>
+		<b>Default policy</b>: beyond the tree, random moves until the end of the episode.<br>
+		<b>Anytime</b>: stop whenever the budget is exhausted and play the most visited action at the root.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Les 4 phases : sélection (descente avec UCB1), expansion (ajout d'un nœud), simulation (rollout aléatoire), rétropropagation (mise à jour de N et Q sur le chemin). Tree policy vs default policy ; algorithme anytime.
+		</div>
+		<div class="en-notes">
+MCTS combines these two ideas: a tree, and a bandit at each node of the tree.
+Each iteration has four phases.
+
+First, <b style="color:red">selection</b>: we go down the tree, and at each node, UCB1 chooses the child.
+
+<i style="color:gray">[click]</i>
+Second, <b style="color:red">expansion</b>: at the bottom of the tree, we add one new node.
+
+<i style="color:gray">[click]</i>
+Third, <b style="color:red">simulation</b>: from this new node, a random rollout until the end gives a return G.
+
+<i style="color:gray">[click]</i>
+Fourth, <b style="color:red">backpropagation</b>: we go back up, and G updates N and Q along the path.
+
+<i style="color:gray">[click]</i>
+And we repeat this n times.
+Inside the tree, UCB1 is the <b style="color:red">tree policy</b>: this version of MCTS is called UCT.
+Beyond the tree, the random moves are the <b style="color:red">default policy</b>.
+We can stop at any time and play the most visited action: MCTS is <b style="color:red">anytime</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+<!-- PART 1: FROZENLAKE ----------------------------------- -->
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Part 1 -->
+<section>
+	<h3>Part 1</h3>
+	<p>A stochastic environment: FrozenLake</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Partie 1 : MCTS sur un environnement stochastique.
+		</div>
+		<div class="en-notes">
+Let's see these four phases in action.
+We start with a <b style="color:red">stochastic environment</b>.
+There, the same action can lead to <b style="color:red">different states</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: FrozenLake -->
+<section id="mcts-frozenlake-env" style="font-size: 62%;">
+	<h3>The environment: FrozenLake</h3>
+
+	<div style="display: grid; grid-template-columns: 46% 54%; align-items: center; text-align: left;">
+		<div>
+			<svg class="frozenlake-map" width="400" height="430" data-initial-frame="map" data-frames="DOWN LEFT"></svg>
+		</div>
+		<div>
+			<ul style="display: block; margin: 0;">
+				<li>Gymnasium <code>FrozenLake-v1</code>, $4 \times 4$ map, <code>is_slippery=True</code></li>
+				<li>Actions: LEFT, DOWN, RIGHT, UP</li>
+				<li><b>Slippery ice</b>: the agent moves in the intended direction, or in one of the two
+					perpendicular directions — probability $1/3$ each</li>
+				<li>Reward $+1$ when reaching $G$, $0$ otherwise; holes $H$ and $G$ are terminal</li>
+				<li>We plan from $s_0 = 10$ with $\gamma = 0.95$</li>
+			</ul>
+			<p class="fragment" data-fragment-index="0" style="margin: 0.6em 0 0 0;">
+				DOWN heads for the goal… but falls into a hole with probability $1/3$.
+			</p>
+			<p class="fragment" data-fragment-index="1" style="margin: 0.3em 0 0 0;">
+				LEFT moves away from the goal… but can <em>never</em> fall into a hole.
+			</p>
+		</div>
+	</div>
+	<script src="assets/rl_mcts/frame_steps.js"></script>
+	<script type="module" src="assets/rl_mcts/frozenlake_map.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+FrozenLake de Gymnasium, version glissante : chaque action a 3 issues équiprobables. Depuis la case 10, DOWN va vers le but mais tombe dans le trou 11 avec probabilité 1/3 ; LEFT s'éloigne du but mais ne peut jamais tomber dans un trou.
+		</div>
+		<div class="en-notes">
+Our stochastic environment is <b style="color:red">FrozenLake</b>, from Gymnasium.
+The agent must reach the goal G, without falling into a hole H.
+The reward is 1 at the goal, and 0 everywhere else.
+
+But the ice is <b style="color:red">slippery</b>.
+The agent moves in the intended direction only one time out of three.
+Otherwise, it slips sideways, to the left or to the right of this direction.
+
+We plan from state 10, the red dot, near the goal, with gamma equal to 0.95.
+
+<i style="color:gray">[click]</i>
+So, what should we do?
+<b style="color:red">DOWN</b> looks natural: it goes towards the goal.
+But one time out of three, the agent slips to the right, into the hole.
+
+<i style="color:gray">[click]</i>
+<b style="color:red">LEFT</b> moves away from the goal.
+But look: whatever happens, it can <b style="color:red">never fall into a hole</b>.
+Keep this in mind: we will see which one MCTS prefers.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: The search tree of a stochastic MDP -->
+<section id="mcts-stochastic-tree" style="font-size: 56%;">
+	<h3>The search tree of a stochastic MDP</h3>
+
+	<div style="display: grid; grid-template-columns: 55% 45%; align-items: center; text-align: left;">
+		<div>
+			<svg class="node-types" data-variant="stochastic" width="520" height="340"></svg>
+		</div>
+		<div>
+			<p style="margin-top: 0;">Two kinds of nodes alternate:</p>
+			<ul style="display: block; margin: 0 0 0 1em;">
+				<li><b>state nodes</b> $v$ (decision): the agent <em>chooses</em> $a$ with UCB1</li>
+				<li><b>action nodes</b> $(v, a)$ (chance): the simulator <em>draws</em> $s' \sim P(\cdot \mid s, a)$</li>
+			</ul>
+			<p>
+				An action node gets one child per distinct sampled outcome $s'$. The outcomes are drawn
+				with probability $P(s' \mid s, a)$, so the mean $Q(v, a)$ weights them correctly
+				without ever computing $P$.
+			</p>
+			<p style="margin-bottom: 0;">
+				Statistics: $N(v)$, $N(v, a)$ and $Q(v, a)$ = mean return observed after playing $a$ in $v$.
+			</p>
+		</div>
+	</div>
+	<script type="module" src="assets/rl_mcts/node_types.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Dans un MDP stochastique, l'arbre alterne nœuds état (on choisit l'action avec UCB1) et nœuds action, qui sont des nœuds de chance (le simulateur tire l'état suivant). Un nœud action a autant de fils que d'issues distinctes tirées. Statistiques : N(v), N(v,a), Q(v,a).
+		</div>
+		<div class="en-notes">
+In a stochastic environment, the search tree has <b style="color:red">two kinds of nodes</b>.
+
+A <b style="color:red">state node</b> is a decision node.
+Here, the agent chooses the action, with UCB1.
+
+Below it, an <b style="color:red">action node</b> is a chance node.
+Here, nobody chooses: the simulator <b style="color:red">draws</b> the next state.
+So an action node can have several children, one for each outcome we have sampled.
+On the figure, LEFT and DOWN each have three possible outcomes.
+And DOWN can end in the hole, in red.
+
+Do we need to know the probabilities P?
+No: the outcomes are drawn with their true probabilities.
+So the mean Q of v, a <b style="color:red">weights them correctly</b>, automatically.
+
+The state node stores N of v, and the action node stores N of v, a, and Q of v, a.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: MCTS on FrozenLake, step by step -->
+<section id="mcts-frozenlake-steps" style="font-size: 48%;">
+	<h3>MCTS on FrozenLake, step by step</h3>
+
+	<div style="display: grid; grid-template-columns: 44% 56%; align-items: center;">
+		<div class="mcts-code" style="padding-left: 2.2em; font-size: 76%;">
+			<div data-ln="1"><span class="kw">for</span> $i = 1, \dots, n$ <span class="kw">do</span></div>
+			<div data-ln="2" class="i1">$v \leftarrow v_0$ ; $\;\text{path} \leftarrow (\,)$</div>
+			<div data-ln="3" class="i1"><span class="kw">while</span> $v$ is not terminal <span class="kw">do</span></div>
+			<div data-ln="4" class="i2"><span class="kw">if</span> all actions of $v$ have been tried <span class="kw">then</span></div>
+			<div data-ln="5" class="i3">$a \leftarrow \arg\max_{a} \; Q(v,a) + c \sqrt{\ln N(v) \,/\, N(v,a)}$</div>
+			<div data-ln="6" class="i2"><span class="kw">else</span> $a \leftarrow$ an untried action ; add node $(v,a)$</div>
+			<div data-ln="7" class="i2">$(s', r) \leftarrow \textsf{simulator}(s(v), a)$ <span class="cm">▷ $s' \sim P(\cdot \mid s(v), a)$</span></div>
+			<div data-ln="8" class="i2">$\text{path} \leftarrow \text{path} + (v, a, r)$</div>
+			<div data-ln="9" class="i2"><span class="kw">if</span> $s'$ is not yet a child of $(v,a)$ <span class="kw">then</span></div>
+			<div data-ln="10" class="i3">add node $s'$ under $(v,a)$ ; $v \leftarrow s'$ ; <span class="kw">break</span></div>
+			<div data-ln="11" class="i2">$v \leftarrow$ the child $s'$ of $(v,a)$</div>
+			<div data-ln="12" class="i1">$G \leftarrow \textsf{rollout}(s(v))$ <span class="cm">▷ random policy, $G = \sum_t \gamma^t r_t$</span></div>
+			<div data-ln="13" class="i1"><span class="kw">for</span> $(v, a, r) \in \text{path}$, from last to first <span class="kw">do</span></div>
+			<div data-ln="14" class="i2">$G \leftarrow r + \gamma\, G$</div>
+			<div data-ln="15" class="i2">$N(v) \leftarrow N(v) + 1$ ; $\;N(v,a) \leftarrow N(v,a) + 1$</div>
+			<div data-ln="16" class="i2">$Q(v,a) \leftarrow Q(v,a) + \big(G - Q(v,a)\big) / N(v,a)$</div>
+			<div data-ln="17"><span class="kw">return</span> $\arg\max_a N(v_0, a)$</div>
+		</div>
+
+		<div>
+			<svg class="fl-tree" width="530" height="400" viewBox="0 0 530 400"
+					data-initial-frame="0:all"
+					data-frames="1:init 1:try.0 1:sim.0 1:new.0 1:rollout 1:backprop 2:all
+						3:try.0 3:sim.0 3:new.0 3:rollout 3:backprop 4:all
+						5:ucb.0 5:sim.0 5:move.0 5:try.1 5:sim.1 5:new.1 5:rollout 5:backprop
+						6:ucb.0 6:sim.0 6:new.0 6:rollout 6:backprop 7:all
+						8:ucb.0 8:sim.0 8:move.0 8:try.1 8:sim.1 8:new.1 8:rollout 8:backprop
+						11:all 11:return"></svg>
+			<div style="display: flex; justify-content: center; align-items: flex-end; gap: 1.5em;">
+				<svg class="fl-grid" width="150" height="150"></svg>
+				<svg class="fl-ucb" width="190" height="168"></svg>
+			</div>
+		</div>
+	</div>
+	<script src="assets/rl_mcts/frame_steps.js"></script>
+	<script type="module" src="assets/rl_mcts/mcts_frozenlake.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Déroulé pas à pas (37 clics) : itération 1 (LEFT glisse en 14, rollout jusqu'au but), 2–4 (RIGHT tombe directement dans le trou : feuille terminale), 5 (UCB1 avec égalité, issue déjà connue : on descend d'un niveau), 6–7 (nouvelle issue sous un nœud action existant : spécifique au stochastique), 8 (UCB1 choisit UP grâce au seul bonus), puis recommandation après 11 itérations : DOWN.
+		</div>
+		<div class="en-notes">
+Let's run MCTS by hand: the current line is in red, the tree on the right, the map and the UCB1 scores below.
+
+<i style="color:gray">[click × 6: iteration 1]</i>
+No child yet, so we <b style="color:red">try</b> LEFT: it <b style="color:red">slips</b> down to 14, and a random rollout from there reaches the goal.
+
+<i style="color:gray">[click × 7: iterations 2 to 4]</i>
+Same for UP, RIGHT and DOWN, but RIGHT falls straight into the hole: a <b style="color:red">terminal leaf</b>, with G equal to 0.
+
+<i style="color:gray">[click × 8: iteration 5]</i>
+All actions are tried, so now <b style="color:red">UCB1</b> chooses: LEFT and DOWN are tied, and DOWN wins at random.
+DOWN lands on 14 again, which is already in the tree, so we go <b style="color:red">one level deeper</b>.
+
+<i style="color:gray">[click × 6: iterations 6 and 7]</i>
+This time, LEFT really goes left, to 9: a <b style="color:red">new outcome</b> for an old action, only possible with chance.
+
+<i style="color:gray">[click × 8: iteration 8]</i>
+UCB1 picks UP, although its Q is zero: its <b style="color:red">exploration bonus</b> is the largest.
+
+<i style="color:gray">[click × 2: iteration 11]</i>
+After 11 iterations, MCTS would play <b style="color:red">DOWN</b>, the most visited action… but is it the right choice?
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Backpropagation of discounted returns -->
+<section id="mcts-backprop-math" style="text-align: left; font-size: 60%;">
+	<h3 style="text-align: center;">Backpropagation of discounted returns</h3>
+
+	<p>
+		For a path $(v_0, a_0, r_0), \dots, (v_{L-1}, a_{L-1}, r_{L-1})$ ending at the leaf $v_L$,
+		the update $G \leftarrow r + \gamma G$ gives, at depth $d$:
+	</p>
+	$$ G_d = \sum_{k=d}^{L-1} \gamma^{k-d}\, r_k \; + \; \gamma^{L-d}\, G_L
+	\qquad \text{with } G_L = \sum_{t \geq 0} \gamma^t\, r^{\text{rollout}}_t $$
+	<p>
+		i.e. the discounted return of the whole simulated episode from $v_d$: tree part + rollout part.
+	</p>
+	<div class="fragment">
+		<p style="margin-bottom: 0;">Incremental mean — no need to store the returns:</p>
+		$$ Q_N = Q_{N-1} + \frac{1}{N}\big(G - Q_{N-1}\big) \iff Q_N = \frac{1}{N} \sum_{i=1}^{N} G^{(i)} $$
+	</div>
+	<p class="fragment">
+		$N(v) = \sum_a N(v, a)$: each iteration through $v$ increments exactly one of its actions.
+	</p>
+	<p class="fragment">
+		Here every return lies in $[0, 1]$ (a single terminal reward $\leq 1$), as UCB1 with
+		$c = \sqrt{2}$ assumes. Otherwise: normalize the returns, or tune $c$.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+La mise à jour G ← r + γG reconstruit le retour actualisé de tout l'épisode simulé depuis chaque nœud du chemin (partie arbre + partie rollout). Moyenne incrémentale. N(v) = somme des N(v,a). Retours dans [0,1] : hypothèse de UCB1 avec c = √2.
+		</div>
+		<div class="en-notes">
+Let's look at the backpropagation more closely.
+We go up the path, and at each step, G becomes r plus gamma times G.
+
+So at depth d, G is the <b style="color:red">discounted return</b> of the whole simulated episode, from this node.
+It has two parts: the rewards collected <b style="color:red">inside the tree</b>, and the return of the <b style="color:red">rollout</b>.
+
+<i style="color:gray">[click]</i>
+Q is updated as an <b style="color:red">incremental mean</b>.
+It is exactly the average of all the returns, but we don't need to store them.
+
+<i style="color:gray">[click]</i>
+And N of v is the sum of the N of v, a, over its actions.
+Each visit of v increments exactly one of its actions.
+
+<i style="color:gray">[click]</i>
+One more detail: UCB1, with c equal to root two, assumes rewards between 0 and 1.
+Here it is true, because the only reward is 1, at the goal.
+In general, we must <b style="color:red">normalize the returns</b>, or tune the constant c.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: After n iterations (FrozenLake) -->
+<section id="mcts-frozenlake-overview" style="font-size: 60%;">
+	<h3>FrozenLake: the tree after $n$ iterations</h3>
+
+	<svg class="fl-overview" width="900" height="420" data-initial-frame="11" data-frames="100 1000 10000 20000"></svg>
+	<div style="display: flex; align-items: center; gap: 1em; width: 60%; margin: 0 auto;">
+		<span class="fl-overview-n" style="min-width: 7em; text-align: right;"></span>
+		<input type="range" class="mcts-slider fl-overview-slider">
+	</div>
+	<script src="assets/rl_mcts/frame_steps.js"></script>
+	<script type="module" src="assets/rl_mcts/mcts_frozenlake_overview.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+La même exécution (même seed) prolongée jusqu'à 20 000 itérations. L'arbre croît de façon asymétrique ; DOWN domine jusqu'à quelques milliers d'itérations, puis LEFT (l'action optimale) devient la plus visitée. Les estimations Q restent nettement sous les valeurs exactes Q*. Le curseur permet de choisir n en direct.
+		</div>
+		<div class="en-notes">
+Now let's run the same search much longer.
+The first eleven iterations are exactly the ones we just saw.
+
+On the left, the tree: node size and edge width show the <b style="color:red">number of visits</b>, with one color per root action.
+On the right, the visit share and the Q estimates at the root, with the exact Q star in red.
+
+<i style="color:gray">[click]</i>
+After a hundred iterations, DOWN and LEFT are almost tied, with about 30 percent of the visits each.
+
+<i style="color:gray">[click]</i>
+After a thousand, the tree is clearly <b style="color:red">asymmetric</b>: UP, the worst action, gets only 13 percent, and DOWN leads.
+From now on, we only draw the most visited nodes: the full tree is much bigger.
+
+<i style="color:gray">[click]</i>
+After ten thousand iterations, <b style="color:red">LEFT</b> has become the most visited action: the <b style="color:red">optimal</b> one.
+
+<i style="color:gray">[click]</i>
+After twenty thousand, LEFT gets almost 60 percent of the visits.
+But look at the values: the estimates are still <b style="color:red">far below</b> the exact Q star.
+You can also drag the slider to choose n yourself.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Convergence at the root -->
+<section id="mcts-frozenlake-convergence" style="font-size: 58%;">
+	<h3>Convergence at the root</h3>
+
+	<svg class="fl-convergence" width="900" height="375" data-initial-frame="1" data-frames="2 3"></svg>
+	<script src="assets/rl_mcts/frame_steps.js"></script>
+	<script type="module" src="assets/rl_mcts/frozenlake_convergence.js"></script>
+
+	<ul style="display: block; text-align: left; margin: 0.2em 0 0 1em;">
+		<li class="fragment" data-fragment-index="0">$Q(s_0, a)$ stays far below $Q^*(s_0, a)$: it averages the returns of an
+			<em>evolving</em> policy — exploration inside the tree, random rollouts beyond it.</li>
+		<li class="fragment" data-fragment-index="1">Yet the <b>most visited action</b> converges to the optimal one, LEFT,
+			long before the values do: the <em>decision</em> is right before the <em>estimates</em> are.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Courbes en fonction de n (échelle log) : les Q estimés convergent lentement et restent biaisés vers le bas (moyenne des retours d'une politique qui explore + rollouts aléatoires, et aucun partage entre nœuds représentant le même état). Mais la part des visites de LEFT (action optimale) finit par dominer : la décision est bonne bien avant les valeurs.
+		</div>
+		<div class="en-notes">
+Let's zoom on the root, as a function of n, on a log scale.
+On the left, the estimate Q of each root action, with the same colors as before.
+
+<i style="color:gray">[click]</i>
+The dashed lines are the exact values Q star, computed by value iteration.
+The estimates are <b style="color:red">biased low</b>, even after twenty thousand iterations.
+Why?
+Q is the average return of the policy that MCTS <b style="color:red">actually played</b>.
+Inside the tree, it still explores, and beyond the tree, it plays <b style="color:red">randomly</b>.
+And the same state appears in many nodes, which all learn separately.
+
+<i style="color:gray">[click]</i>
+On the right, the share of visits.
+DOWN and LEFT compete for a long time, then <b style="color:red">LEFT</b> takes over, after a few thousand iterations.
+So the <b style="color:red">decision</b> is right long before the values are.
+And for planning, the decision is what matters.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Large or continuous outcome spaces -->
+<section id="mcts-widening" style="text-align: left; font-size: 66%;">
+	<h3 style="text-align: center;">Large or continuous outcome spaces</h3>
+
+	<p>
+		With continuous next states, every simulation samples a <em>new</em> outcome $s'$:
+		chance nodes get one child per visit, and the tree never grows deeper.
+	</p>
+	<p class="fragment">
+		<b>Progressive widening</b> (Coulom, 2007; Couëtoux et al., 2011): at the chance node $(v, a)$,
+		add a new child only while
+		$$ |\text{children}(v, a)| \leq k \, N(v, a)^{\alpha}, \qquad \alpha \in (0, 1) $$
+		otherwise, go down to one of the existing children (in proportion to its visits).
+		<em>Double</em> progressive widening applies the same rule to the actions.
+	</p>
+	<p class="fragment">
+		<b>Open-loop MCTS</b>: nodes are action <em>sequences</em>; the states are re-simulated at each
+		iteration instead of being stored (Perez Liebana et al., 2015).
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Si l'espace des états suivants est grand ou continu, chaque tirage crée un nouveau fils et l'arbre ne s'approfondit jamais. Progressive widening : le nombre de fils d'un nœud de chance croît comme k N^α. Variante open-loop : les nœuds sont des séquences d'actions.
+		</div>
+		<div class="en-notes">
+In FrozenLake, each action has at most three outcomes.
+But what if the next state is <b style="color:red">continuous</b>, like a position in a physics simulation?
+Then every simulation gives a brand new outcome.
+Chance nodes get one new child per visit, and the tree <b style="color:red">never grows deeper</b>.
+
+<i style="color:gray">[click]</i>
+The standard fix is <b style="color:red">progressive widening</b>.
+We add a new child only while the number of children is below k times N to the power alpha.
+Otherwise, we go down to one of the existing children.
+So the tree widens slowly, and goes deeper on the outcomes it already has.
+Double progressive widening applies the same rule to the actions.
+
+<i style="color:gray">[click]</i>
+Another option is <b style="color:red">open-loop</b> MCTS: the nodes store action sequences, not states.
+The states are simulated again at each iteration.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+<!-- PART 2: TIC-TAC-TOE ---------------------------------- -->
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Part 2 -->
+<section>
+	<h3>Part 2</h3>
+	<p>A deterministic two-player zero-sum game: tic-tac-toe</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Partie 2 : MCTS sur un jeu déterministe à deux joueurs et à somme nulle.
+		</div>
+		<div class="en-notes">
+Now, a very different setting: a <b style="color:red">two-player game</b>.
+The moves are deterministic, but there is an <b style="color:red">opponent</b>, who wants us to lose.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: From MDPs to game trees -->
+<section id="mcts-game-tree" style="font-size: 54%;">
+	<h3>From MDPs to game trees</h3>
+
+	<div style="display: grid; grid-template-columns: 55% 45%; align-items: center; text-align: left;">
+		<div>
+			<svg class="node-types" data-variant="deterministic" width="520" height="340"></svg>
+		</div>
+		<div>
+			<p style="margin-top: 0;">
+				<b>Deterministic</b>: $s' = f(s, a)$ — no chance node; the action and the next
+				state are <em>one and the same node</em> (node = position, edge = move).
+			</p>
+			<p>
+				<b>Two players, zero-sum</b>: the players alternate; what one wins, the other loses:
+				$r_{\text{O}} = 1 - r_{\text{X}}$ (win $1$, draw $\frac{1}{2}$, loss $0$).
+			</p>
+			<p style="margin-bottom: 0;">
+				<b>Minimax</b> (negamax form) — value for the player to move:
+				$$ V(s) = \max_{a} \big[ 1 - V(f(s, a)) \big] $$
+				and $V(s)$ = reward of the player to move if $s$ is terminal.
+			</p>
+		</div>
+	</div>
+	<script type="module" src="assets/rl_mcts/node_types.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Jeu déterministe : l'état suivant est une fonction de (s, a), donc le nœud action et le nœud état suivant fusionnent (nœud = position, arête = coup). Deux joueurs à somme nulle : r_O = 1 − r_X. Récursion minimax sous forme negamax.
+		</div>
+		<div class="en-notes">
+What changes in the tree?
+
+First, the game is <b style="color:red">deterministic</b>: a move from a position always gives the same position.
+So we don't need chance nodes.
+The action and the next state become <b style="color:red">one single node</b>: a node is a position, an edge is a move.
+
+Second, there are <b style="color:red">two players</b>, who alternate, and the game is <b style="color:red">zero-sum</b>.
+A win is worth 1, a draw one half, a loss 0.
+What X wins, O loses.
+So each node stores N, and W, the total reward of the player <b style="color:red">who moved into it</b>.
+
+The exact solution is <b style="color:red">minimax</b>.
+In this negamax form, my value is the best, over my moves, of one minus the value of my opponent.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: The position -->
+<section id="mcts-ttt-puzzle" style="font-size: 60%;">
+	<h3>The position: O to play</h3>
+
+	<svg class="ttt-moves" data-mode="puzzle" width="900" height="440"
+			data-initial-frame="moves" data-frames="flat minimax"></svg>
+	<script src="assets/rl_mcts/frame_steps.js"></script>
+	<script type="module" src="assets/rl_mcts/ttt_root_moves.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+X occupe deux coins opposés, O le centre, O doit jouer. Le flat Monte Carlo (moyenne de parties aléatoires) préfère les coins, parce qu'un X aléatoire trouve rarement la fourchette. Le minimax dit le contraire : jouer un coin perd (X bloque et fait une fourchette), seuls les bords tiennent la nulle.
+		</div>
+		<div class="en-notes">
+Here is our position.
+X has two opposite corners, O has the center, and it is O's turn.
+There are six possible moves: which one would you play?
+
+<i style="color:gray">[click]</i>
+<b style="color:red">Flat Monte Carlo</b> plays twenty thousand random games after each move, and averages the results.
+Its favorite moves are the two <b style="color:red">corners</b>.
+
+<i style="color:gray">[click]</i>
+But <b style="color:red">minimax</b> says that the corners <b style="color:red">lose</b>!
+After a corner, O threatens a line, so X must block.
+And this block creates a <b style="color:red">fork</b>: two threats at once, and O cannot stop both.
+Random players rarely find this sequence.
+Only the edges hold the draw.
+
+Can MCTS do better than flat Monte Carlo?
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: MCTS on tic-tac-toe, step by step -->
+<section id="mcts-tictactoe-steps" style="font-size: 48%;">
+	<h3>MCTS on tic-tac-toe, step by step</h3>
+
+	<div style="display: grid; grid-template-columns: 44% 56%; align-items: center;">
+		<div class="mcts-code" style="padding-left: 2.2em; font-size: 76%;">
+			<div data-ln="1"><span class="kw">for</span> $i = 1, \dots, n$ <span class="kw">do</span></div>
+			<div data-ln="2" class="i1">$v \leftarrow v_0$</div>
+			<div data-ln="3" class="i1"><span class="kw">while</span> $v$ is not terminal and all moves of $v$ were tried <span class="kw">do</span></div>
+			<div data-ln="4" class="i2">$v \leftarrow \arg\max_{v' \in \text{children}(v)} \; \dfrac{W(v')}{N(v')} + c \sqrt{\dfrac{\ln N(v)}{N(v')}}$</div>
+			<div data-ln="5" class="i1"><span class="kw">if</span> $v$ is not terminal <span class="kw">then</span></div>
+			<div data-ln="6" class="i2">$v \leftarrow$ a new child of $v$, for an untried move</div>
+			<div data-ln="7" class="i1">$z \leftarrow$ result of a random playout from $v$</div>
+			<div data-ln="8" class="i1"><span class="kw">while</span> $v \neq \varnothing$ <span class="kw">do</span></div>
+			<div data-ln="9" class="i2">$N(v) \leftarrow N(v) + 1$</div>
+			<div data-ln="10" class="i2">$W(v) \leftarrow W(v) + \text{reward}_{p(v)}(z)$ <span class="cm">▷ $1$ / $\tfrac{1}{2}$ / $0$</span></div>
+			<div data-ln="11" class="i2">$v \leftarrow \text{parent}(v)$</div>
+			<div data-ln="12"><span class="kw">return</span> the move to the most visited child of $v_0$</div>
+			<p class="cm" style="margin: 0.8em 0 0 -2.6em; white-space: normal; line-height: 1.25;">
+				$p(v)$: the player who made the move leading to $v$; $W(v)/N(v)$ is <em>its</em> win rate,
+				so at $v$ the player to move maximizes over the children of $v$.
+			</p>
+		</div>
+
+		<div>
+			<svg class="ttt-tree" width="530" height="400" viewBox="0 0 530 400"
+					data-initial-frame="0:all"
+					data-frames="1:init 1:expand 1:rollout 1:backprop 2:all 3:all
+						4:expand 4:rollout 4:backprop 5:all 6:all
+						7:ucb.0 7:expand 7:rollout 7:backprop 8:all
+						9:ucb.0 9:expand 9:rollout 9:backprop 14:all
+						19:ucb.0 19:ucb.1 19:expand 19:rollout 19:backprop 19:return"></svg>
+			<div style="display: flex; justify-content: center; align-items: flex-end; gap: 1.2em;">
+				<svg class="ttt-rollout" width="260" height="90"></svg>
+				<svg class="ttt-ucb" width="230" height="160"></svg>
+			</div>
+		</div>
+	</div>
+	<script src="assets/rl_mcts/frame_steps.js"></script>
+	<script type="module" src="assets/rl_mcts/mcts_tictactoe.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Déroulé pas à pas (27 clics). Pas de nœud de chance ; W/N de chaque nœud est compté pour le joueur qui y a mené (couleur). Itérations 1–6 : un fils par coup ; le coin bas-gauche gagne son premier playout. 7 : UCB1 le choisit. 9 : UCB1 choisit un autre coup grâce au bonus. 19 : descente sur deux niveaux (X répond au mieux pour X). Après 19 itérations, MCTS jouerait le coin… perdant.
+		</div>
+		<div class="en-notes">
+Same exercise on tic-tac-toe, with a shorter code: there is <b style="color:red">no chance node</b>.
+
+<i style="color:gray">[click × 4: iteration 1]</i>
+We add one move of O, play a random game until the end, and back up the result.
+Each node counts the reward of the player <b style="color:red">who moved into it</b>: red for O, blue for X.
+
+<i style="color:gray">[click × 7: iterations 2 to 6]</i>
+One new child per iteration, and only the bottom-left corner wins its random game.
+
+<i style="color:gray">[click × 4: iteration 7]</i>
+Now all moves are tried, and <b style="color:red">UCB1</b> picks this corner, the best mean.
+
+<i style="color:gray">[click × 5: iterations 8 and 9]</i>
+At iteration 9, UCB1 picks another move: its <b style="color:red">exploration bonus</b> wins.
+
+<i style="color:gray">[click × 7: iterations 14 and 19]</i>
+At iteration 19, we go down <b style="color:red">two levels</b>.
+Below the corner, it is X's turn: UCB1 now maximizes <b style="color:red">X's</b> win rate.
+In the backup, the same result counts 1 for the winner, and 0 for the loser.
+After 19 iterations, MCTS would play the corner… the <b style="color:red">losing move</b>!
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: After n iterations (tic-tac-toe) -->
+<section id="mcts-ttt-overview" style="font-size: 60%;">
+	<h3>Tic-tac-toe: the root after $n$ iterations</h3>
+
+	<svg class="ttt-moves" data-mode="mcts" width="900" height="440"
+			data-initial-frame="19" data-frames="100 300 1000 5000"></svg>
+	<div style="display: flex; align-items: center; gap: 1em; width: 60%; margin: 0 auto;">
+		<span class="ttt-moves-n" style="min-width: 7em; text-align: right;"></span>
+		<input type="range" class="mcts-slider ttt-moves-slider">
+	</div>
+	<script src="assets/rl_mcts/frame_steps.js"></script>
+	<script type="module" src="assets/rl_mcts/ttt_root_moves.js"></script>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Même exécution prolongée. Le coin, d'abord favori, perd ses visites dès que l'arbre est assez profond pour que X y trouve sa fourchette ; au-delà d'environ 500 itérations MCTS joue un bord et les W/N tendent vers les valeurs minimax (½ pour les bords, 0 pour les coins). Contrairement au flat Monte Carlo, MCTS converge vers la décision minimax.
+		</div>
+		<div class="en-notes">
+Let's run this search longer: after 19 iterations, the bottom-left corner is the favorite.
+
+<i style="color:gray">[click]</i>
+After a hundred iterations, the corner still leads, but its win rate drops, from 0.86 to 0.67.
+Why?
+The tree is now deep enough below the corner, and X starts to <b style="color:red">find the fork</b>.
+
+<i style="color:gray">[click]</i>
+After three hundred iterations, an <b style="color:red">edge</b>, the top, takes the lead.
+
+<i style="color:gray">[click]</i>
+After a thousand, the two corners <b style="color:red">lose their visits</b>: about ten percent each.
+
+<i style="color:gray">[click]</i>
+After five thousand, the four edges share the visits, and their win rate is close to <b style="color:red">one half</b>, their minimax value.
+The corners are still at 0.34: their average includes the early visits, and the visits where X explores weaker moves.
+
+So, unlike flat Monte Carlo, MCTS <b style="color:red">converges to the minimax decision</b>.
+The playouts are still random, but the tree corrects them where it matters.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+<!-- PART 3: SYNTHESIS ------------------------------------ -->
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Part 3 -->
+<section>
+	<h3>Part 3</h3>
+	<p>Synthesis, theory and modern variants</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Partie 3 : synthèse, théorie et variantes modernes.
+		</div>
+		<div class="en-notes">
+Let's put the two versions side by side.
+Then we will see what the <b style="color:red">theory</b> says, and how modern programs like <b style="color:red">AlphaZero</b> use MCTS.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Two variants of the same algorithm -->
+<section id="mcts-diff" style="font-size: 42%;">
+	<h3>Two variants of the same algorithm</h3>
+
+	<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5em; text-align: left;">
+		<div class="mcts-code" style="padding-left: 2.4em;">
+			<p style="margin: 0 0 0.4em -2em; font-size: 120%;"><b>Stochastic MDP</b> (FrozenLake)</p>
+			<div data-ln="1"><span class="kw">for</span> $i = 1, \dots, n$ <span class="kw">do</span></div>
+			<div data-ln="2" class="i1">$v \leftarrow v_0$ ; $\;\text{path} \leftarrow (\,)$</div>
+			<div data-ln="3" class="i1"><span class="kw">while</span> $v$ is not terminal <span class="kw">do</span></div>
+			<div data-ln="4" class="i2"><span class="kw">if</span> all actions tried: $a \leftarrow \arg\max_a \mathrm{UCB}(v, a)$</div>
+			<div data-ln="5" class="i2"><span class="kw">else</span> $a \leftarrow$ an untried action ; add node $(v,a)$</div>
+			<div data-ln="6" class="i2 diff">$(s', r) \leftarrow \textsf{simulator}(s(v), a)$ <span class="cm">▷ chance node</span></div>
+			<div data-ln="7" class="i2">$\text{path} \leftarrow \text{path} + (v, a, r)$</div>
+			<div data-ln="8" class="i2 diff"><span class="kw">if</span> $s'$ is new: add node $s'$ ; $v \leftarrow s'$ ; <span class="kw">break</span></div>
+			<div data-ln="9" class="i2 diff">$v \leftarrow$ the child $s'$ of $(v,a)$</div>
+			<div data-ln="10" class="i1">$G \leftarrow \textsf{rollout}(s(v))$</div>
+			<div data-ln="11" class="i1"><span class="kw">for</span> $(v, a, r) \in \text{path}$, last to first <span class="kw">do</span></div>
+			<div data-ln="12" class="i2 diff">$G \leftarrow r + \gamma\, G$ <span class="cm">▷ discounted return</span></div>
+			<div data-ln="13" class="i2">$N(v) \mathrel{+}= 1$ ; $\;N(v,a) \mathrel{+}= 1$</div>
+			<div data-ln="14" class="i2">$Q(v,a) \mathrel{+}= \big(G - Q(v,a)\big)/N(v,a)$</div>
+			<div data-ln="15"><span class="kw">return</span> $\arg\max_a N(v_0, a)$</div>
+			<p class="cm" style="margin: 0.6em 0 0 -2.8em;">
+				$\mathrm{UCB}(v, a) = Q(v, a) + c \sqrt{\ln N(v) / N(v, a)}$
+			</p>
+		</div>
+		<div class="mcts-code" style="padding-left: 2.4em;">
+			<p style="margin: 0 0 0.4em -2em; font-size: 120%;"><b>Two-player zero-sum game</b> (tic-tac-toe)</p>
+			<div data-ln="1"><span class="kw">for</span> $i = 1, \dots, n$ <span class="kw">do</span></div>
+			<div data-ln="2" class="i1">$v \leftarrow v_0$</div>
+			<div data-ln="3" class="i1"><span class="kw">while</span> $v$ is not terminal and fully expanded <span class="kw">do</span></div>
+			<div data-ln="4" class="i2 diff">$v \leftarrow \arg\max_{v' \in \text{children}(v)} \mathrm{UCB}(v')$ <span class="cm">▷ player to move</span></div>
+			<div data-ln="5" class="i1 diff"><span class="kw">if</span> $v$ is not terminal: $v \leftarrow$ new child of $v$ <span class="cm">▷ move = state</span></div>
+			<div data-ln="6" class="i1">$z \leftarrow$ result of a random playout from $v$</div>
+			<div data-ln="7" class="i1"><span class="kw">while</span> $v \neq \varnothing$ <span class="kw">do</span></div>
+			<div data-ln="8" class="i2">$N(v) \mathrel{+}= 1$</div>
+			<div data-ln="9" class="i2 diff">$W(v) \mathrel{+}= \text{reward}_{p(v)}(z)$ <span class="cm">▷ $z$ or $1 - z$</span></div>
+			<div data-ln="10" class="i2">$v \leftarrow \text{parent}(v)$</div>
+			<div data-ln="11"><span class="kw">return</span> the move to the most visited child of $v_0$</div>
+			<p class="cm" style="margin: 0.6em 0 0 -2.8em;">
+				$\mathrm{UCB}(v') = W(v')/N(v') + c \sqrt{\ln N(v) / N(v')}$
+			</p>
+		</div>
+	</div>
+	<p style="font-size: 120%; margin-top: 1em;">
+		Same skeleton: <b>selection, expansion, simulation, backpropagation</b>.
+		The highlighted lines are where the setting changes the algorithm.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Les deux pseudo-codes côte à côte : même squelette en quatre phases. Les lignes surlignées sont celles qui changent : nœud de chance et tirage de l'issue dans le cas stochastique, retour actualisé ; UCB1 du point de vue du joueur au trait et récompense vue par chaque joueur dans le cas à deux joueurs.
+		</div>
+		<div class="en-notes">
+Here are the two versions, side by side.
+The skeleton is exactly the same: <b style="color:red">selection, expansion, simulation, backpropagation</b>.
+The highlighted lines are the differences.
+
+On the left, the stochastic case needs a <b style="color:red">chance node</b>.
+We sample the next state, and it may be new, or already in the tree.
+And the backup <b style="color:red">discounts</b> the return, with gamma.
+
+On the right, the move and the next state are one single node.
+UCB1 maximizes the win rate of the <b style="color:red">player to move</b>.
+And the backup gives each node the reward <b style="color:red">of its own player</b>: z for one player, one minus z for the other.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Comparison table -->
+<section id="mcts-table" style="font-size: 50%;">
+	<h3>What depends on the setting</h3>
+
+	<table style="font-size: 100%; width: 100%;">
+		<thead>
+			<tr><th></th><th>Stochastic MDP<br>(FrozenLake)</th><th>Deterministic zero-sum game<br>(tic-tac-toe)</th></tr>
+		</thead>
+		<tbody>
+			<tr><td><b>Nodes</b></td><td>state nodes + action (chance) nodes</td><td>one node = one position (action ≡ next state)</td></tr>
+			<tr><td><b>Selection</b></td><td>UCB1 at state nodes; $s' \sim P(\cdot \mid s, a)$ at action nodes</td><td>UCB1 at every node, for the player to move</td></tr>
+			<tr><td><b>Expansion</b></td><td>a new action node, or a new outcome under an existing one</td><td>one new child per iteration</td></tr>
+			<tr><td><b>Statistics</b></td><td>$N(v)$, $N(v,a)$, $Q(v,a)$</td><td>$N(v)$, $W(v)$ for the player who moved into $v$</td></tr>
+			<tr><td><b>Rewards</b></td><td>along the path, discounted by $\gamma$</td><td>final outcome only: $1$ / $\frac{1}{2}$ / $0$</td></tr>
+			<tr><td><b>Backpropagation</b></td><td>$G \leftarrow r + \gamma\, G$</td><td>$z$ for one player, $1 - z$ for the other</td></tr>
+			<tr><td><b>Converges to</b></td><td>the optimal action for $Q^*(s_0, \cdot)$ (expectimax)</td><td>the minimax move</td></tr>
+		</tbody>
+	</table>
+	<p style="font-size: 110%;">
+		In both cases: play the <b>most visited</b> action at the root (more robust than the best mean).
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Tableau récapitulatif des différences : types de nœuds, sélection, expansion, statistiques, récompenses, rétropropagation, objet de la convergence. Dans les deux cas, on joue l'action la plus visitée (« robust child »).
+		</div>
+		<div class="en-notes">
+This table sums up what depends on the setting.
+
+The <b style="color:red">nodes</b>: two kinds with chance, one kind without.
+The <b style="color:red">selection</b>: in the stochastic case, half of the steps are draws, not choices.
+The <b style="color:red">rewards</b>: along the path and discounted, or only the final result.
+The <b style="color:red">backup</b>: with discounting, or with a switch of point of view.
+
+And the result: the optimal action for Q star in one case, and the <b style="color:red">minimax</b> move in the other.
+
+In both cases, we play the <b style="color:red">most visited</b> action at the root.
+It is more robust than the best mean, which can come from a few lucky simulations.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Theoretical guarantees -->
+<section id="mcts-theory" style="text-align: left; font-size: 64%;">
+	<h3 style="text-align: center;">Theoretical guarantees of UCT</h3>
+
+	<p>
+		At each node, UCB1 faces a <b>non-stationary</b> bandit: the returns of a child drift
+		as its own subtree improves.
+	</p>
+	<p class="fragment">
+		<b>Theorem</b> (Kocsis &amp; Szepesvári, 2006). For a finite-horizon MDP or game with rewards in
+		$[0, 1]$ and a suitable exploration constant:
+	</p>
+	<ul class="fragment" style="display: block; margin: 0 0 0 2em;">
+		<li>the bias of the value estimated at the root is $O\!\left(\frac{\ln n}{n}\right)$;</li>
+		<li>the probability of choosing a suboptimal action at the root tends to $0$ (at a polynomial rate).</li>
+	</ul>
+	<p class="fragment">
+		<b>But</b> the guarantee is asymptotic: there are trees of depth $D$ where UCT needs a number of
+		iterations that is a tower of $D - 1$ nested exponentials (Coquelin &amp; Munos, 2007).
+		In practice: tune $c$, normalize the returns, use good rollouts or a learned evaluation.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Chaque nœud est un bandit non stationnaire. Théorème de Kocsis & Szepesvári (2006) : biais en O(ln n / n) à la racine, probabilité d'erreur qui tend vers 0. Mais convergence potentiellement extrêmement lente dans le pire cas (Coquelin & Munos, 2007).
+		</div>
+		<div class="en-notes">
+What does the theory say?
+
+Inside the tree, each node is a bandit, but a <b style="color:red">non-stationary</b> one.
+The returns of a child change over time, because its own subtree keeps improving.
+So the classic analysis of UCB1 does not apply directly.
+
+<i style="color:gray">[click]</i>
+Still, Kocsis and Szepesvári proved in 2006 that UCT works, for a finite horizon and rewards between 0 and 1.
+
+<i style="color:gray">[click]</i>
+The bias of the value at the root decreases like <b style="color:red">log n over n</b>.
+And the probability of playing a wrong action at the root goes to <b style="color:red">zero</b>.
+
+<i style="color:gray">[click]</i>
+But this is an <b style="color:red">asymptotic</b> result.
+Coquelin and Munos found trees where UCT needs an absurd number of iterations: a <b style="color:red">tower of exponentials</b>.
+In practice, we tune c, we normalize the returns, and we use good rollouts or a learned evaluation.
+We saw a mild version of this slowness on FrozenLake.
+		</div>
+		<!-- Sources:
+		- L. Kocsis, C. Szepesvári, Bandit based Monte-Carlo planning, ECML 2006 (Theorem 6)
+		- P.-A. Coquelin, R. Munos, Bandit algorithms for tree search, UAI 2007
+		-->
+	</aside>
+</section>
+
+<!-- Slide: Properties and limits -->
+<section id="mcts-properties" style="text-align: left; font-size: 62%;">
+	<h3 style="text-align: center;">Properties and limits</h3>
+
+	<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1em;">
+		<div>
+			<p style="margin-top: 0;"><b>Properties</b></p>
+			<ul style="display: block; margin: 0 0 0 1em;">
+				<li><b>Anytime</b>: stop at any time with a usable answer</li>
+				<li><b>Asymmetric</b> growth: the budget goes to promising lines</li>
+				<li>Needs only a <b>simulator</b>: no evaluation function, no domain knowledge</li>
+				<li>Easy to <b>parallelize</b> (root, leaf or tree parallelization)</li>
+				<li>The subtree of the played action is <b>reused</b> at the next step</li>
+			</ul>
+		</div>
+		<div class="fragment">
+			<p style="margin-top: 0;"><b>Limits</b></p>
+			<ul style="display: block; margin: 0 0 0 1em;">
+				<li><b>Random rollouts</b> are poor evaluators: sparse rewards (FrozenLake), tactical
+					traps (chess: Ramanujan et al., 2010)</li>
+				<li>Very <b>large branching factors</b></li>
+				<li>No <b>generalization</b>: identical or similar states are learned separately
+					⇒ transposition tables, RAVE / AMAF (Gelly &amp; Silver, 2007), learned evaluations</li>
+			</ul>
+		</div>
+	</div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Propriétés : anytime, croissance asymétrique, n'a besoin que d'un simulateur, parallélisable, réutilisation du sous-arbre. Limites : rollouts aléatoires peu informatifs (récompenses rares, pièges tactiques), grands facteurs de branchement, absence de généralisation entre états.
+		</div>
+		<div class="en-notes">
+Let's sum up the strengths of MCTS.
+It is <b style="color:red">anytime</b>: we can stop it whenever we want.
+The tree grows <b style="color:red">asymmetrically</b>, where it matters.
+It only needs a <b style="color:red">simulator</b>: no hand-made evaluation function.
+It is easy to parallelize.
+And after a real move, we can reuse the subtree of the move we played.
+
+<i style="color:gray">[click]</i>
+Now, the limits.
+<b style="color:red">Random rollouts</b> are weak evaluators.
+With sparse rewards, like in FrozenLake, they give very noisy estimates.
+In tactical games like chess, a random playout misses the traps.
+Very large branching factors are also hard.
+And there is <b style="color:red">no generalization</b>: identical or similar states are learned separately.
+Transposition tables, RAVE, or learned evaluations help.
+These limits are exactly what the modern variants fix.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Modern MCTS -->
+<section id="mcts-alphazero" style="text-align: left; font-size: 62%;">
+	<h3 style="text-align: center;">Modern MCTS: AlphaGo, AlphaZero, MuZero</h3>
+
+	<p>
+		<b>AlphaGo</b> (Silver et al., 2016): MCTS guided by a policy network and a value network
+		(plus fast rollouts). <b>AlphaGo Zero</b> (2017), <b>AlphaZero</b> (2018): a single network
+		$f_\theta(s) = (\boldsymbol{p}, v)$ gives a prior $P(s, a)$ over the moves and a value $v(s)$.
+	</p>
+	<p class="fragment">
+		Selection with <b>PUCT</b>: the prior replaces the uniform exploration of UCB1
+		$$ a = \arg\max_a \; Q(s, a) + c_{\text{puct}} \, P(s, a) \, \frac{\sqrt{N(s)}}{1 + N(s, a)} $$
+	</p>
+	<p class="fragment">
+		<b>No rollout</b> (AlphaGo Zero, AlphaZero): the new leaf is evaluated by the value network $v(s)$.
+	</p>
+	<p class="fragment">
+		<b>Self-play</b>: the network learns to predict MCTS's visit distribution and the game outcome —
+		MCTS acts as a <em>policy improvement operator</em>.
+	</p>
+	<p class="fragment">
+		<b>MuZero</b> (Schrittwieser et al., 2020): MCTS in a <em>learned</em> model — no simulator needed.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+AlphaGo : MCTS guidé par un réseau de politique et un réseau de valeur (plus des rollouts rapides). AlphaGo Zero/AlphaZero : un seul réseau donne un a priori sur les coups et une valeur. Sélection PUCT, évaluation des feuilles par le réseau de valeur au lieu des rollouts, apprentissage par self-play où MCTS sert d'opérateur d'amélioration de politique. MuZero : MCTS dans un modèle appris.
+		</div>
+		<div class="en-notes">
+The modern versions keep the tree, and fix these limits with <b style="color:red">neural networks</b>.
+
+AlphaGo, in 2016, already used a policy network and a value network, plus fast rollouts.
+In AlphaGo Zero and AlphaZero, a <b style="color:red">single network</b> gives two things: a prior over the moves, and a value.
+
+<i style="color:gray">[click]</i>
+The prior enters the selection rule, called <b style="color:red">PUCT</b>.
+It replaces the uniform exploration bonus of UCB1: promising moves are explored first.
+
+<i style="color:gray">[click]</i>
+And the value network <b style="color:red">replaces the random rollout</b>: a new leaf is evaluated directly.
+
+<i style="color:gray">[click]</i>
+The network is trained by <b style="color:red">self-play</b>.
+It learns to predict the visit counts of MCTS, and the final result of the game.
+MCTS improves the policy, and the network learns it: MCTS is a <b style="color:red">policy improvement operator</b>.
+
+<i style="color:gray">[click]</i>
+Finally, <b style="color:red">MuZero</b> runs MCTS inside a learned model: no simulator is needed anymore.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Take-home messages -->
+<section id="mcts-summary" style="text-align: left; font-size: 66%;">
+	<h3 style="text-align: center;">Take-home messages</h3>
+
+	<ul style="display: block; margin: 0 0 0 1em;">
+		<li>MCTS = <b>best-first tree search</b>, guided by <b>bandits</b> (UCB1) and evaluated by <b>Monte Carlo</b> simulations</li>
+		<li>Four phases per iteration: selection, expansion, simulation, backpropagation</li>
+		<li>The setting changes the details:
+			<ul>
+				<li>stochastic: <em>chance nodes</em>, sampled outcomes, discounted returns</li>
+				<li>two-player zero-sum: one node per position, values seen by <em>each player</em></li>
+			</ul>
+		</li>
+		<li>Consistent (UCT) but slow: the <b>decision</b> converges before the <b>values</b></li>
+		<li>State of the art: learned priors and values instead of random rollouts (AlphaZero, MuZero)</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Messages à retenir : recherche best-first guidée par des bandits et évaluée par Monte Carlo ; quatre phases ; ce qui change selon le cadre ; consistance mais lenteur ; variantes modernes.
+		</div>
+		<div class="en-notes">
+To conclude, the key ideas to remember.
+
+MCTS is a <b style="color:red">best-first tree search</b>, guided by <b style="color:red">bandits</b>, and evaluated by <b style="color:red">Monte Carlo</b> simulations.
+Each iteration has the same four phases: selection, expansion, simulation, backpropagation.
+
+The skeleton never changes, but the setting changes the details.
+For stochastic environments: <b style="color:red">chance nodes</b>, sampled outcomes, and discounted returns.
+For two-player games: one node per position, and the <b style="color:red">point of view of each player</b>.
+
+It converges, but slowly: the <b style="color:red">decision</b> is right long before the values are.
+
+And the state of the art replaces random rollouts with learned priors and values, like <b style="color:red">AlphaZero</b>.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: References -->
+<section id="mcts-references" style="text-align: left; font-size: 46%;">
+	<h3 style="text-align: center;">References</h3>
+
+	<ul style="display: block; margin: 0 0 0 1em;">
+		<li>P. Auer, N. Cesa-Bianchi, P. Fischer. <em>Finite-time analysis of the multiarmed bandit problem</em>. Machine Learning, 2002.</li>
+		<li>R. Coulom. <em>Efficient selectivity and backup operators in Monte-Carlo tree search</em>. Computers and Games, 2006.</li>
+		<li>L. Kocsis, C. Szepesvári. <em>Bandit based Monte-Carlo planning</em>. ECML, 2006.</li>
+		<li>S. Gelly, D. Silver. <em>Combining online and offline knowledge in UCT</em>. ICML, 2007.</li>
+		<li>P.-A. Coquelin, R. Munos. <em>Bandit algorithms for tree search</em>. UAI, 2007.</li>
+		<li>R. Coulom. <em>Computing Elo ratings of move patterns in the game of Go</em>. ICGA Journal, 2007.</li>
+		<li>R. Ramanujan, A. Sabharwal, B. Selman. <em>On adversarial search spaces and sampling-based planning</em>. ICAPS, 2010.</li>
+		<li>A. Couëtoux, J.-B. Hoock, N. Sokolovska, O. Teytaud, N. Bonnard. <em>Continuous upper confidence trees</em>. LION, 2011.</li>
+		<li>C. Browne et al. <em>A survey of Monte Carlo tree search methods</em>. IEEE Trans. on Computational Intelligence and AI in Games, 2012.</li>
+		<li>D. Perez Liebana, J. Dieskau, M. Hünermund, S. Mostaghim, S. Lucas. <em>Open loop search for general video game playing</em>. GECCO, 2015.</li>
+		<li>D. Silver et al. <em>Mastering the game of Go with deep neural networks and tree search</em>. Nature, 2016.</li>
+		<li>D. Silver et al. <em>Mastering the game of Go without human knowledge</em>. Nature, 2017.</li>
+		<li>D. Silver et al. <em>A general reinforcement learning algorithm that masters chess, shogi, and Go through self-play</em>. Science, 2018.</li>
+		<li>J. Schrittwieser et al. <em>Mastering Atari, Go, chess and shogi by planning with a learned model</em>. Nature, 2020.</li>
+		<li>Gymnasium documentation, <em>Frozen Lake</em>: <a href="https://gymnasium.farama.org/environments/toy_text/frozen_lake/">gymnasium.farama.org/environments/toy_text/frozen_lake</a></li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+Références.
+		</div>
+		<div class="en-notes">
+Here are the references, if you want to go further.
+The survey by <b style="color:red">Browne and colleagues</b>, from 2012, is a good starting point.
+For the AlphaGo family, read the papers by David Silver and his team at DeepMind.
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->
+
+			</div>
+
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/zoom.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/search.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="dist/plugin/math.js"></script>
+
+		<script>
+
+			// Also available as an ES module, see:
+			// https://revealjs.com/initialization/
+			Reveal.initialize({
+				// Display presentation control arrows
+				controls: true,
+
+				// Help the user learn the controls by providing hints, for example by
+				// bouncing the down arrow when they first encounter a vertical slide
+				controlsTutorial: true,
+
+				// Determines where controls appear, "edges" or "bottom-right"
+				controlsLayout: 'bottom-right',
+
+				// Visibility rule for backwards navigation arrows; "faded", "hidden"
+				// or "visible"
+				controlsBackArrows: 'faded',
+
+				// Display a presentation progress bar
+				progress: true,
+
+				// Vertical centering of slides
+				center: true,
+
+				hash: true,
+				slideNumber: 'h.v',
+
+				// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+				maxScale: 4.0,
+				mathjax2: {
+					//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+					//mathjax: 'mathjax/MathJax.js',
+					config: 'TeX-AMS_HTML-full',
+					// pass other options into `MathJax.Hub.Config()`
+					TeX: {
+						Macros: {
+							R: '\\mathbb{R}',
+							set: ['\\left\\{#1 \\; ; \\; #2\\right\\}', 2]
+						}
+					}
+				},
+
+				// There are three typesetters available
+				// RevealMath.MathJax2 (default)
+				// RevealMath.MathJax3
+				// RevealMath.KaTeX
+				//
+				// More info at https://revealjs.com/math/
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2]
+
+				// // Reveal.js plugins
+				// dependencies: [
+				// 	{ src: 'revealjs/plugin/reveald3.js' },
+				// ]
+			});
+
+		</script>
+
+		<!-- Assurez-vous que jdhp.js est référencé après tous les autres scripts -->
+		<script src="jdhp.js"></script>
+
+	</body>
+
+</html>

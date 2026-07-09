@@ -1,0 +1,1 @@
+import{o as e,s as t}from"./src-C3B8pcao.js";function n(n){return typeof n==`string`?new e([[document.querySelector(n)]],[document.documentElement]):new e([[n]],t)}export{n as t};

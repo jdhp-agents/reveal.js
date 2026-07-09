@@ -1,0 +1,1 @@
+var e={frozenlake:{map:[`SFFF`,`FHFH`,`FFFH`,`HFFG`],root:10,gamma:.95,c:1.4142135623730951,seed:986,rolloutHorizon:100},tictactoe:{root:`X...O...X`,c:1.4142135623730951,seed:1014},bandit:{means:[.35,.6,.5,.2],c:1.4142135623730951,seed:7}};export{e as t};
