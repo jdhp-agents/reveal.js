@@ -1,97 +1,123 @@
-# Builds the personal slide decks of EVERY branch and publishes them to GitHub Pages:
+# Builds the personal slide decks of the pushed branch and publishes them to GitHub
+# Pages, one directory per branch:
 #   - master           → https://<user>.github.io/reveal.js/
-#   - any other branch → https://<user>.github.io/reveal.js/<branch>/
-# This makes Claude Code Web branches previewable online before they are merged.
+#   - any other branch → https://<user>.github.io/reveal.js/br/<branch>/
+# This makes Claude Code Web branches previewable online before they are merged. The
+# br/ prefix keeps branch directories from ever colliding with master's own content at
+# the site root (e.g. a branch named "dist" or "assets").
 #
-# Every run re-enumerates the repo's branches and rebuilds the whole site from them, so
-# the published site only ever contains branches that still exist — the `delete` trigger
-# fires a redeploy as soon as a branch is removed. This works because build-decks.mjs
-# emits a site with all-relative URLs, so a deck renders identically at the site root
-# and under a <branch>/ subdirectory.
+# The deployment is INCREMENTAL: the published site lives in the `gh-pages` branch, and
+# each run only rebuilds the pushed branch and replaces its directory there — the other
+# branches' content is left as-is. Directories of branches that no longer exist on the
+# repo are pruned on every run (the `delete` trigger fires one as soon as a branch is
+# removed). Everything at the site root except br/ and the housekeeping files belongs
+# to master's deployment; `.branches-manifest` at the gh-pages root lists the non-master
+# branches currently deployed, so pruning knows which br/ subdirectories to drop.
+# gh-pages history is kept to a single commit (amend + force-push) so the repo does not
+# grow with every deployment.
 #
-# The framework files in dist/ are committed and published as-is (no framework rebuild
-# here): what goes online is exactly what was tested locally. The build step only
-# type-checks the project, assembles _site/ and compiles the d3 figure sources
-# (assets/<deck>/*.ts) — see scripts/build-decks.mjs and vite.config.decks.ts.
+# This works because build-decks.mjs emits a site with all-relative URLs, so a deck
+# renders identically at the site root and under a <branch>/ subdirectory. See
+# DEPLOIEMENT.md at the repo root for the full explanation and the design history.
 #
-# One-time repository setup:
-#   - Settings → Pages → Build and deployment → Source: "GitHub Actions".
-#   - Settings → Environments → github-pages → Deployment branches and tags:
-#     "No restriction" — otherwise deployments triggered by pushes to non-master
-#     branches are rejected by the environment's protection rule.
+# One-time repository setup: Settings → Pages → Build and deployment →
+# Source: "Deploy from a branch", Branch: gh-pages / (root).
+# (Run the workflow once first so the gh-pages branch exists.)
 name: Deploy slides to GitHub Pages
 
 on:
   push:
-    branches: ['**']
-  # Branch deleted → redeploy without it (this event always runs the workflow as
-  # defined on the default branch)
+    branches: ['**', '!gh-pages']
+  # Branch deleted → prune its directory from the published site (this event always
+  # runs the workflow as defined on the default branch)
   delete:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
-# One deployment at a time; let in-flight deployments finish. Since every run publishes
-# every branch, superseded queued runs are safe to collapse (GitHub keeps only the
-# latest pending run in the group).
+# One deployment at a time (runs rewrite the shared gh-pages branch); let in-flight
+# deployments finish
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
+    # The delete event also fires for tags; only branch deletions matter here
+    if: github.event_name != 'delete' || github.event.ref_type == 'branch'
     steps:
       - uses: actions/checkout@v4
-        with:
-          # Every branch gets built, not just the pushed one
-          fetch-depth: 0
       - uses: actions/setup-node@v4
+        if: github.event_name != 'delete'
         with:
           node-version: 20
           cache: npm
-      - name: Build every branch into the combined site
+      - name: Build the pushed branch
+        if: github.event_name != 'delete'
+        run: |
+          npm ci
+          npm run build:decks
+      - name: Update the published site (gh-pages branch)
+        env:
+          EVENT: ${{ github.event_name }}
+          BRANCH: ${{ github.ref_name }}
+          REPO_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
         run: |
           set -eu
-          site="$RUNNER_TEMP/site"
-          mkdir -p "$site"
+          mkdir "$RUNNER_TEMP/site" && cd "$RUNNER_TEMP/site"
+          git init -q -b gh-pages
+          git remote add origin "$REPO_URL"
+          if git fetch -q --depth=1 origin gh-pages; then
+            git reset -q --hard origin/gh-pages
+          fi
 
-          # master first (published at the site root), then every other origin branch
-          # (each published under its own <branch>/ subdirectory).
-          others="$(git for-each-ref --format='%(refname:lstrip=3)' refs/remotes/origin \
-                      | grep -vx -e HEAD -e master || true)"
-          for branch in master $others; do
-            echo "::group::Building branch: $branch"
-            wt="$RUNNER_TEMP/worktree/$branch"
-            mkdir -p "$(dirname "$wt")"
-            git worktree add --detach "$wt" "origin/$branch"
-            if (cd "$wt" && npm ci && npm run build:decks); then
-              if [ "$branch" = master ]; then dest="$site"; else dest="$site/$branch"; fi
-              mkdir -p "$dest"
-              cp -R "$wt/_site/." "$dest/"
-            elif [ "$branch" = master ]; then
-              echo "::error::master failed to build — aborting the deployment."
-              exit 1
+          if [ "$EVENT" != delete ]; then
+            if [ "$BRANCH" = master ]; then
+              # Everything at the root except br/ and the housekeeping files belongs to
+              # master's deployment: replace it wholesale
+              find . -mindepth 1 -maxdepth 1 \
+                ! -name .git ! -name br ! -name .branches-manifest ! -name .nojekyll \
+                -exec rm -rf {} +
+              cp -R "$GITHUB_WORKSPACE/_site/." .
             else
-              echo "::warning::Branch $branch failed to build; it is left out of this deployment."
+              rm -rf "./br/$BRANCH"
+              mkdir -p "./br/$BRANCH"
+              cp -R "$GITHUB_WORKSPACE/_site/." "./br/$BRANCH/"
+              touch .branches-manifest
+              grep -qxF "$BRANCH" .branches-manifest || echo "$BRANCH" >> .branches-manifest
             fi
-            git worktree remove --force "$wt"
-            echo "::endgroup::"
-          done
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: ${{ runner.temp }}/site
+          fi
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          # Prune the directories of branches that no longer exist on the repo
+          git ls-remote --heads origin | sed 's|.*refs/heads/||' > "$RUNNER_TEMP/live-branches"
+          touch .branches-manifest
+          grep -vxF -f "$RUNNER_TEMP/live-branches" .branches-manifest > "$RUNNER_TEMP/stale" || true
+          while IFS= read -r stale; do
+            [ -n "$stale" ] || continue
+            echo "pruning deleted branch: $stale"
+            rm -rf "./br/$stale"
+            # Branch names may contain slashes: clean up now-empty parent directories,
+            # up to and including br/ itself
+            parent=$(dirname "br/$stale")
+            while [ "$parent" != "." ]; do rmdir "$parent" 2>/dev/null || break; parent=$(dirname "$parent"); done
+          done < "$RUNNER_TEMP/stale"
+          grep -xF -f "$RUNNER_TEMP/live-branches" .branches-manifest > "$RUNNER_TEMP/kept" || true
+          mv "$RUNNER_TEMP/kept" .branches-manifest
+
+          # Pages must serve the vite _shared/ chunks: disable Jekyll (it skips _* paths)
+          touch .nojekyll
+
+          git add -A
+          message="Deploy: $EVENT $BRANCH ($GITHUB_SHA)"
+          export GIT_AUTHOR_NAME="github-actions[bot]" GIT_COMMITTER_NAME="github-actions[bot]"
+          export GIT_AUTHOR_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
+          export GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+          if git rev-parse -q --verify HEAD > /dev/null; then
+            # Amend instead of appending: keeps gh-pages at one single commit forever
+            git commit -q --allow-empty --amend -m "$message"
+          else
+            git commit -q --allow-empty -m "$message"
+          fi
+          git push -q --force origin gh-pages
