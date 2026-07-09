@@ -1,8 +1,11 @@
 // Figure « surface 3D d'une fonction objectif » — dessinée en WebGL avec three.js,
 // interactive : glisser à la souris pour tourner autour de la surface, molette pour
-// zoomer / dézoomer. L'apparence imite les surfaces 3D de matplotlib : panneaux gris
-// clair quadrillés de blanc qui changent de côté quand la caméra tourne, colormap
-// séquentielle appliquée à la surface, étiquettes de graduations et d'axes.
+// zoomer / dézoomer. Par défaut, la vue tourne lentement toute seule autour de la
+// surface ; la première interaction (clic, glisser, molette, tactile) arrête
+// définitivement cette rotation automatique. L'apparence imite les surfaces 3D de
+// matplotlib : panneaux gris clair quadrillés de blanc qui changent de côté quand
+// la caméra tourne, colormap séquentielle appliquée à la surface, étiquettes de
+// graduations et d'axes.
 //
 // Usage dans une slide — un conteneur par figure + le script une seule fois :
 //   <div class="r-stretch objective-surface-3d"
@@ -27,6 +30,10 @@
 //                         (azimut autour de z depuis +x, élévation au-dessus du plan xy)
 //                                                                    (défaut : "-60 30")
 //   data-zoom             zoom initial, >1 rapproche, <1 éloigne     (défaut : "1")
+//   data-auto-rotate      "false" pour désactiver la rotation automatique de la vue
+//                                                                    (défaut : "true")
+//   data-auto-rotate-period
+//                         durée d'un tour complet en secondes        (défaut : "10")
 //   data-optimum          "x y" de l'optimum global — attribut présent : point rouge
 //                         affiché en (x, y, f(x, y)) ; absent : rien
 //   data-x-label / data-y-label / data-z-label
@@ -393,6 +400,31 @@ function setupFigure(container: HTMLElement): void {
 	}
 	controls.addEventListener('change', requestRender);
 
+	// -- Rotation automatique de la vue, jusqu'à la première interaction.
+	// La boucle d'animation ne tourne que tant que la rotation auto est active et
+	// la slide visible ; resize() la relance quand la slide redevient visible.
+	controls.autoRotate = ds.autoRotate !== 'false';
+	const period = parseFloat(ds.autoRotatePeriod ?? '10');
+	// Convention OrbitControls : autoRotateSpeed = 2 ⇔ un tour en 30 s
+	controls.autoRotateSpeed = 60 / (period > 0 ? period : 10);
+	let spinning = false;
+	function spin(): void {
+		if (!controls.autoRotate || container.clientWidth === 0) {
+			spinning = false;
+			return;
+		}
+		controls.update(); // applique le pas de rotation et déclenche 'change' → rendu
+		requestAnimationFrame(spin);
+	}
+	function startSpin(): void {
+		if (spinning || !controls.autoRotate) return;
+		spinning = true;
+		requestAnimationFrame(spin);
+	}
+	// 'start' = début de toute interaction (clic-glisser, molette, tactile) :
+	// l'utilisateur prend la main, la rotation automatique s'arrête définitivement
+	controls.addEventListener('start', () => { controls.autoRotate = false; });
+
 	function resize(): void {
 		const w = container.clientWidth, h = container.clientHeight;
 		if (w === 0 || h === 0) return; // slide cachée (display: none)
@@ -404,6 +436,7 @@ function setupFigure(container: HTMLElement): void {
 		camera.aspect = w / h;
 		camera.updateProjectionMatrix();
 		requestRender();
+		startSpin();
 	}
 	new ResizeObserver(resize).observe(container);
 	window.addEventListener('resize', resize);
