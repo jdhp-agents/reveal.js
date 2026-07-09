@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+
+	<!-- optimization_cem_v3.html — troisième version du deck CEM. Comme la v2
+	     (dont ce deck est issu), les figures « CEM sur Rosenbrock » sont dessinées
+	     à la volée avec d3.js ; mais au lieu de lire des données précalculées dans
+	     un JSON (générées hors-ligne), l'exécution du CEM est recalculée au
+	     chargement de la page par une implémentation TypeScript de l'algorithme
+	     (assets/optimization_cem/cem.ts), avec une seed de random fixée pour
+	     que les figures soient parfaitement reproductibles.
+	     Voir assets/optimization_cem/README.md. -->
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Cross-Entropy Method</title>
+
+		<meta name="description" content="Cross-Entropy Method">
+		<meta name="author" content="Jérémie Decock">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+		
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+
+	</head>
+	
+	<body>
+		
+		<div class="reveal">
+			
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h3>Cross-Entropy Method</h3>
+					<br>
+					<p>
+						Jérémie Decock
+					</p>
+					<p>
+						17/12/2022
+					</p>
+
+					<!-- Macros definition -->
+					$$
+					\newcommand{\vs}[1]{\boldsymbol{#1}} % vector symbol (\boldsymbol, \textbf or \vec)
+					\newcommand{\ms}[1]{\boldsymbol{#1}} % matrix symbol (\boldsymbol, \textbf)
+					$$
+
+					<aside class="notes">
+						<ul>
+							<li>...</li>
+						</ul>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				<!-- CROSS-ENTROPY METHOD --------------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- @include decks/optimization_cem/cem.html -->
+
+			</div>
+
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/zoom.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/search.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="dist/plugin/math.js"></script>
+		<script>
+
+			// Also available as an ES module, see:
+			// https://revealjs.com/initialization/
+			Reveal.initialize({
+			    // Display presentation control arrows
+			    controls: true,
+
+			    // Help the user learn the controls by providing hints, for example by
+			    // bouncing the down arrow when they first encounter a vertical slide
+			    controlsTutorial: true,
+
+			    // Determines where controls appear, "edges" or "bottom-right"
+			    controlsLayout: 'bottom-right',
+
+			    // Visibility rule for backwards navigation arrows; "faded", "hidden"
+			    // or "visible"
+			    controlsBackArrows: 'faded',
+
+			    // Display a presentation progress bar
+			    progress: true,
+
+				// Vertical centering of slides
+				center: true,
+
+				hash: true,
+				slideNumber: 'h.v',
+
+				// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+				maxScale: 4.0,
+				mathjax2: {
+					//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+					//mathjax: 'mathjax/MathJax.js',
+					config: 'TeX-AMS_HTML-full',
+                                       // pass other options into `MathJax.Hub.Config()`
+					TeX: {
+						Macros: {
+							R: '\\mathbb{R}',
+							set: [ '\\left\\{#1 \\; ; \\; #2\\right\\}', 2 ]
+						}
+					}
+				},
+
+				// There are three typesetters available
+				// RevealMath.MathJax2 (default)
+				// RevealMath.MathJax3
+				// RevealMath.KaTeX
+				//
+				// More info at https://revealjs.com/math/
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2 ],
+
+				// // Reveal.js plugins
+				// dependencies: [
+				// 	{ src: 'revealjs/plugin/reveald3.js' },
+				// ]
+			});
+
+		</script>
+
+	</body>
+</html>

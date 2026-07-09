@@ -28,6 +28,9 @@ name: Deploy slides to GitHub Pages
 on:
   push:
     branches: ['**', '!gh-pages']
+    # The retired decks in archives/ are dev-only (build-decks.mjs never publishes
+    # them): a push that only touches them cannot change the site, so skip the run
+    paths-ignore: ['archives/**']
   # Branch deleted → prune its directory from the published site (this event always
   # runs the workflow as defined on the default branch)
   delete:

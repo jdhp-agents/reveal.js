@@ -41,6 +41,31 @@ Every file under the repo root is reachable by its path:
   `dist/*` files as `demo.html`, plus `jdhp.css`/`jdhp.js` at the repo root, and initialize
   correctly.
 
+## Previewing a `decks/` chapter file (split decks)
+
+The files under `decks/<deck-name>/` are chapter *fragments* spliced into a root master page
+by the `@include` mechanism — they have no `<head>`, load no `dist/` scripts and never call
+`Reveal.initialize`. NEVER point Playwright at them directly: the page renders as dead,
+unstyled text. To see one rendered:
+
+1. **Open its master page instead.** Line 1 of every chapter file names the master the
+   author recommends: `<!-- @preview /optimization_cem.html -->` means open
+   `http://localhost:8000/optimization_cem.html`. **Follow that recommendation** — when a
+   chapter is reused by several decks, `@preview` points at the lightest one (e.g.
+   `decks/optimization_cem/cem.html` is included by both `optimization_cem.html`, a few
+   slides, and `inf581_optimization.html`, ~a hundred slides: preview the former, it loads
+   faster and the slide is easier to reach). Fall back to
+   `grep -l "@include.*<chapter-file-name>" *.html` at the repo root when the `@preview`
+   line is missing or names a file that no longer exists; the grep is also how you list
+   *all* masters, worth a look when a change to a shared chapter could interact with the
+   context of the bigger decks.
+2. **Navigate to the slide you edited** via its `<section id>` (`#/<id>`) when it has one —
+   plain slide indices differ between masters that include different chapter sets — otherwise
+   arrow-key from the nearest slide that has an id.
+
+Editing a chapter file auto-reloads the assembled master page (dev-server watcher), same as
+editing a root deck.
+
 ## Seeing a change take effect
 
 - **Editing a deck's HTML**: just reload the page in Playwright (`browser_navigate` again).

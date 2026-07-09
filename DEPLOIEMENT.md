@@ -61,6 +61,15 @@ Détails d'implémentation utiles à connaître :
   compilées partagent leur code dans `assets/_shared/`.
 - Git déduplique les blobs identiques entre répertoires de branches : publier 3 branches
   quasi identiques ne stocke les ~270 Mo d'`assets/` qu'une seule fois dans `gh-pages`.
+- **Les decks archivés ne sont jamais publiés** : les présentations retirées vivent dans
+  `archives/` (avec leurs médias dans `archives/assets/<deck>/` et leurs chapitres dans
+  `archives/decks/<deck>/`) pour rester consultables via le serveur de dev, mais rien
+  d'`archives/` n'entre dans `_site/` — `build-decks.mjs` n'assemble que les `*.html` de
+  la racine et la compilation/type-check ne couvre que `assets/**/*.ts`. La liste
+  « Archives » de `index.html` est balisée `<!-- @dev-only -->`…`<!-- @end-dev-only -->`
+  et retirée à la publication (ses liens seraient morts en ligne), et le workflow ignore
+  les pushes qui ne modifient que `archives/**` (`paths-ignore`), pour ne pas payer un
+  build qui ne peut rien changer au site.
 
 ## Réglages GitHub (une seule fois)
 

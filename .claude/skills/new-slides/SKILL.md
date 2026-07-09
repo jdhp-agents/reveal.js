@@ -69,8 +69,15 @@ See `FORMATS-ECRAN.md` (repo root) for the tested rationale. Non-negotiable in e
   full-line `<!-- @include decks/<deck-name>/NN-<chapter>.html -->` directive. The browser
   always receives the assembled page (expanded by the Vite plugin in dev — chapter edits
   auto-reload — and by `scripts/build-decks.mjs` at publish time). **Edit the chapter file,
-  not the master**; grep in `decks/<deck-name>/` when looking for a slide of a split deck.
-  `inf581_optimization.html` is split this way; the other decks are single-file so far.
+  not the master**; grep in `decks/` when looking for a slide of a split deck. A chapter can
+  be included by *several* masters (shared slide sequences — e.g.
+  `decks/optimization_cem/cem.html` is used by both `optimization_cem.html` and
+  `inf581_optimization.html`). Line 1 of every chapter file must be a
+  `<!-- @preview /<master>.html -->` comment naming the recommended master page to preview
+  it — for a shared chapter, pick the lightest deck that includes it (chapter files are
+  fragments and can't be opened directly; the `run` skill covers the preview workflow) —
+  add it when creating a new chapter file.
+  `inf581_optimization.html` and `optimization_cem.html` are split this way.
 - Speaker notes: `<aside class="notes">` containing `<div class="fr-notes">` and
   `<div class="en-notes">` (both languages; `jdhp.js` shows one).
 - Work-in-progress slides: add class `draft` to the section — `jdhp.css` gives them a

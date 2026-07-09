@@ -84,11 +84,20 @@ function in both paths — in dev via the `deckIncludes()` Vite plugin
 (`scripts/deck-includes.mjs`, wired into `vite.config.ts`; editing a chapter file
 auto-reloads the browser), at publish time in `scripts/build-decks.mjs` — so the browser
 always sees a single assembled page (reveal.js/MathJax/fragments behave identically, the
-published HTML stays fully static, `decks/` itself is not published). `inf581_optimization.html`
-is split this way (17 chapters in `decks/inf581_optimization/`, cut exactly at the
-`<!-- #region -->`…`<!-- endregion -->` markers, which stay inside the chapter files). To
-edit a slide of a split deck, edit the chapter file, not the master; to add a chapter, create
-the file and add its `@include` line.
+published HTML stays fully static, `decks/` itself is not published). Splitting also enables
+*reuse*: the same chapter can be included by several masters — e.g.
+`decks/optimization_cem/cem.html` is pulled by both `optimization_cem.html` (CEM-only deck)
+and `inf581_optimization.html` (general optimization course) — so a shared slide sequence is
+defined once. `inf581_optimization.html` is split this way (17 chapters in
+`decks/inf581_optimization/`, cut exactly at the `<!-- #region -->`…`<!-- endregion -->`
+markers, which stay inside the chapter files). To edit a slide of a split deck, edit the
+chapter file, not the master; to add a chapter, create the file and add its `@include` line.
+Chapter files are fragments (no head, no `Reveal.initialize`) and cannot be opened directly
+in a browser: line 1 of every chapter file carries a `<!-- @preview /<master>.html -->`
+comment naming the master page the author recommends opening to see it rendered — for a
+shared chapter, the lightest deck that includes it. Follow it; fall back to
+`grep -l "@include.*<chapter-file>" *.html` if it is missing or stale (the `run` skill
+details the preview workflow). Add the `@preview` line to any new chapter file.
 
 **Publishing the decks (GitHub Pages)** — `npm run build:decks` type-checks, assembles the
 static site into `_site/` (gitignored) and compiles each figure `.ts` to a standalone `.js`
@@ -100,6 +109,22 @@ what GitHub Pages serves): `master` at the site root, every other branch under
 Each run only rebuilds the pushed branch; directories of deleted branches are pruned
 automatically (the `delete` event triggers a run). Full explanation, one-time Pages
 settings and design history in `DEPLOIEMENT.md` at the repo root.
+
+**Archived decks (dev-only)** — retired decks are moved to `archives/` (deck HTML at
+`archives/<deck>.html`, media in `archives/assets/<deck>/`, chapter files in
+`archives/decks/<deck>/`). They stay browsable through the dev server
+(`http://localhost:8000/archives/<deck>.html`) but are never published: `build-decks.mjs`
+only assembles root `*.html`, type-checking and figure compilation only cover
+`assets/**/*.ts`, and the deploy workflow skips pushes that touch nothing outside
+`archives/**`. In root HTML, anything between `<!-- @dev-only -->` and
+`<!-- @end-dev-only -->` (e.g. index.html's links to the archived decks) is stripped at
+publish time — wrap any new archive link in those markers. Archived decks keep their
+original relative URLs untouched: `dist/*` resolves through the committed symlink
+`archives/dist → ../dist`, and `assets/<deck>/…` lands on `archives/assets/<deck>/`
+naturally. To archive a deck, move those three pieces under `archives/`, move its
+index.html entry into the dev-only block, and make the archive self-contained: if the
+deck references another deck's `assets/` folder, copy those files into its own
+`archives/assets/<deck>/` and update the refs (the live folder can move or be renamed).
 
 ## Commands
 

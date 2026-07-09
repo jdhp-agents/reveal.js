@@ -20,12 +20,15 @@ const site = path.join(root, '_site');
 fs.rmSync(site, { recursive: true, force: true });
 fs.mkdirSync(site);
 
-// Root HTML pages (landing page + every deck): chapter includes expanded, then
-// .ts module scripts rewritten to .js
+// Root HTML pages (landing page + every deck): chapter includes expanded, dev-only
+// blocks dropped, then .ts module scripts rewritten to .js. Note that the retired
+// decks in archives/ are never published: only root *.html files are assembled here,
+// and index.html marks its links to them as dev-only.
 for (const file of fs.readdirSync(root)) {
 	if (!file.endsWith('.html')) continue;
 	const source = path.join(root, file);
 	const html = expandIncludes(fs.readFileSync(source, 'utf8'), source)
+		.replace(/[\t ]*<!-- @dev-only -->[\s\S]*?<!-- @end-dev-only -->\n?/g, '')
 		.replace(/(<script[^>]+src="[^"]+)\.ts"/g, '$1.js"');
 	fs.writeFileSync(path.join(site, file), html);
 	console.log(`html  ${file}`);
