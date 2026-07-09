@@ -401,15 +401,24 @@ function setupFigure(container: HTMLElement): void {
 	controls.addEventListener('change', requestRender);
 
 	// -- Rotation automatique de la vue, jusqu'à la première interaction.
-	// La boucle d'animation ne tourne que tant que la rotation auto est active et
-	// la slide visible ; resize() la relance quand la slide redevient visible.
+	// La boucle d'animation (et donc le rendu WebGL à 60 fps) ne tourne que si la
+	// figure est réellement à l'écran. Attention : clientWidth > 0 ne suffit PAS —
+	// reveal.js garde les slides à moins de `viewDistance` (3) de la slide courante
+	// en display:block pour les précharger ; seule la classe `present` de la
+	// <section> distingue la slide effectivement affichée.
 	controls.autoRotate = ds.autoRotate !== 'false';
 	const period = parseFloat(ds.autoRotatePeriod ?? '10');
 	// Convention OrbitControls : autoRotateSpeed = 2 ⇔ un tour en 30 s
 	controls.autoRotateSpeed = 60 / (period > 0 ? period : 10);
+	const revealSection = container.closest('.reveal section');
+	function displayed(): boolean {
+		return container.clientWidth > 0 &&
+			!document.hidden &&
+			(revealSection === null || revealSection.classList.contains('present'));
+	}
 	let spinning = false;
 	function spin(): void {
-		if (!controls.autoRotate || container.clientWidth === 0) {
+		if (!controls.autoRotate || !displayed()) {
 			spinning = false;
 			return;
 		}
@@ -417,13 +426,21 @@ function setupFigure(container: HTMLElement): void {
 		requestAnimationFrame(spin);
 	}
 	function startSpin(): void {
-		if (spinning || !controls.autoRotate) return;
+		if (spinning || !controls.autoRotate || !displayed()) return;
 		spinning = true;
 		requestAnimationFrame(spin);
 	}
 	// 'start' = début de toute interaction (clic-glisser, molette, tactile) :
 	// l'utilisateur prend la main, la rotation automatique s'arrête définitivement
 	controls.addEventListener('start', () => { controls.autoRotate = false; });
+	// Relancer la rotation quand la figure redevient affichable : retour sur la
+	// slide (événements reveal.js) ou onglet redevenu visible
+	document.addEventListener('visibilitychange', startSpin);
+	const Reveal = (window as unknown as
+		{ Reveal?: { on?: (ev: string, cb: () => void) => void } }).Reveal;
+	if (Reveal?.on) {
+		for (const ev of ['ready', 'slidechanged']) Reveal.on(ev, startSpin);
+	}
 
 	function resize(): void {
 		const w = container.clientWidth, h = container.clientHeight;

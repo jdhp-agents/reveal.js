@@ -107,5 +107,13 @@ you care about:
 Avoid opening the speaker-notes plugin (`S` key): it spawns a popup window that is awkward to
 drive headlessly.
 
+**Close the browser when you are done** (`browser_close`), and always before ending the
+session. A headless page left open keeps running — and unlike a background tab in a normal
+browser, it is never throttled. Parked on a slide with a continuous animation (e.g. the
+auto-rotating three.js surface in `optimization_cem.html`, driven by a requestAnimationFrame
+loop), it kept rendering WebGL at 60 fps for hours and visibly loaded the author's GPU long
+after the work was finished. If you still need the browser later in the session, navigating
+to `about:blank` between verifications is a cheap alternative.
+
 If the playwright MCP tools aren't available, say so explicitly rather than claiming a visual
 check was done.
