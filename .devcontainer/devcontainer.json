@@ -31,8 +31,8 @@
 	// Use 'mounts' to mount a host path or volume into the container.
 	"mounts": [
 		{
-			// "source": "claude-code-home",       // My personal Claude Code subscription
-			"source": "claude-code-home-accenta",  // Accenta's Claude Code subscription
+			"source": "claude-code-home",       // My personal Claude Code subscription
+			// "source": "claude-code-home-accenta",  // Accenta's Claude Code subscription
 			"target": "/home/user",
 			"type": "volume"
 		}
@@ -40,13 +40,6 @@
 
 	// Install the development dependencies once the container is created.
 	"postCreateCommand": "npm install",
-
-	// Unlike postCreateCommand (which only runs once), postStartCommand runs every time the
-	// container starts. There is no container init system (no systemd) to auto-start services,
-	// so this starts the dedicated dev PostgreSQL cluster (initializing it on first run) and
-	// the dev Redis server as the devcontainer user. Both are meant to stay up for the whole
-	// lifetime of the container -- this is throwaway dev data, so there is no matching "stop" step.
-	"postStartCommand": "bash .devcontainer/postgres-start.sh && bash .devcontainer/redis-start.sh",
 
 	// Configure tool-specific properties.
 	"customizations": {
@@ -59,8 +52,8 @@
 				"ms-python.isort",
 				"ms-python.mypy-type-checker",
 				"ms-python.python",
-				"ms-python.vscode-pylance",
-				"svelte.svelte-vscode"
+				"ms-python.vscode-pylance"
+				// "svelte.svelte-vscode"
 			]
 		}
 	},
