@@ -1,0 +1,442 @@
+<!-- @preview /optimization_cmaes.html -->
+<!-- #region -->
+
+<section style="text-align: left; font-size: 70%;">
+	<h3 style="text-align: center;">CMA-ES</h3>
+
+	<p>
+		Hansen, N. and A. Ostermeier (2001) Completely Derandomized Self-Adaptation in Evolution Strategies. Evolutionary Computation, 9(2), pp. 159-195
+	</p>
+
+	<p>
+		Nikolaus Hansen now at Inria in RandOpt team (CMAP)
+	</p>
+
+	<p>
+		CMA-ES:
+		<ul style="padding-left: 1em; display: block;">
+			<li>For difficult optimisation problems in continuous domain</li>
+			<li>Usually considered as the best black box algorithm</li>
+			<li>Search space : between 3 and a hundred</li>
+		</ul>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+CMA-ES (Covariance Matrix Adaptation Evolution Strategy) is an evolutionary algorithm for difficult non-linear non-convex black-box optimisation problems in continuous domain.
+
+It’s considered as state-of-the-art in evolutionary computation and has been adopted as one of the standard tools for continuous optimisation in many (probably hundreds of) research labs and industrial environments around the world. The CMA-ES is typically applied to unconstrained or bounded constraint optimization problems, and search space dimensions between three and a hundred. The method should be applied, if derivative based methods, e.g. quasi-Newton BFGS or conjugate gradient, (supposedly) fail due to a rugged search landscape (e.g. discontinuities, sharp bends or ridges, noise, local optima, outliers). If second order derivative based methods are successful, they are usually faster than the CMA-ES: on purely convex-quadratic functions, f(x)=xTHx, BFGS (Matlabs function fminunc) is typically faster by a factor of about ten (in terms of number of objective function evaluations needed to reach a target function value, assuming that gradients are not available). On the most simple quadratic function f(x)=||x||2=xTx BFGS is faster by a factor of about 30.
+Similar to quasi-Newton methods (but not inspired by them), the CMA-ES is a second order approach estimating a positive definite matrix within an iterative procedure (more precisely: a covariance matrix, that is, on convex-quadratic functions, closely related to the inverse Hessian). This makes the method feasible on non-separable and/or badly conditioned problems. In contrast to quasi-Newton methods, the CMA-ES does not use or approximate gradients and does not even presume or require their existence. This makes the method feasible on non-smooth and even non-continuous problems, as well as on multimodal and/or noisy problems. It turns out to be a particularly reliable and highly competitive evolutionary algorithm for local optimization (Hansen & Ostermeier 2001) and, surprising at first sight, also for global optimization (Hansen & Kern 2004, CEC 2005, Hansen 2009 in BBOB-2009).
+The CMA-ES has several invariance properties. Two of them, inherited from the plain evolution strategy, are (i) invariance to order preserving (i.e. strictly monotonic) transformations of the objective function value (that is, e.g., ||x||2 and 3||x||0.2-100 are equivalent objective functions with identical performance of CMA-ES), and (ii) invariance to angle preserving (rigid) transformations of the search space (including rotation, reflection, and translation), if the initial search point is transformed accordingly. Invariances are highly desirable: they imply uniform behavior on classes of functions and therefore imply the generalization of empirical results.
+The CMA-ES does not require a tedious parameter tuning for its application. In fact, the choice of strategy internal parameters is not left to the user (arguably with the exception of population size λ). Finding good (default) strategy parameters is considered as part of the algorithm design, and not part of its application—the aim is to have a well-performing algorithm as is. The default population size λ is comparatively small to allow for fast convergence. Restarts with increasing population size (Auger & Hansen 2005) improve the global search performance. For the application of the CMA-ES, an initial solution, an initial standard deviation (step-size, variables should be defined such that the same standard deviations can be reasonably applied to all variables, see also here) and, possibly, the termination criteria (e.g. a function tolerance) need to be set by the user. The most common applications are model calibration (e.g. curve fitting) and shape optimisation.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section style="text-align: left; font-size: 75%;">
+	<h3 style="text-align: center;">CMA-ES</h3>
+
+	<ul>
+		<li>Like the cross-entropy method, a distribution is improved over time based on samples</li>
+		<li>CMA uses multivariate Gaussian distributions with 3 parameters</li>
+	</ul>
+
+	<p style="text-align: center;">
+		$\boldsymbol{x} \sim \mathcal{N}$
+		(
+		<span class="fragment highlight-current-red" data-fragment-index="1">$ \boldsymbol{m} $</span>,
+		<span class="fragment highlight-current-red" data-fragment-index="2">$ \sigma^2 $</span>
+		<span class="fragment highlight-current-red" data-fragment-index="3">$ \boldsymbol{C} $</span>
+		)
+	</p>
+
+	<p>
+		CMA maintains:
+		<ul style="padding-left: 1em; display: block;">
+			<li class="fragment highlight-current-red" data-fragment-index="1">a mean vector (position)</li>
+			<li class="fragment highlight-current-red" data-fragment-index="2">a step size scalar (amplitude)</li>
+			<li class="fragment highlight-current-red" data-fragment-index="3">a covariance matrix (direction)</li>
+		</ul>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+CMA maintains … over iterations
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section style="text-align: left; font-size: 70%;">
+	<div class="row">
+		<div style="float: left; width: 50%;">
+			<br>
+			<h3 style="text-align: center;">CMA-ES</h3>
+			<br>
+			<p>
+				Like the cross-entropy method, these 3 parameters are updated at each iteration to converge such that the proposal distribution $\mathcal{N}(\boldsymbol{m}, \sigma^2\boldsymbol{C})$ focus on the global optima $\boldsymbol{x}^*$
+			</p>
+		</div>
+		<div style="float: left; width: 50%;">
+			<img width="100%" src="assets/inf581_optimization/image78.png" />
+		</div>
+	</div>
+	<p style="clear: both;"></p> 
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3>CMA-ES</h3>
+
+	<p>
+		At each iteration, $\lambda$ points are sampled from this distribution
+	</p>
+
+	<p>
+		$$\boldsymbol{x}_i \sim \mathcal{N}(\boldsymbol{m}, \sigma^2 \boldsymbol{C}) \quad \text{for } i = 1, \ldots, \lambda$$
+	</p>
+
+	<p>
+		The samples are then sorted according to their objective function value
+	</p>
+
+	<p>
+		$$f(\boldsymbol{x}_1) \leq f(\boldsymbol{x}_2) \leq \ldots \leq f(\boldsymbol{x}_\lambda)$$
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section style="font-size: 70%;">
+	<h3>CMA-ES</h3>
+	<h4>Step 1: Update $\boldsymbol{m}$</h4>
+
+	<p>
+		$$\boldsymbol{x}_i = \boldsymbol{m} + \sigma \boldsymbol{y}_i, \quad \boldsymbol{y}_i \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{C}), \quad \text{for } i = 1, \ldots, \lambda$$
+
+		<!-- $$\boldsymbol{m} \leftarrow \sum_{i=1}^{m} w_i \boldsymbol{x}_{i:\lambda}$$ -->
+		$$
+		\boldsymbol{m} \leftarrow \sum_{i=1}^{\mu} w_i \boldsymbol{x}_{i:\lambda} =
+		\boldsymbol{m} + \sigma \boldsymbol{y}_w \quad \text{where } \boldsymbol{y}_w = \sum_{i=1}^{\mu} w_i \boldsymbol{y}_{i:\lambda}
+		$$
+	</p>
+
+	<!-- <p>
+		where $\boldsymbol{x}_{i:\lambda}$ is the $i$-th best sample and $w_i$ is a weight
+	</p>
+
+	<p>
+		with $\displaystyle \sum_{i=1}^m w_i = 1$
+	</p>
+	<p>
+		and $w_1 \geq w_2 \geq \dots \geq w_m \geq 0$
+	</p> -->
+
+	<img width="50%" src="assets/inf581_optimization/cma_mu.png" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+A new mean vector mu is formed using a weighted average of the sampled points
+where weights sum to 1
+(all weights are positive)
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- <section style="font-size: 70%;">
+	<h3>CMA-ES</h3>
+	<h4>Step 1: Update $\boldsymbol{m}$</h4>
+
+	<p>
+		The recommended weighting is obtained by normalizing $\boldsymbol{w}$:
+
+		$$\boldsymbol{w} = \frac{\boldsymbol{w}'}{\sum_{i} w'_i}$$
+	</p>
+
+	<p>
+		with $\displaystyle \quad w'_i = \ln\left(\frac{m+1}{2}\right) - \ln(i) \quad $ for $i = 1, \ldots, m$
+	</p>
+
+	<p>
+		CMA tends to update the mean more "aggressively" than CEM
+	</p>
+
+	<img class="r-stretch" src="assets/inf581_optimization/cma_mu.png" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+The recommended weighting is obtained by normalizing weights like this...
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<section style="font-size: 70%;">
+	<h3>CMA-ES</h3>
+	<h4>Step 2: Update $\boldsymbol{C}$</h4>
+
+	<p>
+		The covariance update is then
+
+		<!-- $$
+		\boldsymbol{C}^{(k+1)} \leftarrow
+		\left( 1 + \underbrace{c_1 c_c (1 - h_{\sigma})(2 - c_c) - c_1 - c_{\mu}}_{\text{typically zero}} \right) \boldsymbol{C}^{(k)}
+		+ \underbrace{c_1 \boldsymbol{p}_{\boldsymbol{C}} \boldsymbol{p}_{\boldsymbol{C}}^\top}_{\text{rank-one update}}
+		+ \underbrace{c_{\mu} \sum_{i=1}^{m} w_i^{\circ} \boldsymbol{\delta}^{(i)} \left( \boldsymbol{\delta}^{(i)} \right)^\top}_{\text{rank-$m$ update}}
+		$$ -->
+
+		$$
+		\boldsymbol{C} \leftarrow
+		(1 - c_1 - c_{\mu}) \boldsymbol{C}
+		+ \underbrace{c_1 \boldsymbol{p_c} \boldsymbol{p_c}^\top}_{\text{rank-one update}}
+		+ \underbrace{c_{\mu} \sum_{i=1}^{\mu} w_i \boldsymbol{y}_{i:\lambda} \boldsymbol{y}_{i:\lambda}^\top}_{\text{rank-$\mu$ update}}
+		$$
+
+		Rank-one update using cumulation vector allow for correlations between consecutive steps to be exploited, permitting the covariance matrix to elongate itself more quickly along a favorable axis.
+
+		Rank-$\mu$ update the direction according to best solutions
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Then the covariance matrix is updated ;
+
+The first term represents the old covariance matrix being decayed by factors c1 and cμ.
+The constants c1 and cμ are decay rates that control the adaptation speed of the covariance matrix.
+Subtracting them from 1 ensures that the matrix shrinks slightly, making space for the new information.
+
+The second term is a rank-one update which allow for correlations between consecutive steps to be exploited,
+permitting the covariance matrix to elongate itself more quickly along a favorable axis.
+
+The third term update the direction according to best solutions
+
+---
+
+p sigma is the evolution path -> increase its likelihood
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section style="font-size: 70%;">
+	<h3>CMA-ES</h3>
+	<h4>Step 3: Update $\sigma$</h4>
+
+	<p>
+		The new step size $\sigma$ is obtained according to
+
+$$
+\sigma \leftarrow
+\sigma \times
+\underbrace{
+\exp\left(
+\frac{\color{gray}{c_\sigma}}{\color{gray}{d_\sigma}}
+\left(
+\frac{
+\color{red}{\|\boldsymbol{p}_{\sigma}\|}
+}{
+\color{blue}{\mathbb{E} \| \mathcal{N}(\boldsymbol{0}, \textbf{I}) \|}
+} - 1
+\right)
+\right)
+}_{> 1 ~ \Leftrightarrow ~ \|\boldsymbol{p}_{\sigma}\| \text{ is greater than its expectation}}
+$$
+
+		<!-- Comparing the length of $\boldsymbol{p}_{\sigma}$ to its expected length under random selection provides the mechanism by which $\sigma$ is increased or decreased -->
+	</p>
+
+	<img width="60%" src="assets/inf581_optimization/cma_sigma.svg" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Finally the new step size sigma is obtained
+comparing the length of the path followed by the solution vector “x” for the “N” previous iteration
+with the “expected length” under a random selection.<br>
+
+The main idea is that
+if the step size is “too large”, the vector x will go back and forth and the length of p sigma [in red] will be short… In this case we have to reduce sigma
+on the contrary, if the algorithm move well in one strong direction of the solution space, we can save some iterations by increasing the step size sigma.
+
+<!-- L’idée centrale est de comparer la longueur du chemin d’évolution $p_\sigma$ à ce qu’on obtiendrait si les directions sélectionnées étaient purement aléatoires. -->
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- <section style="text-align: left; font-size: 60%;">
+	<h3 style="text-align: center;">CMA-ES summary</h3>
+
+	<p>
+		<b>Input</b>:
+			$\boldsymbol{m} \in \mathbb{R}^n, \sigma \in \mathbb{R}_+, \lambda$ <br>
+		<b>Initialize</b>:
+			$\boldsymbol{C} = \boldsymbol{I},$ and
+			$\boldsymbol{p_c} = \boldsymbol{0}, \boldsymbol{p_\sigma} = \boldsymbol{0},$ <br>
+		<b>Set</b>:
+			$c_c \approx \frac{4}{n}$,
+			$c_\sigma \approx \frac{4}{n}$,
+			$c_1 \approx \frac{2}{n^2}$,
+			$c_{\mu} \approx \frac{\mu_w}{n^2}$,
+			$c_1 + c_{\mu} \leq 1$,
+			$d_\sigma \approx 1 + \sqrt{\frac{\mu_w}{n}},$ and
+			$w_i = 1 \ldots \lambda$ such that $\mu_w = \frac{1}{\sum_{i=1}^{m} w_i^2} \approx 0.3 \lambda$<br><br>
+
+		<b>WHILE</b> not terminate <br>
+		$\quad$ $\boldsymbol{x}_i = \boldsymbol{m} + \sigma \boldsymbol{y}_i, \quad \boldsymbol{y}_i \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{C}), \quad \text{for } i = 1, \ldots, \lambda$
+			<span style="position: absolute; right: 0;">sampling</span> <br>
+		$\quad$ $\boldsymbol{m} \leftarrow \sum_{i=1}^{m} w_i \boldsymbol{x}_{i:\lambda} = \boldsymbol{m} + \sigma \boldsymbol{y}_w \quad \text{where } \boldsymbol{y}_w = \sum_{i=1}^{m} w_i \boldsymbol{y}_{i:\lambda}$
+			<span style="position: absolute; right: 0;">update mean</span> <br>
+		$\quad$ $\boldsymbol{p_c} \leftarrow (1 - c_c)\boldsymbol{p_c} + \mathbb{1}_{\{\|\boldsymbol{p_\sigma}\| < 1.5\sqrt{n}\}} \sqrt{1 - (1 - c_c)^2} \sqrt{\mu_w} \boldsymbol{y}_w$
+			<span style="position: absolute; right: 0;">cumulation for $\boldsymbol{C}$</span> <br>
+		$\quad$ $\boldsymbol{p_\sigma} \leftarrow (1 - c_\sigma)\boldsymbol{p_\sigma} + \sqrt{1 - (1 - c_\sigma)^2} \sqrt{\mu_w} \boldsymbol{C}^{-\frac{1}{2}} \boldsymbol{y}_w$
+			<span style="position: absolute; right: 0;">cumulation for $\sigma$</span> <br>
+		$\quad$ $\boldsymbol{C} \leftarrow (1 - c_1 - c_{\mu}) \boldsymbol{C} + c_1 \boldsymbol{p_c} \boldsymbol{p_c}^T + c_{\mu} \sum_{i=1}^{m} w_i \boldsymbol{y}_{i:\lambda} \boldsymbol{y}_{i:\lambda}^T$
+			<span style="position: absolute; right: 0;">update $\boldsymbol{C}$</span> <br>
+		$\quad$ $\sigma \leftarrow \sigma \exp\left(\frac{c_\sigma}{d_\sigma} \left(\frac{\|\boldsymbol{p_\sigma}\|}{E\|\mathcal{N}(\boldsymbol{0}, \boldsymbol{I})\|} - 1\right)\right)$
+			<span style="position: absolute; right: 0;">update of $\sigma$</span> <br>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- <section>
+
+	<img class="r-stretch" src="assets/inf581_optimization/image107.png" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<section style="text-align: left; font-size: 60%;">
+	<h3 style="text-align: center;">CMA-ES summary</h3>
+
+	<p>
+		<b>INPUT</b>: <br>
+			$\quad$ $\boldsymbol{m} \in \mathbb{R}^n, \sigma \in \mathbb{R}_+, \lambda$ <br>
+		<b>INITIALIZE</b>: <br>
+			$\quad$ $\boldsymbol{C} = \textbf{I}$,
+				$\boldsymbol{p_c} = \boldsymbol{0}$ and
+				$\boldsymbol{p_\sigma} = \boldsymbol{0}$ <br>
+		<b>SET</b>: <br>
+			$\quad$ $c_c \approx \frac{4}{n}$,
+				$c_\sigma \approx \frac{4}{n}$,
+				$c_1 \approx \frac{2}{n^2}$,
+				$c_{\mu} \approx \frac{\mu_w}{n^2}$,
+				$c_1 + c_{\mu} \leq 1$,
+				$d_\sigma \approx 1 + \sqrt{\frac{\mu_w}{n}},$ and <br>
+			$\quad$ $w_i = 1 \dots \lambda$ such that $\mu_w = \frac{1}{\sum_{i=1}^{\mu} w_i^2} \approx 0.3 \lambda$<br><br>
+
+		<b>WHILE</b> not terminate <br>
+		$\quad$ $\boldsymbol{x}_i = \boldsymbol{m} + \sigma \boldsymbol{y}_i, \quad \boldsymbol{y}_i \sim \mathcal{N}(\boldsymbol{0}, \boldsymbol{C}), \quad \text{for } i = 1, \ldots, \lambda$
+			<span style="position: absolute; right: 0;">sampling</span> <br>
+		$\quad$ $\boldsymbol{m} \leftarrow \sum_{i=1}^{\mu} w_i \boldsymbol{x}_{i:\lambda} = \boldsymbol{m} + \sigma \boldsymbol{y}_w \quad \text{where } \boldsymbol{y}_w = \sum_{i=1}^{\mu} w_i \boldsymbol{y}_{i:\lambda}$
+			<span style="position: absolute; right: 0;">update mean</span> <br>
+		$\quad$ $\boldsymbol{p_c} \leftarrow (1 - c_c)\boldsymbol{p_c} + \mathbb{1}_{\{\|\boldsymbol{p_\sigma}\| < 1.5\sqrt{n}\}} \sqrt{1 - (1 - c_c)^2} \sqrt{\mu_w} \boldsymbol{y}_w$
+			<span style="position: absolute; right: 0;">cumulation for $\boldsymbol{C}$</span> <br>
+		$\quad$ $\boldsymbol{p_\sigma} \leftarrow (1 - c_\sigma)\boldsymbol{p_\sigma} + \sqrt{1 - (1 - c_\sigma)^2} \sqrt{\mu_w} \boldsymbol{C}^{-\frac{1}{2}} \boldsymbol{y}_w$
+			<span style="position: absolute; right: 0;">cumulation for $\sigma$</span> <br>
+		$\quad$ $\boldsymbol{C} \leftarrow (1 - c_1 - c_{\mu}) \boldsymbol{C} + c_1 \boldsymbol{p_c} \boldsymbol{p_c}^\top + c_{\mu} \sum_{i=1}^{\mu} w_i \boldsymbol{y}_{i:\lambda} \boldsymbol{y}_{i:\lambda}^\top$
+			<span style="position: absolute; right: 0;">update $\boldsymbol{C}$</span> <br>
+		$\quad$ $\sigma \leftarrow \sigma \exp\left(\frac{c_\sigma}{d_\sigma} \left(\frac{\|\boldsymbol{p_\sigma}\|}{E\|\mathcal{N}(\boldsymbol{0}, \textbf{I})\|} - 1\right)\right)$
+			<span style="position: absolute; right: 0;">update of $\sigma$</span> <br>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<section>
+	<img class="r-stretch" src="assets/inf581_optimization/image101.png" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3>References</h3>
+
+	<div class="row">
+		<div style="float: left; width: 50%;">
+			<p style="font-size: 0.5em; margin-top: 8em; text-align: left;">
+				Hansen, N. and Ostermeier, A., 2001. Completely derandomized self-adaptation in evolution strategies. <em>Evolutionary computation</em>, 9(2), pp.159-195.
+				[<a href="http://www.cmap.polytechnique.fr/~nikolaus.hansen/cmaartic.pdf">PDF</a>]
+			</p>
+			<p style="font-size: 0.5em; margin-top: 4em; text-align: left;">
+				Hansen, N., 2016. The CMA evolution strategy: A tutorial. <em>arXiv preprint arXiv:1604.00772</em>.
+				[<a href="https://arxiv.org/pdf/1604.00772.pdf">PDF</a>]
+			</p>
+		</div>
+		<div style="float: left; width: 50%;">
+			<a href="http://www.cmap.polytechnique.fr/~nikolaus.hansen/cmaartic.pdf"><img width="70%" src="assets/inf581_optimization/bib_cmaes.png" /></a>
+		</div>
+	</div>
+	<p style="clear: both;"></p> 
+
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->

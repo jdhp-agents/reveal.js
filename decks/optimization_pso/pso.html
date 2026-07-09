@@ -1,0 +1,142 @@
+<!-- @preview /optimization_pso.html -->
+<!-- #region -->
+
+<section>
+	<h3>Particle Swarm Optimization (PSO)</h3>
+
+	<br>
+
+	<p style="text-align: left; font-size: 0.6em;">
+		Use momentum : accumulate speed in a favorable direction
+		<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+			<li>To accelerate convergence toward minima</li>
+			<li>Don’t be disturbed by local perturbations</li>
+		</ul>
+	</p>
+
+	<p style="text-align: left; font-size: 0.6em;">
+		Each individual (or particle) in the population keep tracks of:
+		<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+			<li>its current position</li>
+			<li>its current velocity</li>
+			<li>the best position it has seen so far</li>
+		</ul>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3>Particle Swarm Optimization (PSO)</h3>
+
+	<br>
+
+	<p style="text-align: left; font-size: 0.6em;">
+		At each iteration, each individual is accelerated toward:
+		<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+			<li>the best position it has seen</li>
+			<li>the best position found thus far by any individual</li>
+		</ul>
+	</p>
+
+	<p style="text-align: left; font-size: 0.6em;">
+		The acceleration is weighted by a random term
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3>Particle Swarm Optimization (PSO)</h3>
+
+	<br>
+
+	<p style="text-align: left; font-size: 0.6em;">
+		The update equations are:
+
+		$$
+		\begin{aligned}
+			x^{(i)} &\leftarrow x^{(i)} + v^{(i)} \\
+			v^{(i)} &\leftarrow wv^{(i)} + c_1 r_1 \left( x_{\text{best}}^{(i)} - x^{(i)} \right) + c_2 r_2 \left( x_{\text{best}} - x^{(i)} \right)
+		\end{aligned}
+		$$
+
+		with:
+	</p>
+	<table style="font-size: 0.6em;">
+		<tbody>
+			<tr>
+				<td style="border-bottom: 0px;">$\boldsymbol{x}^{(i)}, \boldsymbol{x}^{(i)}$</td>
+				<td style="border-bottom: 0px;">position and velocity of particle $i$</td>
+			</tr>
+			<tr>
+				<td style="border-bottom: 0px;">$\boldsymbol{x}_{\text{best}}$</td>
+				<td style="border-bottom: 0px;">the best location found so far over all particles</td>
+			</tr>
+			<tr>
+				<td style="border-bottom: 0px;">$w, c_1, c_2$</td>
+				<td style="border-bottom: 0px;">parameters (inertia and momentum coefficients)</td>
+			</tr>
+			<tr>
+				<td>$r_1, r_2$</td>
+				<td>random numbers drawn from $\mathcal{U}(0,1)$</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3>Particle Swarm Optimization (PSO)</h3>
+
+	<img class="r-stretch" src="assets/optimization_pso/image104.png" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+An illustration of the behavior of the algorithm over 8 iterations
+
+Example on the wheeler’s ridge test function
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3>Particle Swarm Optimization (PSO)</h3>
+
+	<img class="r-stretch" src="assets/optimization_pso/image124.gif" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->

@@ -21,12 +21,12 @@
 		<!-- Theme used for syntax highlighting of code -->
 		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
 
-		<link rel="stylesheet" href="jdhp.css">
 	</head>
 	
 	<body>
 
 		<div class="reveal">
+
 			<!-- Any section element inside of this container is displayed as a slide -->
 			<div class="slides">
 
@@ -94,13 +94,28 @@
 				<!-- 2.5: SAES -------------------------------------------- -->
 				<!-- ------------------------------------------------------ -->
 
-				<!-- @include decks/inf581_optimization/10-2-5-saes.html -->
+				<!-- @include decks/optimization_saes/saes.html -->
 
 				<!-- ------------------------------------------------------ -->
 				<!-- 2.5: DIFFERENTIAL EVOLUTION -------------------------- -->
 				<!-- ------------------------------------------------------ -->
 
-				<!-- @include decks/inf581_optimization/11-2-5-differential-evolution.html -->
+				<section id="2.5-examples-de">
+					<h3>Differential Evolution</h3>
+					
+					<p style="font-size: 0.5em; color: dimgray;">
+						Storn, R and Price, K, Differential Evolution - a Simple and Efficient Heuristic for Global Optimization over Continuous Spaces, Journal of Global Optimization, 1997, 11, 341 - 359
+					</p>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- @include decks/optimization_differential-evolution/differential-evolution.html -->
 
 				<!-- ------------------------------------------------------ -->
 				<!-- 2.5: CROSS-ENTROPY METHOD ---------------------------- -->
@@ -123,13 +138,36 @@
 				<!-- 2.5: CMA-ES ------------------------------------------ -->
 				<!-- ------------------------------------------------------ -->
 
-				<!-- @include decks/inf581_optimization/13-2-5-cma-es.html -->
+				<section id="2.5-examples-cma">
+					<h3>CMA-ES</h3>
+					<h4 style="font-size: 80%;">Covariance Matrix Adaptation Evolution Strategy</h4>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- @include decks/optimization_cmaes/cmaes.html -->
 
 				<!-- ------------------------------------------------------ -->
 				<!-- 2.5: PARTICLE SWARM OPTIMIZATION (PSO) --------------- -->
 				<!-- ------------------------------------------------------ -->
 
-				<!-- @include decks/inf581_optimization/14-2-5-particle-swarm-optimization-pso.html -->
+				<section id="2.5-examples-pso">
+					<h3>Particle Swarm Optimization</h3>
+
+					<aside class="notes">
+						<div class="fr-notes">
+						</div>
+						<div class="en-notes">
+						</div>
+					</aside>
+				</section>
+
+				<!-- @include decks/optimization_pso/pso.html -->
 
 				<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
 				<!-- PART 3: APPLICATION TO RL -------------------------------------------------------------------------------------------------- -->
@@ -163,9 +201,26 @@
 			// Also available as an ES module, see:
 			// https://revealjs.com/initialization/
 			Reveal.initialize({
+				// Display presentation control arrows
 				controls: true,
+
+				// Help the user learn the controls by providing hints, for example by
+				// bouncing the down arrow when they first encounter a vertical slide
+				controlsTutorial: true,
+
+				// Determines where controls appear, "edges" or "bottom-right"
+				controlsLayout: 'bottom-right',
+
+				// Visibility rule for backwards navigation arrows; "faded", "hidden"
+				// or "visible"
+				controlsBackArrows: 'faded',
+
+				// Display a presentation progress bar
 				progress: true,
+
+				// Vertical centering of slides
 				center: true,
+
 				hash: true,
 				slideNumber: 'h.v',
 
@@ -184,19 +239,23 @@
 					}
 				},
 
-				// Learn about plugins: https://revealjs.com/plugins/
-				plugins: [ RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2 ]
+				// There are three typesetters available
+				// RevealMath.MathJax2 (default)
+				// RevealMath.MathJax3
+				// RevealMath.KaTeX
+				//
+				// More info at https://revealjs.com/math/
 
-				//// Reveal.js plugins
-				//dependencies: [
-				//	{ src: 'revealjs/plugin/reveald3.js' },
-				//]
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2 ],
+
+				// // Reveal.js plugins
+				// dependencies: [
+				// 	{ src: 'revealjs/plugin/reveald3.js' },
+				// ]
 			});
 
 		</script>
-
-		<!-- Assurez-vous que jdhp.js est référencé après tous les autres scripts -->
-		<script src="jdhp.js"></script>
 
 	</body>
 </html>
