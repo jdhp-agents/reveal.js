@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>Particle Swarm Optimization</title>
+
+		<meta name="description" content="Particle Swarm Optimization">
+		<meta name="author" content="Jérémie Decock">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+		
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+
+	</head>
+	
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h3>Particle Swarm Optimization</h3>
+					<br>
+					<p>
+						Jérémie Decock
+					</p>
+					<p>
+						17/12/2022
+					</p>
+
+					<!-- Macros definition -->
+					$$
+					\newcommand{\vs}[1]{\boldsymbol{#1}} % vector symbol (\boldsymbol, \textbf or \vec)
+					\newcommand{\ms}[1]{\boldsymbol{#1}} % matrix symbol (\boldsymbol, \textbf)
+					$$
+
+					<aside class="notes">
+						<ul>
+							<li>...</li>
+						</ul>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				<!-- PARTICLE SWARM OPTIMIZATION -------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+<!-- @preview /optimization_pso.html -->
+<!-- #region -->
+
+<section>
+	<h3>Particle Swarm Optimization (PSO)</h3>
+
+	<br>
+
+	<p style="text-align: left; font-size: 0.6em;">
+		Use momentum : accumulate speed in a favorable direction
+		<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+			<li>To accelerate convergence toward minima</li>
+			<li>Don’t be disturbed by local perturbations</li>
+		</ul>
+	</p>
+
+	<p style="text-align: left; font-size: 0.6em;">
+		Each individual (or particle) in the population keep tracks of:
+		<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+			<li>its current position</li>
+			<li>its current velocity</li>
+			<li>the best position it has seen so far</li>
+		</ul>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3>Particle Swarm Optimization (PSO)</h3>
+
+	<br>
+
+	<p style="text-align: left; font-size: 0.6em;">
+		At each iteration, each individual is accelerated toward:
+		<ul style="font-size: 0.6em; padding-left: 1em; display: block;">
+			<li>the best position it has seen</li>
+			<li>the best position found thus far by any individual</li>
+		</ul>
+	</p>
+
+	<p style="text-align: left; font-size: 0.6em;">
+		The acceleration is weighted by a random term
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3>Particle Swarm Optimization (PSO)</h3>
+
+	<br>
+
+	<p style="text-align: left; font-size: 0.6em;">
+		The update equations are:
+
+		$$
+		\begin{aligned}
+			x^{(i)} &\leftarrow x^{(i)} + v^{(i)} \\
+			v^{(i)} &\leftarrow wv^{(i)} + c_1 r_1 \left( x_{\text{best}}^{(i)} - x^{(i)} \right) + c_2 r_2 \left( x_{\text{best}} - x^{(i)} \right)
+		\end{aligned}
+		$$
+
+		with:
+	</p>
+	<table style="font-size: 0.6em;">
+		<tbody>
+			<tr>
+				<td style="border-bottom: 0px;">$\boldsymbol{x}^{(i)}, \boldsymbol{x}^{(i)}$</td>
+				<td style="border-bottom: 0px;">position and velocity of particle $i$</td>
+			</tr>
+			<tr>
+				<td style="border-bottom: 0px;">$\boldsymbol{x}_{\text{best}}$</td>
+				<td style="border-bottom: 0px;">the best location found so far over all particles</td>
+			</tr>
+			<tr>
+				<td style="border-bottom: 0px;">$w, c_1, c_2$</td>
+				<td style="border-bottom: 0px;">parameters (inertia and momentum coefficients)</td>
+			</tr>
+			<tr>
+				<td>$r_1, r_2$</td>
+				<td>random numbers drawn from $\mathcal{U}(0,1)$</td>
+			</tr>
+		</tbody>
+	</table>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3>Particle Swarm Optimization (PSO)</h3>
+
+	<img class="r-stretch" src="assets/optimization_pso/image104.png" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+An illustration of the behavior of the algorithm over 8 iterations
+
+Example on the wheeler’s ridge test function
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3>Particle Swarm Optimization (PSO)</h3>
+
+	<img class="r-stretch" src="assets/optimization_pso/image124.gif" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->
+			</div>
+
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/zoom.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/search.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="dist/plugin/math.js"></script>
+
+		<script>
+
+			// Also available as an ES module, see:
+			// https://revealjs.com/initialization/
+			Reveal.initialize({
+				// Display presentation control arrows
+				controls: true,
+
+				// Help the user learn the controls by providing hints, for example by
+				// bouncing the down arrow when they first encounter a vertical slide
+				controlsTutorial: true,
+
+				// Determines where controls appear, "edges" or "bottom-right"
+				controlsLayout: 'bottom-right',
+
+				// Visibility rule for backwards navigation arrows; "faded", "hidden"
+				// or "visible"
+				controlsBackArrows: 'faded',
+
+				// Display a presentation progress bar
+				progress: true,
+
+				// Vertical centering of slides
+				center: true,
+
+				hash: true,
+				slideNumber: 'h.v',
+
+				// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+				maxScale: 4.0,
+				mathjax2: {
+					//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+					//mathjax: 'mathjax/MathJax.js',
+					config: 'TeX-AMS_HTML-full',
+                                       // pass other options into `MathJax.Hub.Config()`
+					TeX: {
+						Macros: {
+							R: '\\mathbb{R}',
+							set: [ '\\left\\{#1 \\; ; \\; #2\\right\\}', 2 ]
+						}
+					}
+				},
+
+				// There are three typesetters available
+				// RevealMath.MathJax2 (default)
+				// RevealMath.MathJax3
+				// RevealMath.KaTeX
+				//
+				// More info at https://revealjs.com/math/
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2 ],
+
+				// // Reveal.js plugins
+				// dependencies: [
+				// 	{ src: 'revealjs/plugin/reveald3.js' },
+				// ]
+			});
+
+		</script>
+
+	</body>
+</html>

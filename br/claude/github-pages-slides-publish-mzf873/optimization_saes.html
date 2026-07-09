@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>SAES</title>
+
+		<meta name="description" content="SAES">
+		<meta name="author" content="Jérémie Decock">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+		
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+
+	</head>
+	
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+				<section>
+					<h3>SAES</h3>
+					<br>
+					<p>
+						Jérémie Decock
+					</p>
+					<p>
+						17/12/2022
+					</p>
+
+					<!-- Macros definition -->
+					$$
+					\newcommand{\vs}[1]{\boldsymbol{#1}} % vector symbol (\boldsymbol, \textbf or \vec)
+					\newcommand{\ms}[1]{\boldsymbol{#1}} % matrix symbol (\boldsymbol, \textbf)
+					$$
+
+					<aside class="notes">
+						<ul>
+							<li>...</li>
+						</ul>
+					</aside>
+				</section>
+
+				<!-- ------------------------------------------------------ -->
+				<!-- SAES ------------------------------------------------- -->
+				<!-- ------------------------------------------------------ -->
+
+<!-- @preview /optimization_saes.html -->
+<!-- #region -->
+
+<section id="2.5-examples-es">
+	<h3>Example: $(1 + 1)\text{-ES}$</h3>
+
+	<br>
+
+	<div style="text-align: left; font-size: 0.65em;">
+		<b>Input</b>:<br>
+		$\quad\quad$ $f$: the objective function<br>
+		$\quad\quad$ $\boldsymbol{x}$: initial solution<br><br>
+
+		<b>FOR EACH</b> generation<br>
+		$\quad\quad$ 1. mutation of $\sigma$ (individual strategy) : $\sigma' \leftarrow $ <span class="fragment highlight-current-red" data-fragment-index="1">Rechenberg's 1/5th rule</span><br>
+		$\quad\quad$ 2. mutation of $\boldsymbol{x}$ (current solution) : $\boldsymbol{x}' \leftarrow \boldsymbol{x} + \sigma' ~ \mathcal{N}(0,1)$<br>
+		$\quad\quad$ 3. eval $f(\boldsymbol{x}')$<br>
+		$\quad\quad$ 4. survivor selection $\boldsymbol{x} \leftarrow \boldsymbol{x}'$ and $\sigma \leftarrow \sigma'$ if $f(\boldsymbol{x}') \leq f(\boldsymbol{x})$<br><br>
+
+		<b>RETURN</b> $\boldsymbol{x}$
+	</div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section id="2.5-examples-saes1">
+	<h3>Example: $(1 + 1)\text{-SA-ES}$</h3>
+
+	<div style="text-align: left; font-size: 0.65em;">
+		<b>Input</b>:<br>
+		$\quad\quad$ $f$: the objective function<br>
+		$\quad\quad$ $\boldsymbol{x}$: initial solution<br>
+
+		<b>Algorithm parameter</b>:<br>
+		$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="1">$\tau$: self-adaptation learning rate</span><br><br>
+
+		<b>FOR EACH</b> generation<br>
+		$\quad\quad$ 1. mutation of $\sigma$ (current individual strategy) : $\sigma' \leftarrow $ <span class="fragment highlight-current-red" data-fragment-index="1">$\sigma ~ e^{\tau \mathcal{N}(0,1)}$</span><br>
+		$\quad\quad$ 2. mutation of $\boldsymbol{x}$ (current solution) : $\boldsymbol{x}' \leftarrow \boldsymbol{x} + \sigma' ~ \mathcal{N}(0,1)$<br>
+		$\quad\quad$ 3. eval $f(\boldsymbol{x}')$<br>
+		$\quad\quad$ 4. survivor selection $\boldsymbol{x} \leftarrow \boldsymbol{x}'$ and $\sigma \leftarrow \sigma'$ if $f(\boldsymbol{x}') \leq f(\boldsymbol{x})$<br><br>
+
+		<b>RETURN</b> $\boldsymbol{x}$
+	</div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section id="2.5-examples-saes2">
+	<h3>Example: $(\mu/\rho + \lambda)\text{-SA-ES}$</h3>
+
+	<div style="text-align: left; font-size: 0.45em;">
+		<b>Input</b>:<br>
+		$\quad\quad$ $f$: the objective function<br>
+
+		<b>Algorithm parameter</b>:<br>
+		$\quad\quad$ $\tau$: self-adaptation learning rate<br>
+		<div class="fragment highlight-current-red" data-fragment-index="1">
+			$\quad\quad$ $\mu$: number of parents per generation<br>
+			$\quad\quad$ $\rho$: number of parents used to make each child<br>
+			$\quad\quad$ $\lambda$: number of children per generation<br>
+			$\quad\quad$ mating selection operator<br>
+			$\quad\quad$ survivor selection operator<br><br>
+		</div>
+
+		Initialize arbitrarily the population<br>
+
+		<b>FOR EACH</b> generation<br>
+		<div class="fragment highlight-current-red" data-fragment-index="1">
+			$\quad$ <b>FOR EACH</b> children<br>
+			$\quad\quad$ 1. randomly select $\rho$ parents<br>
+			$\quad\quad$ 2. $(\boldsymbol{x}, \sigma) \leftarrow$ recombination of selected parents (if $\rho > 1$)<br>
+		</div>
+		$\quad\quad$ 3. mutation of $\sigma$ (individual strategy) : $\sigma \leftarrow \sigma ~ e^{\tau \mathcal{N}(0,1)}$<br>
+		$\quad\quad$ 4. mutation of $\boldsymbol{x}$ (objective param) : $\boldsymbol{x} \leftarrow \boldsymbol{x} + \sigma ~ \mathcal{N}(0,1)$<br>
+		$\quad\quad$ 5. evaluate $f(\boldsymbol{x})$<br>
+		<div class="fragment highlight-current-red" data-fragment-index="1">
+			$\quad$ Select the next generation of individuals<br><br>
+		</div>
+
+		<b>RETURN</b> <span class="fragment highlight-current-red" data-fragment-index="1">the best individual</span>
+	</div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->
+			</div>
+
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/zoom.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/search.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="dist/plugin/math.js"></script>
+
+		<script>
+
+			// Also available as an ES module, see:
+			// https://revealjs.com/initialization/
+			Reveal.initialize({
+				// Display presentation control arrows
+				controls: true,
+
+				// Help the user learn the controls by providing hints, for example by
+				// bouncing the down arrow when they first encounter a vertical slide
+				controlsTutorial: true,
+
+				// Determines where controls appear, "edges" or "bottom-right"
+				controlsLayout: 'bottom-right',
+
+				// Visibility rule for backwards navigation arrows; "faded", "hidden"
+				// or "visible"
+				controlsBackArrows: 'faded',
+
+				// Display a presentation progress bar
+				progress: true,
+
+				// Vertical centering of slides
+				center: true,
+
+				hash: true,
+				slideNumber: 'h.v',
+
+				// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+				maxScale: 4.0,
+				mathjax2: {
+					//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+					//mathjax: 'mathjax/MathJax.js',
+					config: 'TeX-AMS_HTML-full',
+                                       // pass other options into `MathJax.Hub.Config()`
+					TeX: {
+						Macros: {
+							R: '\\mathbb{R}',
+							set: [ '\\left\\{#1 \\; ; \\; #2\\right\\}', 2 ]
+						}
+					}
+				},
+
+				// There are three typesetters available
+				// RevealMath.MathJax2 (default)
+				// RevealMath.MathJax3
+				// RevealMath.KaTeX
+				//
+				// More info at https://revealjs.com/math/
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2 ],
+
+				// // Reveal.js plugins
+				// dependencies: [
+				// 	{ src: 'revealjs/plugin/reveald3.js' },
+				// ]
+			});
+
+		</script>
+
+	</body>
+</html>

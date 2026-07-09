@@ -1,0 +1,3722 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+
+	<title>CSC 53439 EP 2026 - Exploration and Distributional Methods in RL</title>
+
+	<meta name="description" content="Advanced RL Topics">
+	<meta name="author" content="Jérémie Decock">
+
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="dist/reset.css">
+	<link rel="stylesheet" href="dist/reveal.css">
+	<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+
+	<!-- Theme used for syntax highlighting of code -->
+	<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+
+	<link rel="stylesheet" href="jdhp.css">
+</head>
+
+<!--
+
+TODO:
+- [ ] Pour chaque section, ajouter des exemples concrets d'application (c.f. https://chat.mistral.ai/chat/adf399b0-bee4-474e-9f8a-c017fc972faf)
+- [ ] Remarques et suggestions faites dans https://chat.mistral.ai/chat/06ba8113-badf-4a3f-b065-3455576896f7
+- [ ] Pour chaque section:
+    - Expliquer les motivations (problématique adressée face à l'existant, ...)
+		- Quel est l'existant et ses limites (la problématique à résoudre)
+		- La motivation des auteurs
+		- cas d'usages
+	- Ajouter des **références bibliographiques** clés
+		- Année de publication, auteurs, références
+		- implémentations existantes / de référence
+  	- Analyse structurelle
+		- "qu'est-ce qu'il y a dedans" / quelle classe / famille de méthodes ça utilise
+		- Hypothèses / périmètre d'application (domaines, types d'environnements, hypothèses, ...)
+		- Avantages / inconvénients
+		- Limites
+	- Algos
+	- Fondements théoriques / pourquoi ça marche
+	- Ajouter des illustrations (schémas, graphiques)
+	- Ajouter des **exemples concrets d'application**
+	- Ajouter des liens vers des implémentations open-source
+
+Plan: Organisation en **blocs thématiques** avec une progression logique :
+
+1. **Explorer au-delà de l’algorithme standard** (exploration et incertitude)
+2. **Mieux représenter et optimiser les valeurs** (distributional RL, maximum entropy RL)
+3. **Échelle et efficacité computationnelle** (distributed RL)
+4. **Structurer la prise de décision** (hierarchical RL)
+5. **Vers l’adaptation et la généralisation** (meta-learning)
+
+Logique de progression : on commence par l'exploration, puis on passe à la modélisation des valeurs, ensuite à l'optimisation et à la scalabilité, et enfin à la structuration de la prise de décision et à l'adaptation.
+
+Exploration → Modélisation → Efficacité → Structure → Adaptation
+
+Elle part des fondations (exploration) vers des concepts plus abstraits (méta-apprentissage), en passant par des outils concrets (distributional RL, distributed RL).
+
+Chaque bloc prépare naturellement le suivant. Par exemple, l’exploration (bloc 1) est essentielle pour comprendre l’importance de la distribution des valeurs (bloc 2) et de l’entropie (bloc 3).
+
+---
+
+# 1. Exploration et incertitude
+
+C.f. Plaat p.90
+
+*(comment améliorer la recherche d’actions efficaces dans des environnements complexes)*
+
+---
+
+- **Exploration-Exploitation Dilemma** : L’agent doit équilibrer exploration (découvrir) et exploitation (utiliser ce qu’il sait) pour apprendre efficacement.
+- **Unstructured Exploration** : Les méthodes simples comme ε-greedy ou le bruit gaussien introduisent de l’aléa mais restent limitées dans les environnements complexes.
+  - **ε-greedy Exploration Details** : ε-greedy garantit une exploration minimale mais manque de diversité et d’efficacité dans les tâches difficiles.
+  - **Gaussian Noise Exploration Details** : Ajouter du bruit gaussien à l’action favorise une exploration locale, adaptée aux espaces d’actions continus.
+  - **Limits of Unstructured Exploration** : Les méthodes non structurées échouent dans les environnements à récompense rare comme Montezuma’s Revenge.
+- **Maximum Entropy RL** : ...
+- **Parameter Noise-based Exploration** : Le bruit sur les paramètres du réseau (Noisy Nets, Parameter Space Noise) permet une exploration plus cohérente et globale.
+  - Soft Q-Learning (SQL) et Soft Actor-Critic (SAC) intègrent l’entropie pour encourager l’exploration. [DÉJÀ TRAITÉ PAR JESSE DANS LA PREMIÈRE PATIE DU COURS]
+- **Intrinsic Rewards as Exploration Bonuses** : On encourage l’exploration en ajoutant une récompense intrinsèque basée sur la nouveauté ou la surprise.
+  - **Count-based Exploration** : Les bonus d’exploration basés sur le comptage d’états visités sont efficaces en petit espace mais limités en grande dimension.
+  - **Prediction-based Exploration** : Récompenser l’erreur de prédiction du modèle dynamique pousse l’agent vers des états inconnus, mais peut être trompé par le bruit.
+    - **Random Network Distillation (RND)** : RND utilise l’erreur entre un réseau cible aléatoire et un prédicteur pour estimer la nouveauté et guider l’exploration.
+    - **Key Publications on Intrinsic Motivation** : Principales références sur les méthodes d’exploration par motivation intrinsèque et curiosité.
+    - **Limits of Intrinsic Reward and Memory-based Exploration** : Les limites des récompenses intrinsèques motivent l’ajout d’une mémoire externe pour stabiliser et fiabiliser l’exploration.
+- **Structured Exploration via State Archive (Go-Explore)** : Go-Explore archive explicitement les états visités et systématise l’exploration en revenant sur des états prometteurs.
+  - **(Vidéo Go-Explore)** : Illustration vidéo de l’approche Go-Explore dans Montezuma’s Revenge.
+- **Further Reading on Exploration** : Ressources complémentaires pour approfondir les stratégies d’exploration en RL.
+
+---
+
+# 2. Distributional RL
+
+Cf. Xiao 2024 (chap. 12) et Plaat p.90
+
+*(modéliser non seulement l’espérance de la valeur, mais la distribution complète des retours)*
+
+* Motivation : au-delà de la valeur moyenne
+* Value distribution & Maximum utility RL
+* **Probability-based algorithms :**
+
+  * C51
+  * Categorical DQN with utility
+* **Quantile-based algorithms :**
+
+  * QR-DQN
+  * IQN (Implicit Quantile Networks)
+  * QR with utility
+
+
+---
+
+  - Les algorithmes de RL que nous avons vu jusqu'à pésent modélisent la valeur d'un état $s$ ou d'une paire état-action $(s,a)$ par une valeur scalaire $V(s)$ ou $Q(s,a)$, qui correspond à l'espérance $\mathbb{E}...$ du retour.
+  - Cependant, le retour est une variable aléatoire, et dans certains cas, connaître la distribution complète du retour peut être bénéfique.
+  - Par exemple, dans des environnements stochastiques ou lorsque l'on souhaite optimiser une fonction d'utilité plus complexe que l'espérance (comme la minimisation du risque).
+
+
+---
+
+
+Plan GPT
+
+**Slide 1 – Introduction & Motivation**
+
+* Rappel rapide : limites de DQN classique (approximation de la valeur espérée)
+* Motivation : pourquoi modéliser la **distribution des retours** plutôt que leur espérance ?
+* Exemples d’intuition (risque, incertitude, variance).
+
+---
+
+**Slide 2 – Rappel DQN**
+
+* Fonction de valeur d’action ( Q(s,a) = \mathbb{E}[R|s,a] )
+* Approximation par réseau de neurones
+* Apprentissage via Bellman expectation operator.
+
+---
+
+**Slide 3 – Distributional RL : idée clé**
+
+* Modéliser la **loi de probabilité** du retour au lieu de son espérance.
+* Distributional Bellman operator.
+* Illustration graphique : distribution vs moyenne.
+
+---
+
+**Slide 4 – L’approche C51**
+
+* Nom : Categorical DQN, 51 atomes (points de support fixes).
+* Approximation discrète de la distribution des retours.
+* Réseau de neurones prédit une distribution (softmax sur 51 logits).
+
+---
+
+**Slide 5 – Projection & Bellman Update**
+
+* Définition des atomes ( z_i = V_{\min} + i \cdot \Delta z ).
+* Application de l’opérateur de Bellman sur la distribution.
+* Projection sur les 51 atomes fixes (contrainte de discrétisation).
+* Illustration visuelle (shifting/scaling des distributions projetées).
+
+---
+
+**Slide 6 – Fonction de perte**
+
+* Perte de type **cross-entropy** entre distribution prédite et distribution cible projetée.
+* Comparaison avec la perte MSE de DQN classique.
+* Rappel sur la stabilité et la richesse de l’apprentissage distributionnel.
+
+---
+
+**Slide 7 – Architecture & Implémentation**
+
+* Réseau similaire à DQN, mais sortie = vecteur [#actions × 51].
+* Normalisation via softmax pour obtenir des probabilités.
+* Sélection d’action via **espérance** :
+  (\pi(s) = \arg\max_a \sum_i p_i(s,a) z_i).
+
+---
+
+**Slide 8 – Résultats expérimentaux (Atari)**
+
+* C51 vs DQN : meilleures performances.
+* Gains de stabilité et rapidité d’apprentissage.
+* Illustration par un graphe comparatif.
+
+---
+
+**Slide 9 – Limites et extensions**
+
+* Support discret fixé = rigidité (choix de (V_{\min}, V_{\max})).
+* Extensions : QR-DQN (quantile regression), IQN, FQF.
+* Distributional RL comme nouveau paradigme.
+
+---
+
+**Slide 10 – Conclusion & Discussion**
+
+* Bilan : passage de l’espérance à la distribution = progrès majeur.
+* Impact sur la recherche en RL moderne.
+* Questions / discussion ouverte (risque, incertitude, exploration).
+
+---
+
+
+
+
+Questions :
+- [x] Comment la reward est intégrée/propagé dans la mise à jour de la distribution dans C51 ? => ok c'est comme pour TD, etc. on part avec une estimation bidon et on améliore au fur et à mesure en minimisant la TD error jusqu'à converger vers les vraies distributions.
+- [x] Pourquoi modéliser la distribution complète des valeurs si le choix des actions repose uniquement sur l'espérance de la valeur ?
+- [x] A quoi correspond $P^\pi$ dans la figure 4 du papier C51 ?
+
+-->
+
+<body>
+
+	<div class="reveal">
+
+		<!-- Any section element inside of this container is displayed as a slide -->
+		<div class="slides">
+
+			<!-- Slide: Titre -->
+			<section>
+				<h1 style="font-size: 1.4em;">CSC 53439 EP</h1>
+				<h2 style="font-size: 0.8em;">Lecture 2</h2>
+				<h2 style="font-size: 0.8em;">Exploration and Distributional Methods in RL</h2>
+				<!--<p style="font-size: 1.5em;"><small>Pour une collaboration efficace</small></p>-->
+				<br>
+				<br>
+				<p style="font-size: 1em;"><small><a href="https://www.jdhp.org/">Jérémie Decock</a></small></p>
+				<p style="font-size: 1em;"><small>October 3, 2026</small></p>
+
+				<aside class="notes">
+					<div class="fr-notes"></div>
+					<div class="en-notes"></div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+			<!-- 1.: OUTLINE ------------------------------------------ -->
+			<!-- ------------------------------------------------------ -->
+			<!-- #region -->
+
+			<!-- Section: Outline -->
+			<section>
+				<h3>Outline</h3>
+
+				<ol>
+					<li><a href="#/part1-exploration">Exploration and Uncertainty</a></li>
+					<li><a href="#/part2-distributional-rl">Distributional RL</a></li>
+					<!-- <li><a href="#/part4-distributed-rl">Distributed RL</a></li> -->
+					<!-- <li><a href="#/part5-hierarchical-rl">Hierarchical RL</a></li> -->
+					<!-- <li><a href="#/part6-meta-learning-transfer">Meta-learning and Transfer</a></li> -->
+				</ol>
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+In this lecture, we will cover two main topics:
+exploration, and distributional reinforcement learning.
+
+The goal is to give you an overview of advanced RL techniques that go beyond the standard algorithms you have already seen.
+
+We will not go into every technical detail, but instead focus on the motivations, core principles of each method.
+					</div>
+				</aside>
+			</section>
+
+			<!-- endregion -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- PART 1: Exploration and Uncertainty----------------------------------------------------------------------------------------- -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- #region -->
+
+			<!-- Slide: Part 1 -->
+			<section id="part1-exploration">
+				<h3>Part 1</h3>
+				<h4>Exploration and Uncertainty</h4>
+
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+So we start with exploration.
+					</div>
+				</aside>
+			</section>
+
+<!-- @preview /rl_exploration.html -->
+<!-- #region -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Exploration-Exploitation Dilemma -->
+<section>
+	<h3>Exploration-Exploitation Dilemma</h3>
+	<!-- <h4>A core Challenge in Reinforcement Learning</h4> -->
+	<figure>
+		<img src="assets/rl_exploration/exploration_vs_exploitation.png"
+			alt="Exploration-Exploitation Dilemma" style="width: 50%; margin-bottom: 10px;">
+		<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+			A real-life example of the exploration vs exploitation dilemma: where to eat?<br>
+			(Image source: UC Berkeley AI course slide, <a
+				href="https://web.archive.org/web/20250130152055if_/https://ai.berkeley.edu/slides/Lecture%2011%20--%20Reinforcement%20Learning%20II/SP14%20CS188%20Lecture%2011%20--%20Reinforcement%20Learning%20II.pptx">lecture
+				11</a>.)
+		</figcaption>
+	</figure>
+	<ul style="font-size: 0.6em;">
+		<li>Agent must <b>explore</b> to discover rewarding actions and states.</li>
+		<li>Agent must <b>exploit</b> known information to maximize reward.</li>
+		<li>Balancing exploration and exploitation is critical for efficient learning.</li>
+		<li>Too much exploration: slow progress; too much exploitation: suboptimal policies.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+The exploration-exploitation dilemma is fundamental in RL:
+agents must balance trying new actions
+to gather information
+and
+leveraging what they know to maximize returns.
+
+This illustration is a good example:
+- we are used to a few restaurants (exploitation), we are happy with them,
+- but a new one just opened
+
+Do we try it (do we explore)?
+- with the risk of being disappointed, but maybe we will find a new favorite place?
+- or do we stick to what we know (exploitation)?
+
+
+---
+
+"without enough explORAtion, we cannot learn the environment well enough; without enough
+explOItation, we cannot complete our reward optimization task"
+"Different RL algorithms balance between exploration and exploitation in different ways. In MC
+methods, Q-learning or many on-policy algorithms, the exploration is commonly implemented by
+ε-greedy;"
+
+"With exploitation, we take advantage of the best option we know. With exploration, we take some
+risk to collect information about unknown options. The best long-term strategy may involve
+short-term sacrifices. For example, one exploration trial could be a total failure, but it warns
+us of not taking that action too often in the future."
+
+
+---
+
+- https://lilianweng.github.io/posts/2018-02-19-rl-overview/#exploration-exploitation-dilemma
+- https://lilianweng.github.io/posts/2018-01-23-multi-armed-bandit/#exploitation-vs-exploration
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Unstructured Exploration -->
+<!-- <section>
+	<h3>Unstructured Exploration</h3>
+	<ul>
+		<li><b>ε-greedy</b>: random action with probability ε, otherwise greedy action.</li>
+		<li><b>Gaussian noise</b>: add noise to actions (continuous control).</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Exploration non structurée : méthodes simples, peu coûteuses, mais souvent inefficaces dans des
+			environnements complexes ou à grande dimension.
+		</div>
+		<div class="en-notes">
+			Unstructured exploration uses simple stochasticity (randomness) to encourage the agent to try
+			new actions. Effective in simple tasks, but often insufficient for complex environments.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Unstructured Exploration (ε-greedy) -->
+<section>
+	<h3>Unstructured Exploration</h3>
+	<h4 style="text-transform: none;">$\varepsilon$-greedy</h4>
+
+	<div class="r-stack">
+		<div class="fragment current-visible" data-fragment-index="1">
+			<div style="text-align: center; margin-bottom: 0.5em; font-size: 0.5em;">
+				Deep Q-Learning Algorithm<br>
+			</div>
+			<div style="font-size: 0.3em; text-align: left; margin-left: 4em;">
+				<!--
+				<b>Input</b>:<br>
+					$\quad\quad$ none<br>
+				<b>Algorithm parameter</b>:<br>
+					$\quad\quad$ discount factor $\gamma$<br>
+					$\quad\quad$ step size $\alpha \in (0,1]$<br>
+					$\quad\quad$ small $\epsilon > 0$<br>
+					$\quad\quad$ capacity of the experience replay memory $M$<br>
+					$\quad\quad$ batch size $m$<br>
+					$\quad\quad$ target network update frequency $\color{red}{\tau}$<br><br>
+	
+				<b>Initialize</b> replay memory $\mathcal{D}$ to capacity $M$<br>
+				<b>Initialize</b> action-value function $\hat{Q}_{\mathbf{\omega_1}}$ with random weights $\mathbf{\omega_1}$<br>
+				<b>Initialize</b> target action-value function $\hat{Q}_{\mathbf{\omega_2}}$ with weights $\color{red}{\mathbf{\omega_2} = \mathbf{\omega_1}}$<br><br>-->
+				<b>FOR EACH</b> episode<br>
+				$\quad$ $\mathbf{s} \leftarrow \text{env.reset}()$<br>
+				$\quad$ <b>DO</b> <br>
+				$\quad\quad$ $\mathbf{a} \leftarrow \color{red}{\epsilon\text{-greedy}(\mathbf{s},
+				\hat{Q}_{\mathbf{\omega_1}})}$<br>
+				$\quad\quad$ $r, \mathbf{s'} \leftarrow \text{env.step}(\mathbf{a})$<br>
+				$\quad\quad$ Store transition $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ in $\mathcal{D}$<br>
+				$\quad\quad$ If $\mathcal{D}$ contains "enough" transitions<br>
+				$\quad\quad\quad$ Sample random batch of transitions $(\mathbf{s}_j, \mathbf{a}_j, r_j,
+				\mathbf{s'}_j)$ from $\mathcal{D}$ with $j=1$ to $m$<br>
+				$\quad\quad\quad$ For each $j$, set $y_j =
+				\begin{cases}
+				r_j & \text{for terminal } \mathbf{s'}_j\\
+				r_j + \gamma \max_{\mathbf{a}^\star} \hat{Q}_{\mathbf{\omega_{2}}}
+				(\mathbf{s'}_j)_{\mathbf{a}^\star} & \text{for non-terminal } \mathbf{s'}_j
+				\end{cases}$<br>
+				$\quad\quad\quad$ Perform a gradient descent step on $\left( y_j -
+				\hat{Q}_{\mathbf{\omega_1}}(\mathbf{s}_j)_{\mathbf{a}_j} \right)^2$ with respect to the weights
+				$\mathbf{\omega_1}$<br>
+				$\quad\quad\quad$ Every $\tau$ steps reset $\hat{Q}_{\mathbf{\omega_2}}$ to
+				$\hat{Q}_{\mathbf{\omega_1}}$, i.e., set $\mathbf{\omega_2} \leftarrow \mathbf{\omega_1}$<br>
+				$\quad\quad$ $\mathbf{s} \leftarrow \mathbf{s'}$ <br>
+				$\quad$ <b>UNTIL</b> $\mathbf{s}$ is final<br>
+				<b>RETURN</b> $\mathbf{\omega_1}$
+			</div>
+		</div>
+		<div class="fragment current-visible" data-fragment-index="2">
+			<img src="assets/rl_exploration/lab1_epsilon.png" alt="ε-greedy Exploration" style="width: 60%; margin-bottom: 0;">
+		</div>
+	</div>
+	<div class="r-stack">
+		<div class="fragment current-visible" data-fragment-index="1">
+			<p style="font-size:0.4em; margin-top: 1em; text-align: left; margin-bottom: 0; margin-left: 3em;">At each step,:</p>
+			<ul style="font-size: 0.4em; padding-left: 1em; display: block; margin-left: 3em;">
+				<li>with probability <b>ε</b>, select a random action;</li>
+				<li>with probability <b>1-ε</b>, select the action with the highest estimated value.
+				</li>
+			</ul>
+			<p style="font-size: 0.4em;">
+				👉 Simple to implement, widely used in discrete action spaces.
+			</p>
+		</div>
+		<p class="fragment current-visible" data-fragment-index="2" style="font-size: 0.4em;">
+			Typically, ε is annealed (decreased) over time to shift from exploration to exploitation.<br>
+			The decay schedule is a hyperparameter and often determined empirically.
+		</p>
+	</div>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+There are several kinds of exploration strategies.
+
+The most basic ones are unstructured exploration methods.
+
+Among them, ε-greedy is the most common in discrete action spaces.
+
+[...]
+
+
+
+Unstructured exploration uses simple stochasticity (randomness) to encourage the agent to try
+new actions.
+Effective in simple tasks, but often insufficient for complex environments.
+ε-greedy ensures some exploration but may revisit the same states/actions repeatedly and
+struggles in high-dimensional or sparse-reward settings.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Unstructured Exploration (Gaussian Noise) -->
+<section>
+	<h3>Unstructured Exploration</h3>
+	<h4>Gaussian Noise</h4>
+
+	<ul style="font-size: 0.7em; margin-top: 2em;">
+		<li>Add zero-mean Gaussian noise to the action output by the policy.</li>
+		<li>Common in algorithms for continuous control (e.g., DDPG, TD3).</li>
+		<li>Noise variance can be annealed to reduce exploration over time.</li>
+		<li>Encourages smooth, local exploration around the current policy.</li>
+	</ul>
+	<!-- <ul style="font-size: 0.7em;">
+		<li>
+			<a href="https://arxiv.org/abs/1509.02971" target="_blank">Continuous Control With Deep
+				Reinforcement Learning</a>, Lillicrap et al., 2015.<br>
+			<b>Algorithm:</b> DDPG
+		</li>
+	</ul> -->
+	<p style="font-size: 0.7em; margin-top: 1em;">
+		$$\mu'(s_t) = \mu(s_t | \theta^{\mu}_t) + \mathcal{N}$$
+		where $\mu(s_t | \theta^{\mu}_t)$ is the actor network with weights $\theta^{\mu}_t$<br>
+		and $\mathcal{N}$ is a noise process (e.g. Gaussian or Ornstein-Uhlenbeck).
+	</p>
+	<!-- <img src="assets/rl_exploration/ddpg.png" alt="Gaussian Noise Exploration" style="width: 50%; margin-bottom: 10px;"> -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+In continuous action spaces, a common exploration strategy is to add Gaussian noise directly to the actions output by the policy network.
+
+This means that, instead of always taking the deterministic action suggested by the policy, we perturb it with random noise sampled from a normal distribution.
+
+This approach is widely used in algorithms like DDPG and TD3, where the action space is continuous.
+
+The variance of the noise can be annealed over time, so the agent explores more at the beginning of training and gradually exploits more as learning progresses.
+
+The main advantage is that it encourages smooth, local exploration around the current policy, which is often appropriate for physical control tasks.
+
+However, this method can be insufficient in environments where more global or structured exploration is needed, since the agent may only explore in a small neighborhood of its current behavior.
+
+In summary, Gaussian noise is simple and effective for many continuous control problems, but it may not be enough for tasks that require discovering distant or rare states.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Limits of Unstructured Exploration (Case Study: Montezuma's Revenge) -->
+<section>
+	<h3 style="font-size: 1.1em;">Limits of Unstructured Exploration</h3>
+	<h4 style="font-size: 0.8em;">Case Study: Montezuma's Revenge (Atari)</h4>
+
+	<p style="font-size:0.6em; text-align: left; margin-left: 3em;">
+		Unstructured methods (ε-greedy, Gaussian noise) struggle in environments with <b>sparse
+		rewards</b> and <b>complex exploration</b> requirements.
+	</p>
+
+	<video src="assets/rl_exploration/montezuma_revenge.mp4" controls style="width: 50%; display: block; margin: 0 auto 0 auto;"></video>
+	
+	<p style="font-size: 0.55em; text-align: left; margin-bottom: 0; margin-left: 3em;">
+		<b>Montezuma's Revenge</b> (Atari): classic benchmark for hard exploration.
+	</p>
+	<ul style="font-size: 0.55em; padding-left: 1em; display: block; margin-left: 3em;">
+		<li>Random actions rarely reach rewarding states; agent fails to learn meaningful behavior.</li>
+		<li>Motivates the need for <b>intrinsic motivation</b> and <b>structured exploration</b> techniques.</li>
+	</ul>
+			<!-- Placeholder: insert a screenshot or short animation of Montezuma's Revenge gameplay.
+					 Objective: show the complexity and sparse rewards of the environment, highlighting why random exploration is ineffective. -->
+			<!-- <img src="assets/rl_exploration/montezuma_revenge.jpg"
+				alt="Montezuma's Revenge (Atari)" style="width: 90%; margin-bottom: 10px;">
+			<div style="font-size: 0.5em;">
+				<a href="https://ale.farama.org/environments/montezuma_revenge" target="_blank">ALE:
+					Montezuma's Revenge</a>
+			</div>
+			https://www.retrogames.cz/play_124-Atari2600.php
+		</div> -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Montezuma's Revenge is a good example where unstructured exploration fails:
+
+rewards are sparse and require precise action sequences.
+
+This motivates the development of more advanced exploration strategies.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Maximum Entropy RL (Exploration and Robustness via Entropy) -->
+<section>
+	<h3>Maximum Entropy RL</h3>
+	<h4>Exploration and Robustness via Entropy</h4>
+
+	<p style="font-size: 0.6em; text-align: left; margin-bottom: 0; margin-left: 3em;">
+		Augments the reward with an entropy term to encourage diverse actions:
+		$$ J(\pi) = \mathbb{E}_{\pi} \left[ \sum_t r_t + \alpha \mathcal{H}(\pi(\cdot|s_t)) \right] $$
+		where $\mathcal{H}$ is the entropy and $\alpha$ controls the exploration-exploitation tradeoff.
+	</p>
+	<ul style="font-size: 0.6em; padding-left: 1em; display: block; margin-left: 3em; margin-top: 1em;">
+		<li>Promotes stochastic policies, improving robustness and exploration.</li>
+		<li>Widely used in robotics and continuous action domains.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Maximum-entropy RL augments the reward with an entropy term, encouraging stochastic policies and
+robust exploration. Soft Q-Learning and Soft Actor-Critic are leading algorithms in this area,
+especially effective for continuous control.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Maximum Entropy RL (Exploration and Robustness via Entropy) -->
+<section>
+	<h3>Maximum Entropy RL</h3>
+	<h4>Exploration and Robustness via Entropy</h4>
+
+	<p style="font-size:0.7em; margin-top: 2em; text-align: left; margin-bottom: 0.5em;">
+		<b>Key algorithms</b>:
+	</p>
+	<ul style="font-size: 0.7em; padding-left: 0; display: block;">
+		<li style="margin-bottom: 0.5em;">
+			<b>Soft Q-Learning (SQL)</b>: incorporates entropy into Q-learning updates.<br>
+			<span style="font-size: 0.9em;"><a href="https://arxiv.org/abs/1704.06440" target="_blank">Equivalence Between Policy Gradients and Soft Q-Learning</a>, Schulman et al., 2017.</span>
+		</li>
+		<li>
+			<b>Soft Actor-Critic (SAC)</b>: off-policy actor-critic with entropy maximization,<br>
+			state-of-the-art for continuous control.<br>
+			<span style="font-size: 0.9em;"><a href="https://arxiv.org/abs/1801.01290" target="_blank">Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor</a>, Haarnoja et al., 2018.</span>
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+As Jesse already mentioned in his lecture this morning,
+
+Maximum-entropy RL augments the reward with an entropy term, encouraging stochastic policies and robust exploration.
+
+Soft Q-Learning and Soft Actor-Critic are leading algorithms in this area, especially effective for continuous control.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Maximum Entropy RL Principle -->
+<!-- <section>
+	<h3>Maximum Entropy RL Principle</h3>
+	<h4>Exploration and Robustness via Entropy</h4>
+	<ul>
+		<li>Augments reward with entropy term: encourages diverse actions.</li>
+		<li>Objective: maximize expected return <b>and</b> policy entropy.</li>
+		<li>Leads to more robust and exploratory policies.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Le principe du maximum entropy RL consiste à favoriser l’exploration en ajoutant un terme
+			d’entropie à la fonction objectif, ce qui pousse l’agent à maintenir une politique stochastique.
+		</div>
+		<div class="en-notes">
+			Maximum entropy RL encourages agents to explore by rewarding randomness in their actions,
+			improving robustness and avoiding premature convergence.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Soft RL Algorithms -->
+<!-- <section>
+	<h3>Soft RL Algorithms</h3>
+	<h4>Soft Q-Learning, Soft Actor-Critic</h4>
+	<ul>
+		<li><b>Soft Q-Learning (SQL)</b>: incorporates entropy into Q-learning updates.</li>
+		<li><b>Soft Actor-Critic (SAC)</b>: off-policy actor-critic with entropy maximization.</li>
+		<li>State-of-the-art for continuous control tasks.</li>
+	</ul>
+	<ul style="font-size: 0.7em;">
+		<li>
+			<a href="https://arxiv.org/abs/1704.06440" target="_blank">
+				Equivalence Between Policy Gradients and Soft Q-Learning
+			</a>, Schulman et al., 2017.<br>
+			<b>Contribution:</b> Reveals a theoretical link between these two families of RL algorithms.
+		</li>
+		<li>
+			<a href="https://arxiv.org/abs/1801.01290" target="_blank">
+				Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor
+			</a>, Haarnoja et al., 2018.<br>
+			<b>Algorithm:</b> SAC
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			SQL et SAC sont des algorithmes qui intègrent explicitement l’entropie dans l’apprentissage,
+			permettant une exploration efficace et des politiques plus stables.
+		</div>
+		<div class="en-notes">
+			Soft RL algorithms leverage entropy to balance exploration and exploitation, achieving strong
+			empirical results in challenging environments.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Parameter Noise-based Exploration (Noisy Nets, Parameter Space Noise) -->
+<section>
+	<h3>Parameter Noise-based Exploration</h3>
+	<h4>Noisy Nets, Parameter Space Noise</h4>
+
+	<ul style="font-size: 0.8em; margin-top: 2em; margin-bottom: 2em;">
+		<li style="margin-bottom: 0.5em;">
+			<!-- <b>Noisy Nets</b>: -->
+			<a href="https://arxiv.org/pdf/1706.10295" target="_blank">
+				Fortunato et al. (2018). Noisy Networks for Exploration
+			</a>
+			<!-- https://openreview.net/pdf?id=rywHCPkAW -->
+		</li>
+		<li>
+			<!-- <b>Parameter Space Noise</b>: -->
+			<a href="https://arxiv.org/pdf/1706.01905" target="_blank">
+				Plappert et al. (2017). Parameter space noise for exploration
+			</a>
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+...
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Intrinsic Reward-based Exploration -->
+<!--
+<section>
+	<h3>Intrinsic Reward-based Exploration</h3>
+	<h4>Curiosity, State Prediction, Epistemic Uncertainty</h4>
+	<ul>
+		<li><b>Curiosity-driven</b>: reward for visiting novel or unpredictable states.</li>
+		<li><b>State prediction error</b>: reward based on prediction error of next state.</li>
+		<li><b>Examples</b>:
+			<ul>
+				<li>
+					<b>RND (Random Network Distillation)</b> –
+					<a href="https://arxiv.org/abs/1810.12894" target="_blank">Burda et al., 2018</a>
+					&nbsp;|&nbsp;
+					<a href="https://openai.com/index/reinforcement-learning-with-prediction-based-rewards/" target="_blank">OpenAI blog post</a>
+				</li>
+				<li>
+					<b>ICM (Intrinsic Curiosity Module)</b> –
+					<a href="https://arxiv.org/abs/1705.05363" target="_blank">Pathak et al., 2017</a>
+				</li>
+			</ul>
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			L’exploration guidée par récompense intrinsèque pousse l’agent à découvrir de nouveaux états ou
+			à réduire son incertitude, ce qui favorise l’apprentissage dans des environnements à récompense
+			rare.
+
+
+			RND :
+			- explore their environments through **curiosity**
+			- exceeds average human performance on Montezuma’s Revenge
+		</div>
+		<div class="en-notes">
+			Intrinsic motivation encourages agents to seek novelty or reduce uncertainty, enabling better
+			exploration especially in sparse-reward settings.
+		</div>
+	</aside>
+</section>
+            -->
+
+<!--
+TODO
+
+# Slide 1
+
+Intrinsic Rewards as Exploration Bonuses (https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#intrinsic-rewards-as-exploration-bonuses)
+
+on remplace r_t par r_t + β * r^i_t
+
+[...]
+
+2 approches :
+- count-based exploration
+- prediction-based exploration
+
+# Slide 2
+
+Count-based Exploration (https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#count-based-exploration)
+Pb...
+
+Alternative: Counting by Density Model (Bellemare et al., 2016; Ostrovski et al., 2017; Tang et al., 2016)
+
+# Slide 3
+
+Prediction-based Exploration (https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#prediction-based-exploration)
+- Les grandes lignes...
+
+Forward Dynamics (https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#forward-dynamics)
+- Les grandes lignes... (paragraphe avant AIC Intelligent Adaptive Curiosity)
+- Limites : ... -> ce qui amenne aux random networks (https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#random-networks) + https://chatgpt.com/c/68ddabd1-09d8-8328-94a0-2e75d7fc3f0b
+
+# Slide 4
+RND
+-->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Intrinsic Reward-based Exploration -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+
+	<p style="font-size:0.7em; margin-top: 2em; text-align: left;">
+		Augment environment reward $r_t$ with an <b><em>intrinsic reward</em></b> $r^i_t$:
+		$$r_t \leftarrow r_t + \beta \cdot r^i_t$$
+		where $\beta$ balances exploitation vs exploration.
+	</p>
+	<p style="font-size:0.7em; text-align: left;">
+		👉 Encourages agent to explore novel or uncertain states.
+	</p>
+	<p style="font-size:0.7em; text-align: left; margin-bottom: 0;">
+		Two main approaches:
+	</p>
+	<ul style="font-size: 0.7em; padding-left: 0; display: block;">
+		<li>
+			<b>Count-based exploration</b>: bonus for visiting rarely seen states.
+		</li>
+		<li>
+			<b>Prediction-based exploration</b>: bonus for high prediction error (surprise).
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Intrinsic rewards is another approach to encourage exploration.
+
+Here, we augment the environment reward with an additional intrinsic reward signal to encourage exploration.
+
+This intrinsic reward can mean two things: novelty (count-based) or uncertainty/surprise (prediction-based).
+
+
+One common approach to better exploration,
+<strong>hard-exploration</strong> problem, is to augment the environment reward with an
+additional bonus signal to encourage extra exploration.
+The policy is thus trained with a reward composed of two terms,
+\(\; r_t = r_t^{e} + \beta\, r_t^{i} \;\),
+where \(\beta\) is a hyperparameter adjusting the balance between exploitation and
+exploration.
+
+<ul>
+	<li>\( r_t^{e} \) is an <em>extrinsic</em> reward from the environment at time \( t \),
+		defined according to the task at hand.</li>
+	<li>\( r_t^{i} \) is an <em>intrinsic</em> exploration bonus at time \( t \).</li>
+</ul>
+
+This intrinsic reward is somewhat inspired by <em>intrinsic motivation</em> in psychology
+(Oudeyer & Kaplan, 2008).
+Exploration driven by curiosity might be an important way for children to grow and learn.
+In other words, exploratory activities should be rewarding intrinsically in the human mind
+to encourage such behavior.
+The intrinsic rewards could be correlated with curiosity, surprise, familiarity of the
+state, and many other factors.
+
+Same ideas can be applied to RL algorithms.
+In the following sections, methods of bonus-based exploration rewards are roughly grouped
+into two categories:
+
+<ol>
+	<li>Discovery of novel states</li>
+	<li>Improvement of the agent’s knowledge about the environment.</li>
+</ol>
+
+(src: https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#intrinsic-rewards-as-exploration-bonuses )
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Intrinsic Reward-based Exploration (Count-based Exploration) -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4>Count-based Exploration</h4>
+
+	<p style="font-size: 0.7em; text-align: left;">
+		Assigns exploration bonus inversely proportional to state visit count:
+		$$r^i_t = \frac{1}{\sqrt{N(s_t)}}$$
+	</p>
+
+	<p style="font-size: 0.7em; text-align: left;">
+		<b>Advantage</b>: Effective in small, discrete state spaces.
+	</p>
+
+	<p style="font-size:0.7em; text-align: left;">
+		<b>Limitation</b>: Infeasible in high-dimensional or continuous spaces<br>(counts become sparse or meaningless).
+	</p>
+
+	<p style="font-size:0.7em; text-align: left; margin-bottom: 0;">
+		<b>Alternatives:</b> Density models approximate state visitation counts:
+	</p>
+	<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
+		<li>Bellemare et al., 2016 – CTS-based pseudocounts</li>
+		<li>Ostrovski et al., 2017 – PixelCNN-based pseudocounts</li>
+		<li>Tang et al., 2017 – Hash-based counts</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+If we consider intrinsic rewards as rewarding conditions that surprise us, we need a way to
+measure whether a state is novel or appears often.
+
+One intuitive way is to count how many times a state has been encountered and to assign a
+bonus accordingly.
+
+The bonus guides the agent’s behavior to prefer rarely visited states to common states.
+This is known as the <strong>count-based exploration</strong> method.
+
+Let \(N_{n}(s)\) be the <em>empirical count</em> function that tracks the real number of
+visits of a state \(s\) in the sequence of \(s_{1:n}\).
+Unfortunately, using \(N_{n}(s)\) for exploration directly is not practical, because most of
+the states would have \(N_{n}(s) = 0\), especially considering that the state space is often
+continuous or high-dimensional.
+We need an non-zero count for most states, even when they haven’t been seen before.
+
+TODO: alternatives...
+
+https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#count-based-exploration
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Prediction-based Exploration (Prediction-based Exploration) -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4>Prediction-based Exploration</h4>
+
+	<p style="font-size:0.65em; text-align: left;">
+		Uses prediction error as intrinsic reward:
+		$$r^i_t = \| f(s_t, a_t) - s_{t+1} \|$$
+		where $f$ is a learned forward dynamics model.
+	</p>
+
+	<p style="font-size:0.65em; text-align: left; margin-bottom: 0;">
+		<b>Properties:</b>
+	</p>
+	<ul style="font-size: 0.65em; padding-left: 0; display: block;">
+		<li>Agent is rewarded for visiting states where its model is uncertain or inaccurate (novelty/surprise).</li>
+		<li>Common in high-dimensional or continuous environments.</li>
+	</ul>
+
+	<p style="font-size:0.65em; text-align: left; margin-bottom: 0;">
+		<b>Alternatives:</b> Density models approximate state visitation counts
+	</p>
+	<ul style="font-size: 0.65em; display: block;">
+		<li>Model can be "fooled" by stochasticity or noise.</li>
+		<li>May focus on unpredictable but irrelevant states.</li>
+		<li>Motivates use of random networks (e.g., RND) for more robust novelty estimation.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+* The network tries to predict (s_{t+1}) (or a feature of (s_{t+1})) from (s_t, a_t).
+* The prediction difficulty is used as a novelty signal (error = curiosity).
+
+Learning a <strong>forward dynamics prediction model</strong> is a great way to approximate
+how much knowledge
+our model has obtained about the environment and the task MDPs. It captures an agent’s
+capability
+of predicting the consequence of its own behavior,
+\[
+f : (s_t, a_t) \mapsto s_{t+1}.
+\]
+Such a model cannot be perfect (e.g., due to partial observation), the error
+\[
+e(s_t, a_t) \;=\; \| f(s_t, a_t) - s_{t+1} \|^2_2
+\]
+can be used for providing intrinsic exploration rewards.
+
+The higher the prediction error, the less familiar we are with that state.
+
+The faster the error rate drops, the more learning progress signals we acquire.
+
+
+
+https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#forward-dynamics
+
+TODO: limites qui amènent aux random networks c.f.
+https://chatgpt.com/c/68ddabd1-09d8-8328-94a0-2e75d7fc3f0b
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Limits of Prediction-based Intrinsic Motivation -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4 style="font-size: 0.9em;">Limits of Prediction-based Intrinsic Motivation</h4>
+
+	<ul style="font-size: 0.9em; margin-top: 2em;">
+		<li>In stochastic environments, dynamics are unpredictable (e.g., random noise, moving objects).</li>
+		<li>Prediction error remains high even for familiar states.</li>
+		<li>Agent is attracted to noisy or unpredictable regions, leading to biased and inefficient exploration.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Prediction-based intrinsic rewards can fail in stochastic environments: the agent is drawn to noise, resulting in biased and inefficient exploration.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Motivation for RND -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4>Motivation for RND</h4>
+
+	<p style="font-size: 0.7em; text-align: left;">
+		A measure of novelty that is <b>more stable</b> and <b>less sensitive to randomness</b>.
+	</p>
+
+	<ul style="font-size: 0.7em;">
+		<li>
+			<b>Target network</b> = a fixed random function \( f_{\text{target}}(s) \).
+			<ul>
+				<li>Since it is frozen, it defines a <b>stable representation</b> of states.</li>
+				<li>Each state has a unique but time-invariant signature.</li>
+			</ul>
+		</li>
+		<li>
+			<b>Predictor network</b> = a network trained to approximate \( f_{\text{target}}(s) \).
+			<ul>
+				<li>The prediction error is <b>high at first</b> for all states.</li>
+				<li>As some states are revisited, the predictor learns to approximate them &rarr; error decreases.</li>
+				<li>Truly novel states remain hard &rarr; high error &rarr; strong intrinsic reward.</li>
+			</ul>
+		</li>
+	</ul>
+	<p style="font-size: 0.7em; text-align: left;">
+		👉 Unlike dynamics prediction, this error <b>does not depend on the environment’s stochasticity</b>, but only on whether the state has already been “learned” by the predictor.
+	</p>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+RND provides a more stable and robust novelty measure by using a fixed target network and a predictor that learns to imitate it.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Random Network Distillation (RND) -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4>Focus on RND</h4>
+
+	<ul style="font-size: 0.7em;">
+		<li>RND uses two neural networks:
+			<ul>
+				<li>
+					<b>Target network</b>: randomly initialized, fixed parameters.
+				</li>
+				<li>
+					<b>Predictor network</b>: trained to predict the target network's output for each state.
+				</li>
+			</ul>
+		</li>
+		<li>
+			<b>Intrinsic reward</b>: prediction error (difference between predictor and target outputs).
+		</li>
+		<ul>
+			<li>States that are <b>novel</b> (rarely visited) yield high prediction error and thus high intrinsic reward.</li>
+			<li>As the agent visits a state more often, the predictor learns to match the target, reducing the intrinsic reward.</li>
+			<li>Encourages exploration of <b>unfamiliar</b> states.</li>
+		</ul>
+	</ul>
+
+	<!-- Placeholder: insert a diagram showing the RND architecture (state input, target network, predictor network, prediction error as intrinsic reward).
+				Objective: visualize the flow from state to intrinsic reward and the learning process. -->
+	<!-- <img src="assets/rl_exploration/rnd_diagram.png" alt="RND Architecture"
+		style="width: 90%; margin-bottom: 10px;"> -->
+	<p style="font-size: 0.7em; margin-top: 1em;">
+		<a href="https://arxiv.org/abs/1810.12894" target="_blank">Burda et al. (2018). Exploration by random network distillation.</a>
+	</p>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+### 📌 Advantages of this architecture
+
+1. **Stability**: the target is frozen → no drift in the definition of novelty.
+2. **No bias toward noise**: random states do not permanently yield high error, as the predictor eventually learns their fixed projection.
+3. **Universality**: no knowledge of the environment’s dynamics is needed.
+4. **Simplicity**: just two MLPs/CNNs, no need for complex transition models.
+
+---
+
+### 🎯 In summary
+
+* **We do not use next-state prediction** because it confuses novelty with unpredictability.
+* The **frozen target network** acts as a “pseudo-random representation generator” to give states a stable signature.
+* The **predictor network** measures how familiar a state is → and thus how much intrinsic reward it deserves.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Video -->
+<section>
+	<video src="assets/rl_exploration/demo_rnd.mp4" controls style="width: 100%; display: block; margin: 0 auto 1em auto;"></video>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+			<p>
+				...
+			</p>
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Key Publications on Intrinsic Motivation -->
+<section>
+	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
+	<h4>Others Key Publications</h4>
+
+	<table style="font-size: 0.45em; width: 100%;">
+		<thead>
+			<tr>
+				<th style="text-align: left;">Algorithm</th>
+				<th style="text-align: left;">Reference</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>VIME</td>
+				<td>
+					<a href="https://arxiv.org/abs/1605.09674" target="_blank">
+						Houthooft et al., 2016. Variational Information Maximizing Exploration.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>CTS-based Pseudocounts</td>
+				<td>
+					<a href="https://arxiv.org/abs/1606.01868" target="_blank">
+						Bellemare et al., 2016. Unifying Count-Based Exploration and Intrinsic Motivation.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>PixelCNN-based Pseudocounts</td>
+				<td>
+					<a href="https://arxiv.org/abs/1703.01310" target="_blank">
+						Ostrovski et al., 2017. Count-Based Exploration with Neural Density Models.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>Hash-based Counts</td>
+				<td>
+					<a href="https://arxiv.org/abs/1611.04717" target="_blank">
+						Tang et al., 2016. #Exploration: A Study of Count-Based Exploration for Deep Reinforcement Learning.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>EX2</td>
+				<td>
+					<a href="https://arxiv.org/abs/1703.01260" target="_blank">
+						Fu et al., 2017. EX2: Exploration with Exemplar Models for Deep Reinforcement Learning.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>Intrinsic Curiosity Module (ICM)</td>
+				<td>
+					<a href="https://arxiv.org/abs/1705.05363" target="_blank">
+						Pathak et al., 2017. Curiosity-driven Exploration by Self-supervised Prediction.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>Curiosity-driven Learning (systematic analysis)</td>
+				<td>
+					<a href="https://arxiv.org/abs/1808.04355" target="_blank">
+						Burda et al., 2018. Large-Scale Study of Curiosity-Driven Learning.
+					</a>
+				</td>
+			</tr>
+			<tr>
+				<td>RND</td>
+				<td>
+					<a href="https://arxiv.org/abs/1810.12894" target="_blank">
+						Burda et al., 2018. Exploration by Random Network Distillation.
+					</a>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Key references for intrinsic motivation and curiosity-driven exploration. Useful for further
+reading or methodological justification.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Limits of Intrinsic Reward and Memory-based Exploration -->
+<!-- <section>
+	<h3>Limits of Intrinsic Reward</h3>
+	<h4>Motivation for Memory-based Exploration</h4>
+	<ul style="font-size: 0.7em;">
+		<li><b>Intrinsic reward methods</b> (e.g., novelty, prediction error) encourage exploration by
+			rewarding new or surprising states.</li>
+		<li><b>Key limitations:</b>
+			<ul>
+				<li><b>Slow function approximation:</b> Neural networks may lag in updating, so states can
+					appear "novel" longer than they are.</li>
+				<li><b>Non-stationary bonus:</b> What is surprising changes as the agent learns, making the
+					intrinsic reward unstable.</li>
+				<li><b>Knowledge fading:</b> Once a state is no longer novel, the agent may forget its
+					importance, even if it is crucial for solving the task.</li>
+			</ul>
+		</li>
+		<li><b>Alternative:</b> <b>Memory-based exploration</b> augments the agent with an explicit memory
+			module to track visited states and contexts.</li>
+		<li>This enables more reliable novelty detection, stabilizes exploration signals, and helps retain
+			knowledge of key states.</li>
+		<li><b>Example:</b> <i>Never Give Up (NGU)</i> combines short-term episodic memory with long-term
+			novelty signals (e.g., RND) to avoid forgetting useful states.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Les méthodes à récompense intrinsèque présentent trois limites majeures : lenteur de
+			l’approximation par réseau de neurones (décalage entre la réalité et le signal), instabilité du
+			bonus (non-stationnarité), et oubli de certains états importants (knowledge fading). Les
+			approches à mémoire externe (memory-based exploration) permettent de stabiliser le signal
+			d’exploration et de conserver la trace des états clés, comme dans Never Give Up (NGU).
+		</div>
+		<div class="en-notes">
+			Intrinsic reward approaches have key drawbacks: slow adaptation of neural approximators,
+			non-stationary exploration bonuses, and forgetting of important states. Memory-based exploration
+			methods address these by explicitly tracking visited states, providing more stable and
+			persistent exploration signals (e.g., NGU).
+
+			Les bonus d’exploration basés uniquement sur des récompenses intrinsèques ont des limites
+			(instabilité, oubli, lenteur).
+			Pour les corriger, certaines méthodes donnent à l’agent une **mémoire externe** qui lui permet
+			de juger la nouveauté et l’importance des états de manière plus stable et durable.
+
+			### Contexte
+
+			Dans le RL, beaucoup de méthodes d’exploration donnent à l’agent un **bonus de récompense
+			intrinsèque** (par ex. basé sur la nouveauté ou l’erreur de prédiction).
+			L’idée est : « si tu vois quelque chose de nouveau ou difficile à prédire, tu reçois un bonus,
+			donc tu es encouragé à explorer davantage. »
+
+			Mais ces **reward bonuses** posent plusieurs problèmes :
+
+			### Les trois inconvénients cités
+
+			1. **Function approximation is slow to catch up**
+
+			* Dans le DRL, la fonction de valeur ou de bonus est approximée par un réseau de neurones.
+			* Ce réseau met du temps à s’ajuster → un état peut rester considéré comme « nouveau » ou «
+			surprenant » pendant plusieurs pas, même après avoir déjà été vu plusieurs fois.
+			* Cela crée un décalage entre la réalité et le signal de bonus.
+
+			2. **Exploration bonus is non-stationary**
+
+			* Comme l’agent apprend en permanence, ce qui est « surprenant » change sans cesse.
+			* La fonction de récompense intrinsèque n’est donc pas stable : aujourd’hui un état donne un
+			gros bonus, demain presque plus rien.
+			* Cette instabilité complique l’apprentissage, car la politique poursuit un signal mouvant.
+
+			3. **Knowledge fading**
+
+			* Au fur et à mesure que l’agent apprend, un état cesse de paraître « nouveau » et n’apporte
+			plus de récompense intrinsèque.
+			* Conséquence : l’agent peut oublier l’intérêt de certains états cruciaux pour résoudre la tâche
+			(par exemple une clé ou un couloir important dans un jeu comme Montezuma’s Revenge), car ils ne
+			donnent plus de bonus même s’ils sont essentiels.
+
+			### Alternative
+
+			Les méthodes de **memory-based exploration** ajoutent un **module de mémoire externe** (parfois
+			inspiré de la mémoire épisodique biologique).
+
+			* Au lieu de se fier uniquement à un bonus instantané et évanescent, l’agent garde une trace
+			explicite de **ce qu’il a vu** et **dans quel contexte**.
+			* Cette mémoire permet :
+
+			* de comparer un nouvel état à ceux déjà rencontrés (détection plus fiable de nouveauté),
+			* de stabiliser le signal d’exploration (moins dépendant des fluctuations de l’approximation),
+			* de rappeler à l’agent des états clés même s’ils ne sont plus « intrinsèquement nouveaux ».
+
+			Exemple : dans **Never Give Up (NGU)**, l’agent combine une mémoire à court terme (dans
+			l’épisode) et un signal de nouveauté à long terme (RND), ce qui lui évite d’oublier des états
+			utiles.
+
+			chatgpt.com/c/68dd976b-1440-8332-a0e8-7494f01f1fdb
+		</div>
+	</aside>
+</section> -->
+
+<!-- Slide: Structured Exploration via State Archive (Go-Explore) -->
+<!-- <section>
+	<h3>Memory-based Exploration</h3>
+	<h4>Archive-based / Return-based Exploration</h4>
+	<ul style="font-size: 0.8em;">
+		<li>
+			<b>Go-Explore</b> (Ecoffet et al., 2019): systematic exploration by explicitly archiving and
+			revisiting states.
+			<a href="https://arxiv.org/abs/1901.10995" target="_blank">[arXiv]</a>
+			&nbsp;|&nbsp;
+			<a href="https://www.uber.com/en-FR/blog/go-explore/" target="_blank">[Uber AI blog]</a>
+		</li>
+		<li>Two phases:
+			<ul>
+				<li><b>Exploration:</b> Build an archive of visited states ("cells"), return to promising
+					states, and explore from there.</li>
+				<li><b>Robustification:</b> Learn robust policies to reliably reach and exploit discovered
+					trajectories.</li>
+			</ul>
+		</li>
+		<li>Highly effective in environments with <b>sparse rewards</b> (e.g., Montezuma's Revenge).</li>
+		<li>Distinct from intrinsic reward or parameter noise approaches: relies on <b>explicit state memory
+				and systematic return</b>.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Go-Explore inaugure une nouvelle catégorie d’exploration structurée : l’agent archive
+			explicitement les états visités, retourne à des états prometteurs, puis explore systématiquement
+			à partir de là. Cette approche contourne les limites des méthodes basées sur la curiosité ou le
+			bruit, et a permis des percées sur des environnements à récompense très rare comme Montezuma’s
+			Revenge.
+		</div>
+		<div class="en-notes">
+			Go-Explore represents a new family of structured exploration: the agent explicitly archives
+			visited states, returns to promising ones, and systematically explores from there. This approach
+			overcomes the limitations of curiosity- or noise-based methods and has achieved breakthroughs in
+			hard-exploration environments such as Montezuma’s Revenge.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Video -->
+<!-- <section>
+	<video src="assets/rl_exploration/demo_goexplore_nosound.mp4" controls style="width: 100%; display: block; margin: 0 auto 1em auto;"></video>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+			<p>
+				...
+			</p>
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!--
+<section data-background-video="assets/rl_exploration/montezuma_revenge_go-explore.mp4"
+	data-background-video-loop data-background-video-muted>
+	<h2>Video</h2>
+</section>
+-->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- TODO: Une slide sur les application concrètes aurait été bien... -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Further Reading on Exploration -->
+<section>
+	<h3>Further Reading</h3>
+
+	<p style="font-size: 0.7em; margin-top: 2em; text-align: left;">
+		<a href="https://lilianweng.github.io/posts/2020-06-07-exploration-drl/" target="_blank">
+			Exploration Strategies in Deep Reinforcement Learning
+		</a>, Lilian Weng, 2020.
+	</p>
+	<p style="font-size: 0.7em; text-align: left;">
+		👉 A comprehensive blog post covering a wide range of exploration techniques, theoretical motivations,	and practical considerations in deep RL.
+	</p>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+For a deeper dive into exploration strategies, this blog post provides a clear and illustrated
+overview of both classic and advanced methods.
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Limits of Intrinsic Reward and Memory-based Exploration -->
+			<section>
+				<h3>Limits of Intrinsic Reward</h3>
+				<h4>Motivation for Memory-based Exploration</h4>
+						<ul style="font-size: 0.7em;">
+							<li><b>Intrinsic reward methods</b> (e.g., novelty, prediction error) encourage exploration by rewarding new or surprising states.</li>
+							<li><b>Key limitations:</b>
+								<ul>
+									<li><b>Slow function approximation:</b> Neural networks may lag in updating, so states can appear "novel" longer than they are.</li>
+									<li><b>Non-stationary bonus:</b> What is surprising changes as the agent learns, making the intrinsic reward unstable.</li>
+									<li><b>Knowledge fading:</b> Once a state is no longer novel, the agent may forget its importance, even if it is crucial for solving the task.</li>
+								</ul>
+							</li>
+							<li><b>Alternative:</b> <b>Memory-based exploration</b> augments the agent with an explicit memory module to track visited states and contexts.</li>
+							<li>This enables more reliable novelty detection, stabilizes exploration signals, and helps retain knowledge of key states.</li>
+							<li><b>Example:</b> <i>Never Give Up (NGU)</i> combines short-term episodic memory with long-term novelty signals (e.g., RND) to avoid forgetting useful states.</li>
+						</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Les méthodes à récompense intrinsèque présentent trois limites majeures : lenteur de l’approximation par réseau de neurones (décalage entre la réalité et le signal), instabilité du bonus (non-stationnarité), et oubli de certains états importants (knowledge fading). Les approches à mémoire externe (memory-based exploration) permettent de stabiliser le signal d’exploration et de conserver la trace des états clés, comme dans Never Give Up (NGU).
+					</div>
+					<div class="en-notes">
+						Intrinsic reward approaches have key drawbacks: slow adaptation of neural approximators, non-stationary exploration bonuses, and forgetting of important states. Memory-based exploration methods address these by explicitly tracking visited states, providing more stable and persistent exploration signals (e.g., NGU).
+
+Les bonus d’exploration basés uniquement sur des récompenses intrinsèques ont des limites (instabilité, oubli, lenteur).
+Pour les corriger, certaines méthodes donnent à l’agent une **mémoire externe** qui lui permet de juger la nouveauté et l’importance des états de manière plus stable et durable.
+
+### Contexte
+
+Dans le RL, beaucoup de méthodes d’exploration donnent à l’agent un **bonus de récompense intrinsèque** (par ex. basé sur la nouveauté ou l’erreur de prédiction).
+L’idée est : « si tu vois quelque chose de nouveau ou difficile à prédire, tu reçois un bonus, donc tu es encouragé à explorer davantage. »
+
+Mais ces **reward bonuses** posent plusieurs problèmes :
+
+### Les trois inconvénients cités
+
+1. **Function approximation is slow to catch up**
+
+   * Dans le DRL, la fonction de valeur ou de bonus est approximée par un réseau de neurones.
+   * Ce réseau met du temps à s’ajuster → un état peut rester considéré comme « nouveau » ou « surprenant » pendant plusieurs pas, même après avoir déjà été vu plusieurs fois.
+   * Cela crée un décalage entre la réalité et le signal de bonus.
+
+2. **Exploration bonus is non-stationary**
+
+   * Comme l’agent apprend en permanence, ce qui est « surprenant » change sans cesse.
+   * La fonction de récompense intrinsèque n’est donc pas stable : aujourd’hui un état donne un gros bonus, demain presque plus rien.
+   * Cette instabilité complique l’apprentissage, car la politique poursuit un signal mouvant.
+
+3. **Knowledge fading**
+
+   * Au fur et à mesure que l’agent apprend, un état cesse de paraître « nouveau » et n’apporte plus de récompense intrinsèque.
+   * Conséquence : l’agent peut oublier l’intérêt de certains états cruciaux pour résoudre la tâche (par exemple une clé ou un couloir important dans un jeu comme Montezuma’s Revenge), car ils ne donnent plus de bonus même s’ils sont essentiels.
+
+### Alternative
+
+Les méthodes de **memory-based exploration** ajoutent un **module de mémoire externe** (parfois inspiré de la mémoire épisodique biologique).
+
+* Au lieu de se fier uniquement à un bonus instantané et évanescent, l’agent garde une trace explicite de **ce qu’il a vu** et **dans quel contexte**.
+* Cette mémoire permet :
+
+  * de comparer un nouvel état à ceux déjà rencontrés (détection plus fiable de nouveauté),
+  * de stabiliser le signal d’exploration (moins dépendant des fluctuations de l’approximation),
+  * de rappeler à l’agent des états clés même s’ils ne sont plus « intrinsèquement nouveaux ».
+
+Exemple : dans **Never Give Up (NGU)**, l’agent combine une mémoire à court terme (dans l’épisode) et un signal de nouveauté à long terme (RND), ce qui lui évite d’oublier des états utiles.
+
+chatgpt.com/c/68dd976b-1440-8332-a0e8-7494f01f1fdb
+					</div>
+				</aside>
+			</section>
+
+			<!-- Slide: Structured Exploration via State Archive (Go-Explore) -->
+			<section>
+			<h3>Memory-based Exploration</h3>
+			<h4>Archive-based / Return-based Exploration</h4>
+			<ul style="font-size: 0.8em;">
+				<li>
+					<b>Go-Explore</b> (Ecoffet et al., 2019): systematic exploration by explicitly archiving and revisiting states.
+					<a href="https://arxiv.org/abs/1901.10995" target="_blank">[arXiv]</a>
+					&nbsp;|&nbsp;
+					<a href="https://www.uber.com/en-FR/blog/go-explore/" target="_blank">[Uber AI blog]</a>
+				</li>
+				<li>Two phases:
+				<ul>
+					<li><b>Exploration:</b> Build an archive of visited states ("cells"), return to promising states, and explore from there.</li>
+					<li><b>Robustification:</b> Learn robust policies to reliably reach and exploit discovered trajectories.</li>
+				</ul>
+				</li>
+				<li>Highly effective in environments with <b>sparse rewards</b> (e.g., Montezuma's Revenge).</li>
+				<li>Distinct from intrinsic reward or parameter noise approaches: relies on <b>explicit state memory and systematic return</b>.</li>
+			</ul>
+			<!-- Placeholder: insert a diagram showing the Go-Explore process (archive, return, explore, robustify).
+				Objective: illustrate the two-phase approach and the concept of returning to archived states for systematic exploration. -->
+			<aside class="notes">
+				<div class="fr-notes">					
+				Go-Explore inaugure une nouvelle catégorie d’exploration structurée : l’agent archive explicitement les états visités, retourne à des états prometteurs, puis explore systématiquement à partir de là. Cette approche contourne les limites des méthodes basées sur la curiosité ou le bruit, et a permis des percées sur des environnements à récompense très rare comme Montezuma’s Revenge.
+				</div>
+				<div class="en-notes">
+				Go-Explore represents a new family of structured exploration: the agent explicitly archives visited states, returns to promising ones, and systematically explores from there. This approach overcomes the limitations of curiosity- or noise-based methods and has achieved breakthroughs in hard-exploration environments such as Montezuma’s Revenge.
+				</div>
+			</aside>
+			</section>
+
+			<section data-background-video="assets/csc-53439-ep_lecture-2_2025/montezuma_revenge_go-explore.mp4"
+					data-background-video-loop data-background-video-muted>
+			<h2>Video</h2>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- TODO: Une slide sur les application concrètres aurait été bien... -->
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- endregion -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- PART 2: Distributional RL -------------------------------------------------------------------------------------------------- -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- #region -->
+
+			<section id="part2-distributional-rl">
+				<h3>Part 2</h3>
+				<h4>Distributional RL</h4>
+
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+					</div>
+				</aside>
+			</section>
+
+<!-- @preview /rl_distributional.html -->
+<!-- #region -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Motivation for Distributional RL -->
+<!-- <section>
+	<h3>Motivation</h3>
+	<h4>Beyond the Mean Value</h4>
+	<ul>
+		<li>Classic RL: estimates expected return (mean).</li>
+		<li>Distributional RL: models the full distribution of returns.</li>
+		<li>Captures risk, uncertainty, and variability in outcomes.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			La modélisation de la distribution complète des retours permet de mieux gérer le risque et
+			l’incertitude, et ouvre la voie à des politiques plus robustes ou adaptées à différents profils
+			d’utilisateurs.
+		</div>
+		<div class="en-notes">
+			Modeling the full return distribution enables reasoning about risk and uncertainty, not just
+			average performance.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Introduction & Motivation -->
+<section>
+	<h3>Categorical DQN (C51)</h3>
+	<h4>Introduction &amp; Motivation</h4>
+
+	<p style="font-size:0.6em; margin-top: 3em; text-align: left; margin-bottom: 0;"><b>Classic DQN</b>:</p>
+	<ul style="font-size:0.6em; margin-top: 0em; text-align: left; padding-left: 1em; display: block;">
+		<li>Learns only the expectation $Q(s,a)=\mathbb{E}[R \mid s,a]$</li>
+		<li>Bellman: \(Q(s,a) = R(s,a) + \gamma Q(s', a')\).</li>
+		<li>Lost information: variance, skewness, tail (risk) structure.</li>
+	</ul>
+	<p style="font-size:0.6em; margin-top: 1em; text-align: left; margin-bottom: 0em;"><b>Distributional RL</b>:</p>
+	<ul style="font-size:0.6em; margin-top: 0em; text-align: left; padding-left: 1em; display: block;">
+		<li>Model full return random variable \(Z(s,a)\) (not just its mean).</li>
+		<li>Distributional Bellman: \(\mathcal{T} Z(s,a) \stackrel{D}{=} R(s,a) + \gamma Z(s', a')\).</li>
+		<li>Benefits: richer training signal, more stable gradients, enables risk-sensitive objectives.</li>
+	</ul>
+	<p style="font-size:0.6em; margin-top: 1.5em;">
+		<b>Key idea</b>: preserve probabilistic structure throughout the backup,<br>then take \(\mathbb{E}[Z]\)
+		only for action selection.
+	</p>
+	<!-- Placeholder: diagram showing mean vs full return distribution (bell curve vs single point). Objective: illustrate loss of information when collapsing to expectation. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+In this section, I’ll introduce the motivation behind distributional reinforcement learning, and
+specifically the C51 algorithm.
+
+Let’s start by recalling that classic algorithms like DQN aim to approximate the value of an
+action in a given state, that is, the expected future return.
+However, this approach collapses all uncertainty, variance, and risk structure into a single
+number.
+We lose all information about the spread of possible returns, the probability of very good or
+very bad outcomes, and the overall shape of the distribution—such as whether it’s skewed or has
+heavy tails.
+
+This is where distributional RL comes in.
+Instead of modeling only the expectation, we aim to approximate the full distribution of
+possible returns, denoted Z(s,a).
+This allows us to capture not just the mean, but also the variance, the tails, and thus to have
+a much richer picture of what the agent might experience.
+
+Mathematically, the Bellman operator becomes distributional: we no longer propagate a scalar
+value, but a probability law, which is shifted and contracted at each step.
+The C51 algorithm represents this distribution by discretizing it onto 51 fixed points, called
+“atoms,” and projects the updated distribution onto this support at every iteration.
+
+What are the benefits? First, the learning signal is much richer: instead of a single number, we
+supervise the agent with an entire distribution, which improves stability and convergence speed.
+Second, this opens the door to risk-sensitive policies: we can choose to optimize not just the
+mean, but also Value-at-Risk or other utility criteria.
+
+Finally, it’s important to note that even though action selection is still done via the
+expectation of the distribution, the entire learning phase benefits from this probabilistic
+structure,
+which explains the empirical gains observed.
+
+In summary, moving from expectation to the full distribution allows us to capture the richness
+of uncertainty, improve learning, and lay the groundwork for more robust and adaptive agents.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Rappel DQN -->
+<section>
+	<h3>DQN Recap</h3>
+	<img src="assets/rl_distributional/dqn.jpg" alt="DQN Architecture" style="width: 50%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 2em;">
+		Source: Mnih et al. Human-level control through deep reinforcement learning. Nature 518, 529–533 (2015).
+	</figcaption>
+	<ul style="font-size:0.6em;">
+		<li><b>Goal</b>: approximate \( Q(s,a) = \mathbb{E}\left[\sum_{t} \gamma^t r_t \mid s,a\right] \)</li>
+		<li><b>Network</b>: input is state, output is vector \( Q(s,a) \) for all actions</li>
+		<li><b>Bellman backup (target)</b>: \( y = r + \gamma \max_{a'} Q(s',a') \)</li>
+		<li><b>Loss</b>: mean squared error \( (y - Q(s,a))^2 \)</li>
+		<li><b>Limitation</b>: collapses all uncertainty into a single scalar value</li><!-- TODO -->
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Classic DQN uses scalar regression toward bootstrapped expectation; no distributional structure
+preserved.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Distributional RL -->
+<section>
+	<h3>Distributional RL</h3>
+
+	<img src="assets/rl_distributional/dqn_vs_c51.png" alt="DQN vs C51" style="width: 60%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1806.06923" target="_blank">Implicit Quantile Networks for
+			Distributional Reinforcement Learning</a>, Dabney et al., 2018.
+	</figcaption>
+	<ul style="font-size:0.6em;">
+		<li><b>Random return</b>: \( Z(s,a) \) is a random variable over \( \mathbb{R} \)</li>
+		<li><b>Distributional Bellman</b>: \( \mathcal{T} Z(s,a) \stackrel{D}{=} r + \gamma Z(S', A') \), i.e., the law is transformed</li>
+		<li><b>Goal</b>: approximate the law of \( Z(s,a) \) (not just \( \mathbb{E}[Z] \))</li>
+		<li><b>Expectation recoverable</b>: \( Q(s,a) = \mathbb{E}[Z(s,a)] \)</li>
+		<!-- <li>Stronger contraction in the \( p \)-Wasserstein metric (on bounded support)</li> -->
+		<li>
+			<b>C51</b>: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on
+				Reinforcement Learning</a>, Bellemare et al., 2017.
+		</li>
+	</ul>
+	<!-- Placeholder: figure comparing scalar target vs full histogram shift after Bellman update. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Emphasize distributional Bellman operator and theoretical contraction in Wasserstein metric.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 -->
+<section>
+	<h3>Categorical Approximation (C51)</h3>
+
+	<img src="assets/rl_distributional/distrib.png" alt="C51 Distribution Support" style="width: 50%;">
+	<ul style="font-size:0.7em;">
+		<li>Fixed discrete support: \( \{z_i\}_{i=0}^{N-1} \), with \( N = 51 \)</li>
+		<li>Bounded interval: \( [V_{\min}, V_{\max}] \)</li>
+		<li>\( \Delta z = \frac{V_{\max} - V_{\min}}{N-1} \)</li>
+		<li>Network predicts logits \( \to \) softmax \( \to \) \( p_i(s,a) \)</li>
+		<li>Approximate distribution: \( \mathbb{P}(Z(s,a) = z_i) = p_i \)</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Choix fixe du support simplifie projection mais introduit rigidité si queue hors bornes.
+		</div>
+		<div class="en-notes">
+			Fixed categorical support enables simple cross-entropy optimization; clipping handles
+			out-of-range targets.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 (example of learned distribution) -->
+<section>
+	<h3>Distributional RL</h3>
+	<h4>Example of learned distribution</h4>
+
+	<img src="assets/rl_distributional/c51_space_inveder.png" alt="C51 Distribution"
+		style="width: 100%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here is an example of the learned return distribution for different actions for a given
+state of the SPACE INVADERS Atari game.
+
+Learned value distribution during an episode of SPACE INVADERS.
+Different actions are shaded different colours.
+Returns below 0 (which do not occur in SPACE INVADERS) are not shown here as the agent
+assigns virtually no probability to them.
+
+This example illustrates the typical value distributions that can be observed.
+In this example, three actions (those including the button press) lead to the agent releasing its laser too early and eventually losing the game.
+The corresponding distributions reflect this: they assign a significant probability to 0 (the terminal value).
+The safe actions have similar distributions (LEFT, which tracks the invaders’ movement, is slightly favoured).
+This example helps explain why distributional RL approach is so successful:
+the distributional update keeps separated the low-value,
+“losing” event from the high-value,
+“survival” event,
+rather than average them into one (unrealizable) expectation.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 (example of learned distribution - video Space Invaders) -->
+<section>
+	<h3>Distributional RL</h3>
+	<h4>Example of learned distribution</h4>
+	<br>
+	<video src="assets/rl_distributional/c51.mp4" controls style="width: 80%; display: block; margin: 0 auto 1em auto;"></video>
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 (example of learned distribution - video Pong) -->
+<section>
+	<h3>Distributional RL</h3>
+	<h4>Example of learned distribution</h4>
+	<br>
+	<video src="assets/rl_distributional/c51_pong.mp4" controls style="width: 80%; display: block; margin: 0 auto 1em auto;"></video>
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Projection & Bellman Update -->
+<!-- <section>
+	<h3>C51</h3>
+	<h4>Bellman Update &amp; Projection</h4>
+	<img src="assets/rl_distributional/c51_distribution_support_simple.png" alt="C51 Distribution Support" style="width: 40%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section> -->
+
+<!-- <section>
+	<h3>C51</h3>
+	<h4>Bellman Update &amp; Projection</h4>
+	<img src="assets/rl_distributional/c51_distribution_support.png" alt="C51 Distribution Support" style="width: 60%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<ul style="font-size:0.6em;">
+		<li>Backup distribution: \( r + \gamma z_i \) (or \( r \) if terminal)</li>
+		<li>Clip to interval \([V_{\min}, V_{\max}]\)</li>
+		<li>Redistribute probability mass by linear interpolation to neighboring atoms</li>
+		<li>Projection operator \(\Phi\): maps shifted/scaled distribution onto fixed support</li>
+		<li>Approximately preserves expectation, stabilizes learning</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			### Que représente (P^\pi) ici ?
+
+			* (P^\pi) est **l’opérateur de transition sous la politique (\pi)**.
+
+			* Formellement :
+			[
+			(P^\pi Z)(s,a) ;\overset{d}{=}; Z\big(s',a'\big) \quad \text{avec } s' \sim P(\cdot|s,a),; a' \sim \pi(\cdot|s').
+			]
+			Autrement dit, on prend la distribution (Z) mais **vue depuis l’état suivant (s')**, en suivant la politique (\pi).
+
+			* Intuition : (P^\pi Z) est la **distribution des retours futurs** si on part du prochain état (s'), puis on continue à suivre (\pi).
+
+			---
+
+			### Explication de la figure :
+
+			1. **(a) (P^\pi Z)** (en bleu)
+
+			* On prend la distribution (Z) associée aux retours futurs, mais décalée pour refléter le fait qu’on regarde maintenant les retours **à partir du prochain état**.
+			* C’est la "matière première" du Bellman opérateur distributionnel.
+
+			2. **(b) (\gamma P^\pi Z)** (en violet)
+
+			* On applique le **facteur d’actualisation (\gamma)** : la distribution est **contractée vers 0** (les valeurs sont "compressées").
+
+			3. **(c) (R + \gamma P^\pi Z)** (en vert)
+
+			* On ajoute la récompense immédiate (R).
+			* Cela a pour effet de **translater** la distribution (on la déplace sur l’axe des x).
+
+			4. **(d) (\Phi \mathcal{T}^\pi Z)** (en orange)
+
+			* Enfin, comme C51 approxime la distribution par une **distribution discrète sur un support fixe** (les "51 atomes"), il faut une étape de **projection (\Phi)**.
+			* Cela "replaque" la distribution résultante sur le support fixe choisi (par exemple entre ([V_\text{min}, V_\text{max}])).
+
+			---
+
+			✅ Donc, **(P^\pi) correspond à l’opérateur de transition sous la politique (\pi)** : il prend la distribution de retours futurs et la "fait passer au pas de temps suivant", en tirant le prochain état (s') selon la dynamique (P(\cdot|s,a)) et la prochaine action (a') selon la politique (\pi(\cdot|s')).
+		</div>
+		<div class="en-notes">
+			Explain linear redistribution of probability mass to adjacent atoms after shift/scale.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Fonction de perte -->
+<!-- <section>
+	<h3>C51</h3>
+	<h4>Loss Function</h4>
+	<ul style="font-size:0.8em;">
+		<li><b>Target:</b> \( m' = \Phi \left( r + \gamma Z_{\theta^-}(s', a^*) \right) \)</li>
+		<li><b>Loss:</b> \( \mathrm{CE}(m', p_\theta) = - \sum_{i} m'_i \log p_\theta(z_i \mid s, a) \)</li>
+		<li><b>Comparison:</b> DQN uses MSE on a scalar value</li>
+		<li><b>Advantage:</b> Multi-bin signal &rarr; more informative gradients</li>
+		<li><b>Empirical result:</b> Improved stability on Atari benchmarks</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Cross-entropy agit comme maximum likelihood sur distribution projetée; meilleure propagation
+			d'information que MSE scalaire.
+		</div>
+		<div class="en-notes">
+			Cross-entropy between projected target distribution and predicted categorical distribution;
+			richer supervision.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 (architecture) -->
+<section>
+	<h3>C51 Architecture</h3>
+	<!-- <h4>Architecture</h4> -->
+
+	<div class="r-stack">
+		<div class="fragment current-visible" data-fragment-index="1">
+			<img src="assets/rl_distributional/dqn_architecture.png" alt="DQN Architecture" style="width: 75%;">
+			<figcaption style="font-size: 0.5em; text-align: center; margin-bottom: 0.5em; font-weight: bold;">
+				DQN
+			</figcaption>
+			<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 2em;">
+				Source: Bellemare, M. G., Dabney, W., &amp; Rowland, M. (2023). <i>Distributional Reinforcement Learning</i>. MIT Press.
+			</figcaption>
+		</div>
+		<div class="fragment" data-fragment-index="2">
+			<img src="assets/rl_distributional/c51_architecture.png" alt="C51 Architecture" style="width: 75%;">
+			<figcaption style="font-size: 0.5em; text-align: center; margin-bottom: 0.5em; font-weight: bold;">
+				C51 / QR-DQN
+			</figcaption>
+			<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 2em;">
+				Source: Bellemare, M. G., Dabney, W., &amp; Rowland, M. (2023). <i>Distributional Reinforcement Learning</i>. MIT Press.
+			</figcaption>
+		</div>
+	</div>
+	<ul style="font-size:0.6em;">
+		<li>Backbone identical to DQN: convolutional layers followed by fully connected layers.</li>
+		<li>Output: $(\#\text{actions} \times N)$ logits, reshaped to $(\#\text{actions}, N)$.</li>
+		<li>Softmax over atoms for each action: $p_i(s,a)$.</li>
+		<li>Action selection: $a^* = \arg\max_a \sum_i p_i(s,a) z_i$.</li>
+		<li>Target: uses frozen (target) network and projection onto fixed support.</li>
+	</ul>
+	<!-- Placeholder: diagram: shared feature extractor → branch per action → 51-way softmax. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Implementation detail: flatten logits, apply grouped softmax; expectation used for policy.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: But wait... -->
+<section>
+	<h3>But wait...</h3>
+
+	<p>
+		Why model the full value distribution if action selection is based only on the expected value?
+	</p>
+	<img src="assets/rl_distributional/c51_space_inveder.png" alt="C51 Distribution" style="width: 100%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<b>Key idea of the figure</b>
+In <i>Space Invaders</i>, some actions ("Laser", etc.) often lead to immediate death &rarr; return ≈ <b>0</b>. Others ("Left/Right/Noop") are "safe" &rarr; higher return (6–9).
+<b>The return distribution is thus bimodal</b>: a mass near 0 ("lose") + a higher mass ("survive").
+
+If we only learn a scalar (<code>Q(s,a)=\mathbb{E}[Z(s,a)]</code>), we <b>collapse these two events into a mean</b> (e.g., 5.3).
+This mean can be "unrealizable" (we never actually observe 5.3: we either die or survive). As a result, each transition pulls the network in opposite directions (one update toward 0, one toward 8), leading to <b>very "blurry" targets</b> and <b>contradictory gradients</b>.
+
+In contrast, C51 learns the <b>entire distribution</b> (<code>Z(s,a)</code>) (a histogram over "atoms" <code>z_i</code>). The update distributes mass where it should go (closer to 0 after a death, higher after survival) <b>without mixing</b> these modes. This is what the text calls "keeping the 'lose' event separate from the 'survive' event".
+
+<b>So, why model the distribution if the policy still uses argmax of the expectation?</b>
+
+Even if we select actions using <code>\mathbb{E}[Z]</code> at evaluation, <b>learning the distribution improves optimization</b>:
+1. More informative targets and more stable gradients.
+   We align a probability vector (cross-entropy / categorical projection) rather than a single number (TD-error). Each transition updates <b>all</b> atoms &rarr; richer learning signal, lower variance, less oscillation due to mode mixing.
+2. Better generalization under multimodality and heteroscedasticity.
+   Two state/action pairs may have the same mean but <b>very different risk</b>. The distributional model does not merge these cases, so it generalizes better and propagates information more faithfully via bootstrapping.
+3. Favorable theory.
+   The <i>distributional</i> Bellman operator (<code>T^\pi</code>) is a contraction (in Wasserstein distance): we learn a mathematically well-posed object. (C51 adds a discrete projection that works very well in practice.)
+4. "Free" bonus: risk & exploration.
+   Even if C51 uses the expectation for acting, having <code>Z(s,a)</code> allows, if desired, <b>risk-sensitive</b> (quantiles, expectiles) or <b>exploratory</b> (optimism via variance) policies without retraining another network.
+
+<b>In one sentence</b>
+The policy may remain based on the expectation, but <b>learning the distribution avoids the "blurriness" of the mean</b>, provides <b>better-conditioned gradients</b>, and <b>accelerates/stabilizes</b> learning—which explains the empirical gains of C51.
+
+(texte original du papier Bellemare et al. 2017)
+This previously seen example illustrates the typical value distributions that can be observed.
+In this example, three actions (those including the button press) lead to the agent releasing its laser too early and eventually losing the game.
+The corresponding distributions reflect this: they assign a significant probability to 0 (the terminal value).
+The safe actions have similar distributions (LEFT, which tracks the invaders’ movement, is slightly favoured).
+This example helps explain why distributional RL approach is so successful:
+the distributional update keeps separated the low-value,
+“losing” event from the high-value,
+“survival” event,
+rather than average them into one (unrealizable) expectation.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: DQN Algorithm -->
+<section>
+	<h3>DQN Algorithm</h3>
+	<!-- <h4>DQN (recall)</h4> -->
+
+	<div style="font-size: 0.3em; text-align: left; margin-left: 10em;">
+		<b>Input</b>:<br>
+			$\quad\quad$ none<br>
+		<b>Algorithm parameter</b>:<br>
+			$\quad\quad$ discount factor $\gamma$<br>
+			$\quad\quad$ step size $\alpha \in (0,1]$<br>
+			$\quad\quad$ small $\epsilon > 0$<br>
+			$\quad\quad$ capacity of the experience replay memory $M$<br>
+			$\quad\quad$ batch size $m$<br>
+			$\quad\quad$ target network update frequency $\tau$<br><br>
+
+		<b>Initialize</b> replay memory $\mathcal{D}$ to capacity $M$<br>
+		<b>Initialize</b> action-value function $\hat{Q}_{\mathbf{\omega_1}}$ with random weights $\mathbf{\omega_1}$<br>
+		<b>Initialize</b> target action-value function $\hat{Q}_{\mathbf{\omega_2}}$ with weights $\mathbf{\omega_2} = \mathbf{\omega_1}$<br><br>
+
+		<b>FOR EACH</b> episode<br>
+			$\quad$ $\mathbf{s} \leftarrow \text{env.reset}()$<br>
+			$\quad$ <b>DO</b> <br>
+				$\quad\quad$ $\mathbf{a} \leftarrow $<span class="fragment highlight-current-red" data-fragment-index="1">$\epsilon\text{-greedy}(\mathbf{s}, \hat{Q}_{\mathbf{\omega_1}})$</span><br>
+				$\quad\quad$ $r, \mathbf{s'} \leftarrow \text{env.step}(\mathbf{a})$<br>
+				$\quad\quad$ Store transition $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ in $\mathcal{D}$<br>
+				$\quad\quad$ If $\mathcal{D}$ contains "enough" transitions<br>
+					$\quad\quad\quad$ Sample random batch of transitions $(\mathbf{s}_j, \mathbf{a}_j, r_j, \mathbf{s'}_j)$ from $\mathcal{D}$ with $j=1$ to $m$<br>
+					<span class="fragment highlight-current-red" data-fragment-index="1">$\quad\quad\quad$ For each $j$, set $y_j = 
+					\begin{cases} 
+					r_j & \text{for terminal } \mathbf{s'}_j\\
+					r_j + \gamma \max_{\mathbf{a}^\star} \hat{Q}_{\mathbf{\omega_{2}}} (\mathbf{s'}_j)_{\mathbf{a}^\star} & \text{for non-terminal } \mathbf{s'}_j
+					\end{cases}$</span><br>
+					$\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="1">Perform a gradient descent step on $\left( y_j - \hat{Q}_{\mathbf{\omega_1}}(\mathbf{s}_j)_{\mathbf{a}_j} \right)^2$ with respect to the weights $\mathbf{\omega_1}$</span><br>
+					$\quad\quad\quad$ Every $\tau$ steps reset $\hat{Q}_{\mathbf{\omega_2}}$ to $\hat{Q}_{\mathbf{\omega_1}}$, i.e., set $\mathbf{\omega_2} \leftarrow \mathbf{\omega_1}$<br>
+				$\quad\quad$ $\mathbf{s} \leftarrow \mathbf{s'}$ <br>
+			$\quad$ <b>UNTIL</b> $\mathbf{s}$ is final<br><br>
+		<b>RETURN</b> $\mathbf{\omega_1}$ <br>
+	</div>
+
+	<aside class="notes">
+		<div class="fr-notes"></div>
+		<div class="en-notes"></div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 Algorithm -->
+<section>
+	<h3>C51 Algorithm</h3>
+	<!-- <h4>C51, Categorical DQN</h4> -->
+
+	<div style="font-size: 0.3em; text-align: left; margin-left: 10em;">
+		<!-- <b>Input</b>:<br>
+			$\quad\quad$ none<br>
+		<b>Algorithm parameter</b>:<br>
+			$\quad\quad$ discount factor $\gamma$<br>
+			$\quad\quad$ step size $\alpha \in (0,1]$<br>
+			$\quad\quad$ small $\epsilon > 0$<br>
+			$\quad\quad$ capacity of the experience replay memory $M$<br>
+			$\quad\quad$ batch size $m$<br>
+			$\quad\quad$ target network update frequency $\tau$<br><br>
+
+		<b>Initialize</b> replay memory $\mathcal{D}$ to capacity $M$<br>
+		<b>Initialize</b> action-value distribution function <span class="fragment highlight-current-red" data-fragment-index="0">$\hat{Z}_{\mathbf{\omega_1}}$</span> with random weights $\mathbf{\omega_1}$<br>
+		<b>Initialize</b> target action-value distribution function <span class="fragment highlight-current-red" data-fragment-index="0">$\hat{Z}_{\mathbf{\omega_2}}$</span> with weights $\mathbf{\omega_2} = \mathbf{\omega_1}$<br><br> -->
+
+		<b>FOR EACH</b> episode<br>
+			$\quad$ $\mathbf{s} \leftarrow \text{env.reset}()$<br>
+			$\quad$ <b>DO</b> <br>
+				$\quad\quad$ $\mathbf{a} \leftarrow $<span class="fragment highlight-current-red" data-fragment-index="1">$\epsilon\text{-greedy}(\mathbf{s}, \hat{Z}_{\mathbf{\omega_1}})$</span><br>
+				$\quad\quad$ $r, \mathbf{s'} \leftarrow \text{env.step}(\mathbf{a})$<br>
+				$\quad\quad$ Store transition $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ in $\mathcal{D}$<br>
+				$\quad\quad$ <b>IF</b> $\mathcal{D}$ contains "enough" transitions<br>
+					$\quad\quad\quad$ Sample random batch of transitions $(\mathbf{s}_j, \mathbf{a}_j, r_j, \mathbf{s'}_j)$ from $\mathcal{D}$ with $j=1$ to $m$<br>
+					$\quad\quad\quad$ <b>FOR EACH</b> transitions $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ of this batch<br>
+					    <!-- $\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="2">$\mathbf{a}^\star \leftarrow \arg\max_{\mathbf{a'}} \sum_i z_i p_i (\mathbf{s}',\mathbf{a'})$</span><br> -->
+						<!-- $\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="3">Obtain the value distribution for the next state \( s' \) and action \( a^\star \)</span><br> -->
+						$\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="4">Apply the Bellman operator</span><br>
+					    $\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="5">Compute the projection $\Phi$ of $\mathcal{T}^{\pi}Z$ onto the support $\{z_i\}$</span><br>
+					    $\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="6">Perform a gradient descent step to minimize the cross-entropy</span><br>
+					$\quad\quad\quad$ Every $\tau$ steps reset <span class="fragment highlight-current-red" data-fragment-index="0">$\hat{Z}_{\mathbf{\omega_2}}$</span> to <span class="fragment highlight-current-red" data-fragment-index="0">$\hat{Z}_{\mathbf{\omega_1}}$</span>, i.e., set $\mathbf{\omega_2} \leftarrow \mathbf{\omega_1}$<br>
+				$\quad\quad$ $\mathbf{s} \leftarrow \mathbf{s'}$ <br>
+			$\quad$ <b>UNTIL</b> $\mathbf{s}$ is final<br><br>
+		<b>RETURN</b> $\mathbf{\omega_1}$ <br>
+	</div>
+	<div class="r-stack">
+		<p class="fragment current-visible" data-fragment-index="0" style="font-size: 0.45em;">
+			$$Q(s,a) = \mathbb{E}[Z(s,a)] = \sum_i z_i , p_\omega(z_i \mid s,a).$$
+			The value $Q$ can be obtained as the expectation of $Z$.
+		</p>
+		<p class="fragment current-visible" data-fragment-index="1" style="font-size: 0.5em;">
+			<b>Behavior policy</b>: with probability $1-\epsilon$, take the action that maximizes the expected value<br>according to the current distributional estimate.
+		</p>
+		<!-- <p class="fragment current-visible" data-fragment-index="2" style="font-size: 0.5em; margin-top: 2em;">
+			For the state $s_j'$, compute the greedy action \( a^\star \) using the main network (expectation of the distributions).
+		</p> -->
+		<!-- <p class="fragment current-visible" data-fragment-index="3" style="font-size: 0.5em; margin-top: 2em;">
+			Use the target network to obtain the value distribution for the next state \( s' \) and action \( a^\star \)
+		</p> -->
+		<p class="fragment current-visible" data-fragment-index="4" style="font-size: 0.5em;">
+			<!-- Apply the distributional Bellman operator: \( r + \gamma Z(s', a^*) \). -->
+			<img src="assets/rl_distributional/belman_operator.png" alt="C51 Projection" style="width: 60%;">
+		</p>
+		<p class="fragment current-visible" data-fragment-index="5" style="font-size: 0.35em; margin: 2em;">
+			Since the support of the target distribution does not necessarily fall exactly on the fixed support of the predicted distribution,<br>we project it using the operator $(\Phi)$.<br>
+			<img src="assets/rl_distributional/c51_projection.png" alt="C51 Projection" style="width: 25%;">
+		</p>
+		<p class="fragment current-visible" data-fragment-index="6" style="font-size: 0.4em;">
+			Perform a gradient descent step to minimize the cross-entropy between<br>the predicted distribution and the target distribution.
+			$$L(\omega) = - \sum_i p_i^{\text{target}} \log p_i^{\text{pred}}$$
+		</p>
+	</div>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes"></div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Résultats expérimentaux -->
+<section>
+	<h3>C51</h3>
+	<h4>Atari Results (Summary)</h4>
+	<img src="assets/rl_distributional/c51_results_2.png" alt="C51 results" style="width: 70%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Percentage improvement, per-game (Atari benchmark), of C51 over Double DQN.<br>
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<ul style="font-size:0.6em;">
+		<li>Improved median score compared to vanilla DQN</li>
+		<li>Faster convergence in the first millions of frames</li>
+		<li>Reduced training variance</li>
+		<li>Foundation for Rainbow (integration of further improvements)</li>
+	</ul>
+	<!-- Placeholder: line chart comparing median human-normalized score vs frames (DQN vs C51). Source: Bellemare et al. 2017. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Empirical gains largely attributed to richer target signal and improved optimization landscape.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Résultats expérimentaux -->
+<section>
+	<h3>C51</h3>
+	<h4>Atari Results (varying number of atoms)</h4>
+
+	<img src="assets/rl_distributional/c51_results_1.png" alt="C51 results" style="width: 100%; margin-top: 2em;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Varying number of atoms in the discrete distribution.<br>
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on
+			Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<!-- Placeholder: line chart comparing median human-normalized score vs frames (DQN vs C51). Source: Bellemare et al. 2017. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Limites & Extensions -->
+<section>
+	<h3>C51</h3>
+	<h4>Limitations &amp; Extensions</h4>
+
+	<ul style="font-size:0.65em; margin-top: 2em;">
+		<li><b>Fixed support:</b> risk of saturation if returns fall outside $[V_{\min}, V_{\max}]$</li>
+		<li><b>Uniform resolution:</b> inefficient for modeling sharp tails or skewed distributions</li>
+		<li><b>Extensions:</b>
+			<ul>
+				<li><b>QR-DQN:</b> learns quantiles, reducing projection bias</li>
+				<li><b>IQN:</b> continuous implicit quantile function for flexible modeling</li>
+				<!-- <li><b>FQF:</b> learnable fraction proposal for adaptive quantile allocation</li> -->
+			</ul>
+		</li>
+		<li><b>Paradigm:</b> working with distributions enables risk-sensitive and utility-based RL</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Limitations of fixed categorical grid motivate quantile-based and adaptive approaches.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Conclusion & Discussion -->
+<section>
+	<h3>C51</h3>
+	<h4>Conclusion &amp; Discussion</h4>
+
+	<ul style="font-size:0.7em; margin-top: 2em;">
+		<li>Moving from expectation to distribution provides a richer learning signal.</li>
+		<li>C51 is simple, effective, and forms the basis for many improvements.</li>
+		<li>Actions are selected via the expectation: the full distribution is valuable for training and for
+			future risk-sensitive objectives.</li>
+		<li>Enables risk-sensitive RL, robustness, and informed exploration.</li>
+		<li>Open questions: how to choose the support? How to combine with epistemic uncertainty?</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Even if acting greedily on expectation, learning benefits from structured multi-target
+supervision; distribution reusable for risk measures.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Value Distribution & Maximum Utility RL -->
+<!-- <section>
+	<h3>Value Distribution &amp; Maximum Utility RL</h3>
+	<h4>From Value to Utility</h4>
+	<ul>
+		<li>Value distribution: probability distribution over possible returns.</li>
+		<li>Maximum utility RL: optimize for user-defined utility, not just mean.</li>
+		<li>Allows risk-sensitive or robust decision making.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			On peut choisir d’optimiser une fonction d’utilité (par exemple, aversion au risque) plutôt que
+			la simple espérance, ce qui est crucial dans de nombreux domaines (finance, robotique, etc.).
+		</div>
+		<div class="en-notes">
+			Utility-based RL enables agents to be risk-averse or risk-seeking, depending on the application.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Probability-based Algorithms -->
+<!-- <section>
+	<h3>Probability-based Algorithms</h3>
+	<h4>C51, Categorical DQN</h4>
+	<ul>
+		<li><b>C51</b>: models value distribution as a categorical distribution over fixed atoms.</li>
+		<li><b>Categorical DQN with utility</b>: incorporates utility functions into categorical value
+			distributions.</li>
+	</ul>
+	<ul style="font-size: 0.7em;">
+		<li>
+			<a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.<br>
+			<b>Algorithm:</b> C51
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Ces algorithmes représentent la distribution des valeurs par une discrétisation (catégories
+			fixes), ce qui permet une estimation efficace et stable.
+		</div>
+		<div class="en-notes">
+			Probability-based methods discretize the value distribution, enabling tractable learning and
+			inference.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Quantile-based Algorithms -->
+<!-- <section>
+	<h3>Quantile-based Algorithms</h3>
+	<h4>QR-DQN, IQN</h4>
+	<ul>
+		<li><b>QR-DQN</b>: models value distribution via quantile regression.</li>
+		<li><b>IQN</b>: Implicit Quantile Networks, learn arbitrary quantile functions.</li>
+		<li>Extensions: QR with utility for risk-sensitive RL.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Les méthodes basées sur les quantiles offrent une meilleure flexibilité et précision pour
+			approximer la distribution des retours, notamment dans des environnements complexes.
+		</div>
+		<div class="en-notes">
+			Quantile-based approaches provide flexible and accurate modeling of return distributions,
+			supporting advanced risk-sensitive policies.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: QR-DQN (Quantile Regression DQN) -->
+<section>
+	<h3 style="font-size: 1.2em;">Quantile Regression Deep Q-Network</h3>
+	<!-- <h4>Quantile Regression Deep Q-Network</h4> -->
+
+	<img src="assets/rl_distributional/networks_output.png" alt="QR-DQN Architecture"	style="width: 45%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 2em;">
+		Source: <a href="https://arxiv.org/abs/1806.06923" target="_blank">Implicit Quantile Networks for Distributional Reinforcement Learning</a>, Dabney et al., 2018.
+	</figcaption>
+	<ul style="font-size: 0.6em; margin-bottom: 0;">
+		<li>Represents the value distribution by estimating a fixed set of quantiles.</li>
+		<li>Uses quantile regression loss to train the network.</li>
+		<li>Improves stability and expressiveness over categorical methods.</li>
+	</ul>
+	<p style="font-size: 0.6em; margin-top: 0.5em;">
+		<a href="https://arxiv.org/abs/1710.10044" target="_blank">Distributional Reinforcement Learning with Quantile Regression</a>, Dabney et al., 2017.
+	</p>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+QR-DQN models the return distribution using quantiles, enabling more precise and robust value
+estimation than fixed categorical bins.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: IQN (Implicit Quantile Networks) -->
+<!-- <section>
+	<h3>IQN</h3>
+	<h4>Implicit Quantile Networks</h4>
+	<ul>
+		<li>Generalizes QR-DQN by learning a continuous quantile function.</li>
+		<li>Samples arbitrary quantile fractions during training and inference.</li>
+		<li>Provides a flexible and expressive model for return distributions.</li>
+	</ul>
+	<ul style="font-size: 0.7em;">
+		<li>
+			<a href="https://arxiv.org/abs/1806.06923" target="_blank">Implicit Quantile Networks for Distributional Reinforcement Learning</a>, Dabney et al., 2018.<br>
+			<b>Algorithm:</b> IQN
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			IQN permet d’approximer n’importe quelle fonction de quantile, offrant une modélisation très fine de la distribution des retours et une adaptation à des profils de risque variés.
+		</div>
+		<div class="en-notes">
+			IQN learns a continuous quantile function, allowing for highly flexible modeling of return distributions and risk profiles.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Extensions – QR with Utility and Risk Sensitivity -->
+<section>
+	<h3>Extensions</h3>
+	<h4>QR with Utility / Risk-sensitive RL</h4>
+
+	<ul style="font-size:0.9em; margin-top: 2em;">
+		<li>Integrate utility functions into quantile-based RL<br>for risk-sensitive objectives.</li>
+		<li>Customize agent behavior: risk-averse, risk-seeking,<br>or robust policies.</li>
+		<li>Applications in finance, robotics, and safety-critical domains.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Extensions of quantile-based RL incorporate utility or risk criteria, enabling agents to
+optimize for specific risk preferences or robust performance.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Open-Access Monograph – MIT Press -->
+<section>
+	<h3>Further Reading</h3>
+
+	<div class="row">
+		<div style="float: left; width: 50%;">
+			<br><br><br><br>
+			<p style="font-size: 0.45em;">
+				<a href="http://direct.mit.edu/books/oa-monograph-pdf/2111075/book_9780262374026.pdf"
+					target="_blank">
+					Bellemare, M. G., Dabney, W., &amp; Rowland, M. (2023). <i>Distributional Reinforcement
+						Learning</i>. MIT Press.
+				</a><br>
+				Freely available as an open-access PDF from MIT Press.
+			</p>
+		</div>
+		<div style="float: left; width: 50%;">
+			<img src="assets/rl_distributional/mit_press_distributional_rl.png"
+				alt="MIT Press Distributional RL" style="width: 80%;">
+		</div>
+	</div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+This open-access MIT Press monograph provides a comprehensive and up-to-date overview of deep
+reinforcement learning, including theory, algorithms, and applications.
+		</div>
+	</aside>
+</section>
+
+<!-- TODO: see also https://www.youtube.com/watch?v=5nFtBFD2Od8 -->
+
+<!-- endregion -->
+			<!-- endregion -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- PART 4: Distributed RL ----------------------------------------------------------------------------------------------------- -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- #region -->
+
+			<section id="part4-distributed-rl">
+				<h3>Part 4</h3>
+				<h4>Distributed RL / Scaling RL</h4>
+
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: A3C (Asynchronous Advantage Actor-Critic) -->
+			<section>
+				<h3>A3C</h3>
+				<h4>Asynchronous Advantage Actor-Critic</h4>
+				<ul>
+					<li>Multiple agents run in parallel, each with its own environment copy.</li>
+					<li>Asynchronous updates to shared parameters.</li>
+					<li>Improves exploration and training speed.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						A3C permet une exploration diversifiée et une accélération de l’apprentissage grâce à la
+						parallélisation et à la mise à jour asynchrone des paramètres.
+					</div>
+					<div class="en-notes">
+						A3C leverages parallelism and asynchronous updates to stabilize and speed up RL training.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Ape-X -->
+			<section>
+				<h3>Ape-X</h3>
+				<h4>Distributed Prioritized Experience Replay</h4>
+				<ul>
+					<li>Many actors generate experience in parallel.</li>
+					<li>Centralized learner updates the policy using prioritized replay.</li>
+					<li>Scalable to large clusters, efficient data collection.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Ape-X sépare la collecte d’expérience (acteurs) et l’apprentissage (learner), ce qui permet de
+						tirer parti de ressources distribuées à grande échelle.
+					</div>
+					<div class="en-notes">
+						Ape-X architecture enables scalable RL by decoupling experience generation and learning.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: IMPALA -->
+			<section>
+				<h3>IMPALA</h3>
+				<h4>Importance Weighted Actor-Learner Architecture</h4>
+				<ul>
+					<li>Many actors send trajectories to a central learner.</li>
+					<li>Uses V-trace for off-policy correction.</li>
+					<li>Highly scalable, supports thousands of actors.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						IMPALA permet un apprentissage efficace à grande échelle grâce à la correction off-policy
+						(V-trace) et à une architecture centralisée.
+					</div>
+					<div class="en-notes">
+						IMPALA achieves high throughput and scalability with off-policy corrections and centralized
+						learning.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: R2D2 -->
+			<section>
+				<h3>R2D2</h3>
+				<h4>Recurrent Experience Replay in Distributed RL</h4>
+				<ul>
+					<li>Distributed experience replay with recurrent networks (LSTM).</li>
+					<li>Handles partial observability and long-term dependencies.</li>
+					<li>Combines scalability with memory-based policies.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						R2D2 combine la scalabilité du replay distribué avec la capacité des réseaux récurrents à gérer
+						des dépendances temporelles longues.
+					</div>
+					<div class="en-notes">
+						R2D2 enables distributed RL with recurrent policies, suitable for partially observable
+						environments.
+					</div>
+				</aside>
+			</section>
+
+			<!-- Slide: Distributed RL – Key References -->
+			<section>
+				<h3>Distributed RL</h3>
+				<h4>Key Publications</h4>
+				<ul style="font-size: 0.5em;">
+					<li>
+						<a href="https://arxiv.org/abs/1803.02811" target="_blank">Accelerated Methods for Deep Reinforcement Learning</a>, Stooke and Abbeel, 2018.<br>
+						<b>Contribution:</b> Systematic analysis of parallelization in deep RL across algorithms.
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1802.01561" target="_blank">IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures</a>, Espeholt et al., 2018.<br>
+						<b>Algorithm:</b> IMPALA
+					</li>
+					<li>
+						<a href="https://openreview.net/forum?id=H1Dy---0Z" target="_blank">Distributed Prioritized Experience Replay</a>, Horgan et al., 2018.<br>
+						<b>Algorithm:</b> Ape-X
+					</li>
+					<li>
+						<a href="https://openreview.net/forum?id=r1lyTjAqYX" target="_blank">Recurrent Experience Replay in Distributed Reinforcement Learning</a>, Anonymous, 2018.<br>
+						<b>Algorithm:</b> R2D2
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1712.09381" target="_blank">RLlib: Abstractions for Distributed Reinforcement Learning</a>, Liang et al., 2017.<br>
+						<b>Contribution:</b> A scalable library of RL algorithm implementations.
+						<a href="https://ray.readthedocs.io/en/latest/rllib.html" target="_blank">Documentation link</a>
+					</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Principales références sur l’apprentissage par renforcement distribué, couvrant les architectures, algorithmes et outils logiciels majeurs.
+					</div>
+					<div class="en-notes">
+						Key references for distributed reinforcement learning, including major architectures, algorithms, and software libraries.
+					</div>
+				</aside>
+			</section>
+
+			<!-- endregion -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- PART 5: Hierarchical RL ----------------------------------------------------------------------------------------------------- -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- #region -->
+
+			<section id="part1-hierarchical">
+				<h3>Part 5</h3>
+				<h4>Hierarchical Reinforcement Learning</h4>
+
+				<aside class="notes">
+					<div class="fr-notes"></div>
+					<div class="en-notes"></div>
+				</aside>
+			</section>
+
+<!-- @preview /rl_hierarchical.html -->
+<!-- #region -->
+
+<!-- Slide: Intuitive Example -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>Introduction</h4>
+
+	<p style="font-size: 0.8em;">Human analogy: planning a trip vs. walking to the station</p>
+	
+	<img width="50%" src="assets/rl_hierarchical/trip.png" />
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+One of the things humans excel at is breaking down a complex task into smaller, more manageable subproblems.
+We solve these subtasks one by one and then combine their solutions to address the original challenge.
+
+Importantly, these subtasks often operate at different levels of abstraction compared to the overall goal.
+
+For example, imagine planning a trip from your home to a hotel room in a distant city.
+You don't think about every single foot step or body movement you need to take to reach the hotel.
+But that's what a classical reinforcement learning agent would do if it were tasked with this problem.
+
+Instead, at the highest level, you might decide which flight to book and which airport to land at.
+Each of these choices then leads to mid-level decisions, such as which train to take before or after the flight.
+Finally, these can be broken down into low-level actions, like choosing whether to take the metro, a bus, or a taxi to reach the hotel.
+
+This way of thinking—structuring decisions at multiple levels of abstraction—is precisely what Hierarchical Reinforcement Learning aims to capture.
+
+Hierarchical Reinforcement Learning, studies this real-world-inspired approach to problem solving.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Intuitive Example -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>Introduction</h4>
+
+	<img width="50%" src="assets/rl_hierarchical/robot.png" />
+
+	<!-- Placeholder: insert a diagram showing hierarchical decision-making (high-level vs. low-level actions).
+			Objective: illustrate how HRL decomposes tasks. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- Slide 2: What is Hierarchical RL? -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>What and Why?</h4>
+	<ul>
+		<li>Decompose complex tasks into simpler subtasks</li>
+		<li>Learn policies at multiple levels of abstraction</li>
+		<li>Motivation: scalability, efficiency, transferability</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Hiearchical approache can exploit structure in sequential decision-making problems to decompose it into simpler subtasks.
+
+
+TODO: p.263
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Applications -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>Applications</h4>
+	<p style="font-size:0.8em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 3em;">Some problems have natural hierarchical structure</p>
+	<ul style="font-size: 0.8em; padding-left: 1em; display: block; margin-left: 3em;">
+		<li><b>Navigation tasks</b>: route planning + motor control</li>
+		<li><b>Multi-agent systems</b>: hierarchical team organization</li>
+		<li><b>Robotics</b>: task planning + low-level control</li>
+		<li><b>Game playing</b>: strategy + tactical execution</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			La HRL est utilisée en robotique, jeux, NLP, véhicules autonomes, etc.
+		</div>
+		<div class="en-notes">
+It is more or less easy to exploit hierarchical structure depending on the problem.
+
+Some environments have a natural hierarchical structure that can be exploited:
+- Navigation tasks: high-level route planning and low-level motor control.
+- Multi-agent problems: divide into hieratchical teams.
+		</div>
+	</aside>
+</section>
+
+<!-- Slide 4: Advantages -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>Advantages</h4>
+	<ul style="font-size: 0.8em;">
+		<li>Improved sample efficiency</li>
+		<li>Better exploration</li>
+		<li>Transfer and reuse of subpolicies</li>
+		<li>Scalability to complex tasks</li>
+	</ul>
+
+	<img width="40%" src="assets/rl_hierarchical/starcraft.png" />
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+- Improved sample efficiency: learning at multiple levels can speed up convergence.
+- Better exploration: high-level policies can guide exploration more effectively.
+- Transfer and reuse of subpolicies: learned skills can be reused across tasks.
+- Scalability to complex tasks: allow the agent to solve larger more compex problems.
+
+TODO: p.265
+		</div>
+	</aside>
+</section>
+
+<!-- Slide: Drawbacks -->
+<!-- <section class="draft">
+	<h3>Hierarchical RL</h3>
+	<h4>Disadvantages</h4>
+	<ul>
+		<li>Works better when there is <em>domain knowledge</em> available about the structure of the problem</li>
+		<li>Increased algorithmic complexity</li>
+		<li>Subgoal discovery is non-trivial</li>
+		<li>Can miss the global optimum</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+TODO: p.266
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide:  -->
+<section>
+	<h3>Hierarchical RL</h3>
+	<h4>Challenges</h4>
+	<ul style="font-size: 0.8em; padding-left: 1em; display: block; margin-left: 3em;">
+		<li>Find subgoals</li>
+		<li>Find a meta-policy over these subgoals</li>
+		<li>Find subpolicies for these subgoals</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+A Hierarchical Reinforcement Learning algorithm tries to solve
+Sequential Decision Problems more efficently by
+- identifiying common substructures
+- reusing subpolicies to solve them
+
+The hierarchical approache has 3 challenges:
+- find subgoals
+- find a meta-policy over these subgoals
+- find subpolicies for these subgoals
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: title (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<p style="font-size: 0.8em;">
+		Sutton, R. S., Precup, D., & Singh, S. (1999).
+		<a href="https://www.sciencedirect.com/science/article/pii/S0004370299000521" target="_blank">Between MDPs and semi-MDPs: A framework for temporal abstraction in reinforcement learning.</a>
+		<em>Artificial Intelligence, 112</em>(1-2), 181-211.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+To formalize hierarchical reinforcement learning, we need a framework that can represent actions at multiple levels of abstraction.
+The options framework, introduced by Sutton et al. in 1999, provides such a formalism.
+
+It formalizes the concept of subgoals and subpolicies, allowing an agent to operate at different temporal scales.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<h4>Motivation: Temporal Abstraction in RL</h4>
+
+	<ul style="font-size: 0.7em;">
+		<li>Standard MDPs only support <b>primitive actions</b> at each timestep.</li>
+		<li>Need: a way to represent and learn <b>temporally extended behaviors</b>.</li>
+		<li>Goal: extend RL framework minimally to include such <b>temporal abstractions</b>.</li>
+	</ul>
+
+	<p style="font-size: 0.7em;">
+		👉 Solution:
+		Extend standard MDPs to support <b>temporally extended actions</b> called <b>options</b>
+	</p>
+
+	<!-- <img width="30%" src="assets/rl_hierarchical/mdp-smdp.png" />
+	<figcaption style="font-size: 0.4em; text-align: center; margin-bottom: 3em;">
+		Source: Hutsebaut-Buysse M, Mets K, Latré S. <a href="https://www.sciencedirect.com/science/article/pii/S0004370299000521" target="_blank">Hierarchical Reinforcement Learning: A Survey and Open Research Challenges. Machine Learning and Knowledge Extraction.</a>,  2022; 4(1):172-221. https://doi.org/10.3390/make4010009.
+	</figcaption> -->
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Standard MDPs only support <b>primitive actions</b> at each timestep.
+
+To do Hierarchical RL, we need a way to represent and learn <b>temporally extended behaviors</b>.
+
+The goal is extend RL framework to include such <b>temporal abstractions</b> but in a minimal way.
+
+A solution to this is the "options framework": it extends the standard MDP framework to include temporally extended actions called "options."
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<h4>What is an Option?</h4>
+
+	<ul style="font-size: 0.7em;">
+		<li>Some states are designated as <b>subgoals</b></li>
+		<li>At a subgoal, the agent can choose an <b>option</b> (macro-action) instead of a <b>primitive action</b></li>
+		<li>Options are sequences of primitive actions grouped together</li>
+		<li>Executing an option means executing this sequence of actions</li>
+	</ul>
+
+	<img width="30%" src="assets/rl_hierarchical/mdp-smdp2.png" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+The idea of options is simple :
+Some states in the environment are defined as "<em>subgoals</em>".
+
+When the agent reaches one of these subgoal states, it can choose to execute an "<em>option</em>" (or "macro-action")
+instead of a "<em>primitive action</em>".
+
+So an option is a sequence of primitive actions with grouped together.
+
+Executing an option means executing this sequence of actions.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<h4>What is an Option?</h4>
+
+	<p style="font-size: 0.7em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		An option $\omega$ is defined by a triple:
+		$$\omega = \langle I, \pi, \beta \rangle$$
+	</p>
+	<table style="font-size: 0.6em; border-collapse: collapse; width: 100%;">
+		<tr>
+			<td style="vertical-align: top; border: none; padding-right: 1em;">$I_{\omega}$</td>
+			<td style="vertical-align: top; border: none;">
+				The <b>initiation set</b> $I \subseteq \mathcal{S}$ states where the option can be chosen.
+			</td>
+		</tr>
+		<tr>
+			<td style="vertical-align: top; border: none; padding-right: 1em;">$\pi_{\omega}(a|s)$</td>
+			<td style="vertical-align: top; border: none;">
+				The <b>subpolicy</b> $\pi : \mathcal{S} \times \mathcal{A} \rightarrow [0, 1]$ controls which primitive actions are taken while the option runs (here a stochastic policy).
+			</td>
+		</tr>
+		<tr>
+			<td style="vertical-align: top; border: none; padding-right: 1em;">$\beta_{\omega}(s)$</td>
+			<td style="vertical-align: top; border: none;">
+				The <b>termination condition</b> $\beta : \mathcal{S} \rightarrow [0, 1]$ tells us if $\omega$ terminates in $s$.
+			</td>
+		</tr>
+	</table>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+More formally,
+
+an option consists of three components:
+- An initiation set I: defines the states where the option can be initiated.
+- A subpolicy π: defines the behavior of the option. It is internal to the option.
+- A termination condition β: specifies when the option should terminate.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<br>
+	<p>
+		The set of all options is denoted by $\Omega$.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<p style="font-size: 0.7em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		There are two kinds of policies in the options framework:
+	</p>
+	<ul style="font-size: 0.7em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>The <b>meta-policy</b> over options $\pi_{\Omega}(\omega|s)$, which selects which option to execute when the agent is in a state that belongs to the initiation set of one or more options.</li>
+		<li>The <b>subpolicy</b> of each option $\pi_{\omega}(a|s)$, which defines the behavior while the option is being executed.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+There are two kinds of policies in the options framework:
+- The meta-policy over options, which selects which option to execute when the agent is in a
+state that belongs to the initiation set of one or more options.
+- The subpolicy of each option, which defines the behavior while the option is being executed.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<br>
+	<p style="font-size: 0.8em;">
+		The <b>subpolicies</b> $\pi_{\omega}$ are short macros to get from $I_{\omega}$ to $\beta_{\omega}$ quickly.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+
+	<p style="font-size: 0.8em;">
+		"Temporal abstraction mix actions of different granularities, short and long, primitive actions and subpolicys.
+		They allow traveling from $I$ to $\beta$ without additional learning, using a previously provided or learned subpolicy."
+		(Plaat., 2022)
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+This temporal abstraction mix actions of different granularities,
+short and long,
+primitive actions and subpolicys.
+
+They allow traveling from $I$ to $\beta$
+without additional learning,
+using a previously provided or learned subpolicy.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: The options framework (subtitle) -->
+<section>
+	<h3>The options framework</h3>
+	<h4>The rooms example</h4>
+
+	<img width="50%" src="assets/rl_hierarchical/options.png" />
+	<ul style="font-size: 0.7em;">
+		<li>A gridworld environment with stochastic cell-to-cell actions and room-to-room hallway options.</li>
+		<li>Two of the hallway options are suggested by the arrows labeled o1 and o2.</li>
+		<li>The labels G1 and G2 indicate two locations used as goals in experiments described in the text.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+This figure illustrates the options framework using a simple gridworld environment.
+
+The environment consists of four rooms connected by hallways.
+The agent can move between adjacent cells using primitive actions (up, down, left, right).
+
+However, the agent can also execute options that correspond to navigating through hallways.
+
+In hierarchical reinforcement learning, the hallways between rooms are bottleneck states and are natural subgoals.
+
+For example, option o1 might represent the behavior of moving from the top-left room to the bottom-left room through the hallway.
+Similarly, option o2 could represent moving from the bottom-left room to the bottom-right room.
+
+These options allow the agent to operate at a higher level of abstraction, making it easier to plan and learn in this environment.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Finding Subgoals and learning subpolicies (subtitle) -->
+<section>
+	<h3>Finding Subgoals and learning subpolicies</h3>
+	<!-- <h4>subtitle</h4> -->
+
+	<p style="font-size: 0.8em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		In the original options framework, these elements are given:
+	</p>
+	<ul style="font-size: 0.8em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Subgoals</li>
+		<li>Subpolicies</li>
+		<li>Meta-policy</li>
+	</ul>
+	<p style="font-size: 0.8em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		But, in practice, these components often need to be learned.
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+The original options framework assumes that the structure of the problem is obvious and that
+the subgoals, subpolicies, and meta-policy are given.
+
+But, in real world applications, these components often need to be learned.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Algorithms (subtitle) -->
+<section>
+	<h3>Finding Subgoals and learning subpolicies</h3>
+
+	<p style="font-size: 0.85em;">
+		👉 We need algorithms that can <b>find subgoals</b> and <b>learn subpolicies</b>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+So we need algorithms that can <b>find subgoals</b> and <b>learn subpolicies</b>
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Algorithms (subtitle) -->
+<section>
+	<h3>Some algorithms</h3>
+	<h4>For continuous spaces</h4>
+
+	<ul style="font-size: 0.8em;">
+		<li>Feudal Networks</li>
+		<li>Option-Critic</li>
+		<li>HIRO</li>
+		<li>Hierarchical Actor-Critic (HAC)</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+I'll mention some of the main Hierachical Reinforcement Learning algorithms
+that can be applied to environments with continuous state and action spaces:
+- Feudal Networks,
+- Option-Critic,
+- HIRO, and
+- Hierarchical Actor-Critic (HAC).
+
+I'll give a very brief overview of each
+but we will focus more on Hierarchical Actor-Critic
+since it is one of the most practical and effective methods.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Feudal Networks (subtitle) -->
+<section>
+	<h3>Feudal Networks</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Key Idea:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Inspired by <em>Feudal RL</em> (<a href="https://proceedings.neurips.cc/paper/1992/file/d14220ee66aeec73c49038385428ec4c-Paper.pdf" target="_blank">Dayan &amp; Hinton, 1992</a>): a <b>Manager–Worker hierarchy</b>.</li>
+		<li><b>Manager</b> sets abstract goals in a latent space.</li>
+		<li><b>Worker</b> executes primitive actions conditioned on these goals.</li>
+	</ul>
+
+	<!-- <p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Architecture (Vezhnevets et al., 2016 – FeUdal Networks)</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li><b>Manager</b>:
+			<ul>
+				<li>Receives state representation.</li>
+				<li>Outputs a <em>goal vector</em> in latent space (directional embedding).</li>
+				<li>Trained with a long-term extrinsic reward.</li>
+			</ul>
+		</li>
+		<li><b>Worker</b>:
+			<ul>
+				<li>Receives current state and goal vector.</li>
+				<li>Outputs primitive action.</li>
+				<li>Trained with <em>intrinsic reward</em>: cosine similarity between achieved state-change and Manager’s goal vector.</li>
+			</ul>
+		</li>
+	</ul> -->
+
+	<!-- <p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Training Signals</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Manager learns to propose meaningful abstract goals (long horizon).</li>
+		<li>Worker learns to follow goals locally (short horizon).</li>
+		<li>End-to-end differentiable; intrinsic reward provides stable credit assignment.</li>
+	</ul> -->
+
+	<!-- <p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Advantages</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Decomposes long-term tasks into subgoals.</li>
+		<li>Encourages exploration via high-level goals.</li>
+		<li>Mitigates vanishing reward signal in sparse-reward environments.</li>
+	</ul> -->
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Tested on (<a href="https://proceedings.neurips.cc/paper_files/paper/2016/file/c4492cbe90fbdbf88a5aec486aa81ed5-Paper.pdf" target="_blank">Vezhnevets et al., 2016</a>):</b> Atari games</p>
+	<!-- <ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Atari games (sparse reward, long-term credit assignment).</li>
+		<li>Continuous control tasks.</li>
+	</ul> -->
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Achievements:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Learned effective <b>temporal abstractions</b> (macro-actions).</li>
+		<li>Showed <b>faster learning</b> and better <b>exploration</b> on hard sparse-reward environments compared to flat deep RL (DQN, A3C).</li>
+		<li>Demonstrated that latent goal vectors can guide behavior without explicit subgoal supervision.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Feudal Networks (subtitle) -->
+<section>
+	<h3>Feudal Networks</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Position Today:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Pioneered the <b>goal-setting HRL</b> paradigm.</li>
+		<!-- <li>Sparked follow-ups (e.g., Option-Critic, HIRO, HAC, H-DQN).</li> -->
+		<li>However: rarely used in practice now
+			<ul>
+				<li>Instability in training.</li>
+				<li>Limited scalability to very complex tasks.</li>
+			</ul>
+		</li>
+		<li><b>Key historical impact</b>: introduced <em>intrinsic goal representations</em> and the idea of <b>end-to-end differentiable hierarchy</b>, still influential in modern HRL research.</li>
+	</ul>
+
+	<!-- <p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Limitations / Assumptions of Feudal Networks</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li><b>Goal Space Design</b>: Assumes that useful subgoals can be represented as directions in a learned latent space.</li>
+		<li><b>Two-Level Hierarchy Only</b>: Fixed Manager–Worker structure, not easily generalizable to deeper hierarchies.</li>
+		<li><b>Intrinsic Reward Shaping</b>: Relies on cosine similarity between state-changes and goals — assumes this aligns with extrinsic objectives.</li>
+		<li><b>Training Stability</b>: Hierarchical credit assignment is still difficult; Manager may propose unhelpful or inconsistent goals.</li>
+		<li><b>Generalization</b>: Success mostly shown on Atari and simple continuous control; scaling to more complex, real-world environments remains challenging.</li>
+	</ul> -->
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>References:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>
+			<a href="https://proceedings.neurips.cc/paper/1992/file/d14220ee66aeec73c49038385428ec4c-Paper.pdf" target="_blank">
+				Dayan, P., & Hinton, G. E. (1992). Feudal reinforcement learning. Advances in neural information processing systems, 5.
+			</a>
+		</li>
+		<li>
+			<a href="https://proceedings.neurips.cc/paper_files/paper/2016/file/c4492cbe90fbdbf88a5aec486aa81ed5-Paper.pdf" target="_blank">
+				Vezhnevets, A., Mnih, V., Osindero, S., Graves, A., Vinyals, O., & Agapiou, J. (2016). Strategic attentive writer for learning macro-actions. Advances in neural information processing systems, 29.
+			</a>
+		</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Option-Critic (subtitle) -->
+<section>
+	<h3>Option-Critic</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Key Idea:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>A <b>Policy gradient</b> algorithm.</li>
+		<li>Learn <em>intra-option policies</em>, <em>termination functions</em>, and a <em>policy over options</em> <!--<b>end-to-end via gradient descent</b>-->.</li>
+		<!-- <li>The agent autonomously discovers useful temporal abstractions.</li> -->
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Tested on:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Four-room navigation domain</li>
+		<li>Atari 2600 (Arcade Learning Environment)</li>
+		<li>Continuous control (PinBall)</li>
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Achievements:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>First fully differentiable framework for learning options.</li>
+		<li>Demonstrated that options can <em>emerge naturally</em> without hand-crafted subgoals.</li>
+		<li>Improved sample efficiency and exploration compared to flat RL baselines.</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Option-Critic (subtitle) -->
+<section>
+	<h3>Option-Critic</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Position Today:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>A <b>foundational baseline</b> for HRL; many later works extend it (e.g., option discovery, regularization, diversity constraints).</li>
+		<li>Still conceptually influential, though modern state-of-the-art often favors <em>skill discovery methods</em> (e.g., DIAYN, VALOR) or <em>hierarchical RL with pretrained skills</em>.</li>
+	</ul>
+	
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>References:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>
+			<a href="https://ojs.aaai.org/index.php/AAAI/article/download/10916/10775" target="_blank">
+				Bacon, P. L., Harb, J., & Precup, D. (2017, February). The option-critic architecture. In Proceedings of the AAAI conference on artificial intelligence (Vol. 31, No. 1).
+			</a>
+		</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HIRO -->
+<section>
+	<h3>HIRO</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Key Idea:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<!-- <li>Two-level hierarchy:
+			<ul>
+				<li><b>High-level policy</b> outputs <em>goals</em> (desired relative changes in state).</li>
+				<li><b>Low-level policy</b> executes primitive actions to reach these goals.</li>
+			</ul>
+		</li> -->
+		<li>Relabeling mechanism: high-level goals are <em>retrospectively adjusted</em> to match what the low-level actually achieved &rarr; improves sample efficiency and stability.</li>
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Tested on:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Ant (Mujoco like).</li>
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Achievements:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Demonstrated <em>significant gains in sample efficiency</em> vs. flat RL.</li>
+		<li>Learned effective long-horizon behaviors in sparse-reward settings.</li>
+		<!-- <li>Pioneered a <em>practical</em> method for hierarchical credit assignment.</li> -->
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HIRO -->
+<section>
+	<h3>HIRO</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Position Today:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Considered a <b>foundational baseline</b> for HRL.</li>
+		<li>Later methods (e.g. HAC, CHER, HIGL, HiPPO) refine stability, exploration, or scalability.</li>
+		<li>Still cited as one of the <em>most influential HRL approaches</em> for continuous control with sparse rewards.</li>
+	</ul>
+	
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>References:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>
+			<a href="https://proceedings.neurips.cc/paper/2018/file/e6384711491713d29bc63fc5eeb5ba4f-Paper.pdf" target="_blank">
+				Nachum, O., Gu, S. S., Lee, H., & Levine, S. (2018). Data-efficient hierarchical reinforcement learning. Advances in neural information processing systems, 31.
+			</a>
+		</li>
+		<li>
+			Related work: <a href="https://arxiv.org/pdf/1810.01257" target="_blank">
+				Nachum, O., Gu, S., Lee, H., & Levine, S. (2018). Near-optimal representation learning for hierarchical reinforcement learning. arXiv preprint arXiv:1810.01257.
+			</a>
+		</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HAC -->
+<section>
+	<h3>Hierarchical Actor-Critic</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Key Idea:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Train multiple policy levels, each setting goals for the level below.</li>
+		<li>Use <em>Hindsight Experience Replay</em> extended to hierarchical goals (“hindsight action transitions”) to stabilize non-stationary training.</li>
+		<!-- <li>Enables learning of multi-level hierarchies <b>end-to-end</b>, without pre-defined subgoals.</li> -->
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Tested on:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>MuJoCo</li>
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Achievements:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Can learn more than two hierarchical levels.</li>
+		<li>Jointly learn multiple level of policies in parallel (subproblems can be solved simultaneously).</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HAC -->
+<section>
+	<h3>Hierarchical Actor-Critic</h3>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>Position Today:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>Pioneering work: first to show multi-level hierarchical RL with hindsight replay.</li>
+		<li>Inspired many follow-ups in hierarchical goal-conditioned RL.</li>
+		<!-- <li>Limitations: sample inefficiency, brittle in high-dimensional tasks; largely surpassed by recent methods (e.g., skill discovery, options with transformers, world models).</li> -->
+	</ul>
+
+	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>References:</b></p>
+	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
+		<li>
+			<a href="https://arxiv.org/pdf/1712.00948" target="_blank">
+				Levy, A., Konidaris, G., Platt, R., & Saenko, K. (2017). Learning multi-level hierarchies with hindsight. arXiv preprint arXiv:1712.00948
+			</a>
+		</li>
+	</ul>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: HAC -->
+<section>
+	<h3>Hierarchical Actor-Critic</h3>
+
+	<img width="100%" src="assets/rl_hierarchical/hac.png" />
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Video HAC -->
+<section>
+	<h3>Hierarchical Actor-Critic</h3>
+	<h4>Examples</h4>
+	<video src="assets/rl_hierarchical/hac.mp4" controls style="width: 80%; display: block; margin: 0 auto 1em auto;"></video>
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/pdf/1712.00948" target="_blank">Learning multi-level hierarchies with hindsight</a>, Levy et al., 2017.
+	</figcaption>
+	<!-- Levy, A., Konidaris, G., Platt, R., & Saenko, K. (2017). Learning multi-level hierarchies with hindsight. arXiv preprint arXiv:1712.00948. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+			<p>
+				...
+			</p>
+		</div>
+	</aside>
+</section>
+
+<!-- endregion -->
+			<!-- endregion -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- PART 6: Meta-learning and Transfer ------------------------------------------------------------------------------------------ -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- #region -->
+
+			<section id="part6-meta-learning-transfer">
+				<h3>Part 6</h3>
+				<h4>Meta-learning and Transfer</h4>
+
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Knowledge Transfer -->
+			<section>
+				<h3>Knowledge Transfer</h3>
+				<h4>Transferring Skills Across Tasks</h4>
+				<ul>
+					<li>Reuse knowledge from previous tasks to accelerate learning.</li>
+					<li>Methods: policy transfer, value transfer, feature reuse.</li>
+					<li>Reduces sample complexity in new environments.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Le transfert de connaissances permet à un agent de réutiliser des compétences ou représentations
+						apprises, accélérant l’apprentissage sur de nouvelles tâches.
+					</div>
+					<div class="en-notes">
+						Knowledge transfer leverages prior learning to improve efficiency and performance on related
+						tasks.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Pretraining -->
+			<section>
+				<h3>Pretraining</h3>
+				<h4>Leveraging Prior Experience</h4>
+				<ul>
+					<li>Train on large datasets or simpler tasks before target task.</li>
+					<li>Improves initial performance and convergence speed.</li>
+					<li>Common in robotics, vision, and language RL.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Le pré-entraînement consiste à préparer l’agent sur des tâches génériques ou des données
+						abondantes, facilitant l’adaptation à des tâches spécifiques.
+					</div>
+					<div class="en-notes">
+						Pretraining provides a strong initialization, making subsequent learning faster and more stable.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Model-Agnostic Meta-Learning (MAML) -->
+			<section>
+				<h3>Model-Agnostic Meta-Learning (MAML)</h3>
+				<h4>Learning to Learn</h4>
+				<ul>
+					<li>Meta-learns an initialization for fast adaptation to new tasks.</li>
+					<li>Few-shot learning: adapts with minimal data.</li>
+					<li>Applicable to policy gradients and value-based RL.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						MAML apprend une initialisation des paramètres permettant une adaptation rapide à de nouvelles
+						tâches avec peu d’exemples.
+					</div>
+					<div class="en-notes">
+						MAML enables agents to quickly adapt to new tasks by optimizing for rapid learning.
+					</div>
+				</aside>
+			</section>
+
+			<!-- Slide: Transfer and Multitask RL – Key References -->
+			<section>
+				<h3>Transfer and Multitask RL</h3>
+				<h4>Key Publications</h4>
+				<ul style="font-size: 0.5em;">
+					<li>
+						<a href="https://arxiv.org/abs/1606.04671" target="_blank">Progressive Neural Networks</a>, Rusu et al., 2016.<br>
+						<b>Algorithm:</b> Progressive Networks
+					</li>
+					<li>
+						<a href="http://proceedings.mlr.press/v37/schaul15.pdf" target="_blank">Universal Value Function Approximators</a>, Schaul et al., 2015.<br>
+						<b>Algorithm:</b> UVFA
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1611.05397" target="_blank">Reinforcement Learning with Unsupervised Auxiliary Tasks</a>, Jaderberg et al., 2016.<br>
+						<b>Algorithm:</b> UNREAL
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1707.03300" target="_blank">The Intentional Unintentional Agent: Learning to Solve Many Continuous Control Tasks Simultaneously</a>, Cabi et al., 2017.<br>
+						<b>Algorithm:</b> IU Agent
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1701.08734" target="_blank">PathNet: Evolution Channels Gradient Descent in Super Neural Networks</a>, Fernando et al., 2017.<br>
+						<b>Algorithm:</b> PathNet
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1707.07907" target="_blank">Mutual Alignment Transfer Learning</a>, Wulfmeier et al., 2017.<br>
+						<b>Algorithm:</b> MATL
+					</li>
+					<li>
+						<a href="https://openreview.net/forum?id=rk07ZXZRb&noteId=rk07ZXZRb" target="_blank">Learning an Embedding Space for Transferable Robot Skills</a>, Hausman et al., 2018.
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1707.01495" target="_blank">Hindsight Experience Replay</a>, Andrychowicz et al., 2017.<br>
+						<b>Algorithm:</b> Hindsight Experience Replay (HER)
+					</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Principales références sur le transfert et l’apprentissage multitâche en RL. À citer pour approfondir ou justifier les choix méthodologiques.
+					</div>
+					<div class="en-notes">
+						Key references for transfer and multitask reinforcement learning. Useful for further reading or methodological justification.
+					</div>
+				</aside>
+			</section>
+
+			<!-- Slide: Meta-RL – Key References -->
+			<section>
+				<h3>Meta-RL</h3>
+				<h4>Key Publications</h4>
+				<ul style="font-size: 0.5em;">
+					<li>
+						<a href="https://arxiv.org/abs/1611.02779" target="_blank">RL<sup>2</sup>: Fast Reinforcement Learning via Slow Reinforcement Learning</a>, Duan et al., 2016.<br>
+						<b>Algorithm:</b> RL<sup>2</sup>
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1611.05763" target="_blank">Learning to Reinforcement Learn</a>, Wang et al., 2016.
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1703.03400" target="_blank">Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks</a>, Finn et al., 2017.<br>
+						<b>Algorithm:</b> MAML
+					</li>
+					<li>
+						<a href="https://openreview.net/forum?id=B1DmUzWAW&noteId=B1DmUzWAW" target="_blank">A Simple Neural Attentive Meta-Learner</a>, Mishra et al., 2018.<br>
+						<b>Algorithm:</b> SNAIL
+					</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Principales références sur le meta-apprentissage en RL, couvrant les approches historiques et les algorithmes majeurs (RL², MAML, SNAIL).
+					</div>
+					<div class="en-notes">
+						Key references for meta-reinforcement learning, including foundational works and major algorithms (RL², MAML, SNAIL).
+					</div>
+				</aside>
+			</section>
+
+			<!-- endregion -->
+			<!-- ------------------------------------------------------ -->
+			<!-- CONCLUSION ------------------------------------------- -->
+			<!-- ------------------------------------------------------ -->
+			<!-- #region -->
+
+			<!-- Slide: Conclusion -->
+			<section>
+				<h3>Conclusion</h3>
+				<ul style="font-size:0.85em;">
+					<li>Advanced RL methods address key challenges: <b>exploration</b>, <b>uncertainty</b>, and <b>value modeling</b>.</li>
+					<li>Structured exploration (intrinsic rewards, memory, Go-Explore) enables progress in sparse and complex environments.</li>
+					<li>Distributional RL provides richer learning signals and opens the door to <b>risk-sensitive</b> and <b>robust</b> agents.</li>
+					<li>These advances are foundational for scaling RL to real-world, high-stakes applications.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+This session covered advanced methods to overcome the limitations of classic RL algorithms,
+especially regarding exploration and uncertainty modeling.
+These tools are essential for tackling complex environments and scaling RL to real-world
+problems.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Conclusion -->
+			<section>
+				<h3>Perspectives &amp; Open Questions</h3>
+				<ul style="font-size:0.85em;">
+					<li>How to combine exploration, distributional modeling, and scalability in unified frameworks?</li>
+					<li>What are the best strategies for <b>generalization</b> and <b>transfer</b> to new tasks?</li>
+					<li>How to ensure <b>safety</b>, <b>robustness</b>, and <b>interpretability</b> in RL agents?</li>
+					<li>Other advanced topics: hierarchical RL, meta-learning, large-scale distributed RL, Multi-agent RL.</li>
+				</ul>
+				<p style="font-size:0.7em; margin-top:1em;">
+					<b>Key takeaway:</b> Modern RL is a rapidly evolving field—mastering these advanced concepts is
+					crucial for both research and practical applications.
+				</p>
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+Open questions include combining advances, generalization, safety, and interpretability. Modern
+RL evolves rapidly—understanding these concepts is key for research and real-world impact.
+					</div>
+				</aside>
+			</section>
+
+			<!-- endregion -->
+
+		</div>
+	</div>
+
+	<script src="dist/reveal.js"></script>
+	<script src="dist/plugin/zoom.js"></script>
+	<script src="dist/plugin/notes.js"></script>
+	<script src="dist/plugin/search.js"></script>
+	<script src="dist/plugin/markdown.js"></script>
+	<script src="dist/plugin/highlight.js"></script>
+	<script src="dist/plugin/math.js"></script>
+
+	<script>
+
+		// Also available as an ES module, see:
+		// https://revealjs.com/initialization/
+		Reveal.initialize({
+			controls: true,
+			progress: true,
+			center: true,
+			hash: true,
+			autoAnimateDuration: 0.25,
+			slideNumber: 'h.v',
+
+			// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+			maxScale: 4.0,
+			mathjax2: {
+				//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+				//mathjax: 'mathjax/MathJax.js',
+				config: 'TeX-AMS_HTML-full',
+				// pass other options into `MathJax.Hub.Config()`
+				TeX: {
+					Macros: {
+						R: '\\mathbb{R}',
+						set: ['\\left\\{#1 \\; ; \\; #2\\right\\}', 2]
+					}
+				}
+			},
+
+			// Learn about plugins: https://revealjs.com/plugins/
+			plugins: [RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2]
+
+			//// Reveal.js plugins
+			//dependencies: [
+			//	{ src: 'revealjs/plugin/reveald3.js' },
+			//]
+		});
+
+	</script>
+
+	<!-- Assurez-vous que jdhp.js est référencé après tous les autres scripts -->
+	<script src="jdhp.js"></script>
+
+</body>
+
+</html>
