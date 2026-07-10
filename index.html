@@ -26,10 +26,16 @@
 				font-weight: 600;
 				margin-bottom: 2rem;
 			}
+			h2 {
+				font-size: 1.2rem;
+				font-weight: 600;
+				margin: 2rem 0 1rem;
+			}
 			ul {
 				list-style: none;
 				margin: 0;
 				padding: 0;
+				padding-left: 1rem;
 			}
 			li + li {
 				margin-top: 0.75rem;
@@ -46,10 +52,11 @@
 			a:hover {
 				background: #333;
 			}
-			a .subtitle {
+			.subtitle {
 				display: block;
 				margin-top: 0.2rem;
 				font-size: 0.85rem;
+				font-weight: 400;
 				color: #999;
 			}
 		</style>
@@ -57,6 +64,11 @@
 	<body>
 		<main>
 			<h1>Presentations</h1>
+
+			<h2>
+				Deep Reinforcement Learning (CSC 53439 EP)
+				<span class="subtitle">École Polytechnique (MScT AI-ViC)</span>
+			</h2>
 			<ul>
 				<li>
 					<a href="csc-53439-ep_lecture-2_2025.html">
@@ -70,15 +82,36 @@
 						<span class="subtitle">Advanced RL Topics</span>
 					</a>
 				</li>
+			</ul>
+
+			<h2>
+				Advanced Topics in Artificial Intelligence (CSC 52081 EP)
+				<span class="subtitle">École Polytechnique (AN3 - P2)</span>
+			</h2>
+			<ul>
 				<li>
 					<a href="inf581_optimization.html">
-						INF581 — Optimization
+						Topics in Mathematical Optimization (2026)
 					</a>
 				</li>
+			</ul>
+
+			<!--
+			<h2>Machine Learning (CSC 2S004 EP) — École Polytechnique (Bachelor of Science)</h2>
+			<ul>
+				<li>
+					<a href="todo.html">
+						...
+					</a>
+				</li>
+			</ul>
+			-->
+
+			<h2>Mathematical Optimization</h2>
+			<ul>
 				<li>
 					<a href="optimization_cem.html">
 						Cross-Entropy Method
-						<span class="subtitle">figures computed live by a TypeScript CEM</span>
 					</a>
 				</li>
 				<li>
@@ -96,14 +129,11 @@
 						PSO
 					</a>
 				</li>
-				<li>
-					<a href="optimization_saes.html">
-						SAES
-					</a>
-				</li>
 			</ul>
+
 			<!-- @dev-only -->
-			<h1>Draft</h1>
+			<hr style="margin-top: 3rem;">
+			<h1>Drafts</h1>
 			<ul>
 				<li>
 					<a href="csc-53439-ep_lecture-2_2026.html">
@@ -111,7 +141,14 @@
 						<span class="subtitle">Advanced RL Topics</span>
 					</a>
 				</li>
+				<li>
+					<a href="optimization_saes.html">
+						SAES
+					</a>
+				</li>
 			</ul>
+
+			<hr style="margin-top: 3rem;">
 			<h1>Archives</h1>
 			<ul>
 				<li>
