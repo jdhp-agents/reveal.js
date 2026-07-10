@@ -1,22 +1,22 @@
 <!-- @preview /inf581_optimization.html -->
-				<!-- #region -->
+	<!-- #region -->
 
-				<section>
-					<h3 style="font-size: 0.75em; font-weight: bold;">INF 581 Advanced Machine Learning and Autonomous Agents</h3>
-					<h4 style="font-size: 0.65em;">Topics in Optimization</h4>
-					<br><br><br><br>
-					<p style="color:darkgray; font-size: 0.5em;">February 2026</p>
+	<section>
+		<h3 style="font-size: 0.75em; font-weight: bold;">INF 581 Advanced Machine Learning and Autonomous Agents</h3>
+		<h4 style="font-size: 0.65em;">Topics in Optimization</h4>
+		<br><br><br><br>
+		<p style="color:darkgray; font-size: 0.5em;">February 2026</p>
 
-					<!-- Macros definition -->
-					$$
-					\newcommand{\vs}[1]{\boldsymbol{#1}} % vector symbol (\boldsymbol, \textbf or \vec)
-					\newcommand{\ms}[1]{\boldsymbol{#1}} % matrix symbol (\boldsymbol, \textbf)
-					$$
+		<!-- Macros definition -->
+		$$
+		\newcommand{\vs}[1]{\boldsymbol{#1}} % vector symbol (\boldsymbol, \textbf or \vec)
+		\newcommand{\ms}[1]{\boldsymbol{#1}} % matrix symbol (\boldsymbol, \textbf)
+		$$
 
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
+		<aside class="notes">
+			<div class="fr-notes">
+			</div>
+			<div class="en-notes">
 Hello everyone,
 
 welcome to this lecture dedicated to mathematical optimization.
@@ -35,97 +35,97 @@ And optimization is often an iterative procedure where we try to find a vector t
 so optimization itself can also be seen as a learning problem!
 
 So again, Machine Learning and Optimization are totally interconnected and interdependent and that’s why mathematical optimization is presented here today. -->
-						</div>
-					</aside>
-				</section>
+			</div>
+		</aside>
+	</section>
 
-				<!-- ------------------------------------------------------ -->
+	<!-- ------------------------------------------------------ -->
 
-				<section style="font-size: 50%;">
-					<h3>Outline</h3>
-			
-					<!-- <ul>
-						<li>Optimization in general</li>
-						<li>Mainly with gradient free methods</li>
-						<li>Zoom on an application linked to RL : Direct Policy Search</li>
-					</ul> -->
+	<section style="font-size: 50%;">
+		<h3>Outline</h3>
 
-					<br>
+		<!-- <ul>
+			<li>Optimization in general</li>
+			<li>Mainly with gradient free methods</li>
+			<li>Zoom on an application linked to RL : Direct Policy Search</li>
+		</ul> -->
 
+		<br>
+
+		<ul style="list-style: none;">
+			<li><b><a href="#/part1-introduction">Part 1. Introduction</a></b></li>
+			<!-- <ul style="list-style: none;"> -->
+				<!-- <li>Optimization in general</li> -->
+				<!-- <li></li>
+				<li></li> -->
+			<!-- </ul> -->
+			<li style="margin-top: 0.5em;"><b><a href="#/part2-stochastic-and-population-methods">Part 2. Stochastic and Population Methods</a></b></li>
+			<ul style="list-style: none;">
+				<!-- <li><a href="#/"></a>Gradient free methods</li> -->
+				<li><a href="#/2.1-population-methods-intro">Population methods</a></li>
+				<li><a href="#/2.2-generic-evolutionary-algorithm">Generic Evolutionary Algorithm</a></li>
+				<li><a href="#/2.3-solution-encoding">Solution encoding</a></li>
+				<li>
+					<a href="#/2.4-operators-selection">Operators</a>
 					<ul style="list-style: none;">
-						<li><b><a href="#/part1-introduction">Part 1. Introduction</a></b></li>
-						<!-- <ul style="list-style: none;"> -->
-							<!-- <li>Optimization in general</li> -->
-							<!-- <li></li>
-							<li></li> -->
-						<!-- </ul> -->
-						<li style="margin-top: 0.5em;"><b><a href="#/part2-stochastic-and-population-methods">Part 2. Stochastic and Population Methods</a></b></li>
-						<ul style="list-style: none;">
-							<!-- <li><a href="#/"></a>Gradient free methods</li> -->
-							<li><a href="#/2.1-population-methods-intro">Population methods</a></li>
-							<li><a href="#/2.2-generic-evolutionary-algorithm">Generic Evolutionary Algorithm</a></li>
-							<li><a href="#/2.3-solution-encoding">Solution encoding</a></li>
-							<li>
-								<a href="#/2.4-operators-selection">Operators</a>
-								<ul style="list-style: none;">
-									<li>
-										<a href="#/2.4-operators-selection">Selection</a>,
-										<a href="#/2.4-operators-crossover">Crossover</a>,
-										<a href="#/2.4-operators-mutation">Mutation</a>,
-										<a href="#/2.4-operators-termination">Termination</a>
-									</li>
-								</ul>
-							</li>
-							<li>
-								<a href="#/2.5-examples-es">Evolution Strategies Examples</a>
-								<ul style="list-style: none;">
-									<li>
-										<a href="#/2.5-examples-es">$(1 + 1)\text{-ES}$</a>,
-										<a href="#/2.5-examples-saes1">$(1 + 1)\text{-SA-ES}$</a>,
-										<a href="#/2.5-examples-saes2">$(\mu/\rho + \lambda)\text{-SA-ES}$</a>
-									</li>
-								</ul>
-							</li>
-							<li>
-								<a href="#/2.5-examples-de">Other Popular Stochastic and Population Methods</a>
-								<ul style="list-style: none;">
-									<li>
-										<a href="#/2.5-examples-de">Differential Evolution</a>,
-										<a href="#/2.5-examples-cem">Cross-Entropy Method</a>,
-										<a href="#/2.5-examples-cma">CMA-ES</a>,
-										<a href="#/2.5-examples-pso">Particle Swarm Optimization</a>
-									</li>
-								</ul>
-							</li>
-						</ul>
-						<li style="margin-top: 0.5em;"><b><a href="#/part3-application-to-rl">Part 3. Applications Linked to Reinforcement Learning</a></b></li>
-						<!-- <ul style="list-style: none;"> -->
-							<!-- <li>Direct Policy Search</li> -->
-							<!-- <li></li>
-							<li></li> -->
-						<!-- </ul> -->
-						<li style="margin-top: 0.5em;"><b><a href="#/conclusion">Conclusion</a></b></li>
+						<li>
+							<a href="#/2.4-operators-selection">Selection</a>,
+							<a href="#/2.4-operators-crossover">Crossover</a>,
+							<a href="#/2.4-operators-mutation">Mutation</a>,
+							<a href="#/2.4-operators-termination">Termination</a>
+						</li>
 					</ul>
-			
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
+				</li>
+				<li>
+					<a href="#/2.5-examples-es">Evolution Strategies Examples</a>
+					<ul style="list-style: none;">
+						<li>
+							<a href="#/2.5-examples-es">$(1 + 1)\text{-ES}$</a>,
+							<a href="#/2.5-examples-saes1">$(1 + 1)\text{-SA-ES}$</a>,
+							<a href="#/2.5-examples-saes2">$(\mu/\rho + \lambda)\text{-SA-ES}$</a>
+						</li>
+					</ul>
+				</li>
+				<li>
+					<a href="#/2.5-examples-de">Other Popular Stochastic and Population Methods</a>
+					<ul style="list-style: none;">
+						<li>
+							<a href="#/2.5-examples-de">Differential Evolution</a>,
+							<a href="#/2.5-examples-cem">Cross-Entropy Method</a>,
+							<a href="#/2.5-examples-cma">CMA-ES</a>,
+							<a href="#/2.5-examples-pso">Particle Swarm Optimization</a>
+						</li>
+					</ul>
+				</li>
+			</ul>
+			<li style="margin-top: 0.5em;"><b><a href="#/part3-application-to-rl">Part 3. Applications Linked to Reinforcement Learning</a></b></li>
+			<!-- <ul style="list-style: none;"> -->
+				<!-- <li>Direct Policy Search</li> -->
+				<!-- <li></li>
+				<li></li> -->
+			<!-- </ul> -->
+			<li style="margin-top: 0.5em;"><b><a href="#/conclusion">Conclusion</a></b></li>
+		</ul>
+
+		<aside class="notes">
+			<div class="fr-notes">
+			</div>
+			<div class="en-notes">
 Today I’ll talk about...
 
 - optimization in general,
 
 - then I will focus on some popular <b style="color:red">stochastic</b> and <b style="color:red">population methods</b>,
-  like genetic algorithms and evolutionary strategies.
+like genetic algorithms and evolutionary strategies.
 
 - And finally I'll discuss applications to Reinforcement Learning ;
-  and for that I’ll introduce <b style="color:red">Direct Policy Search</b> methods.
-  Actually, today’s lab will focus on this:
-  we will continue to solve Reinforcement Learning problems
-  in the Gymnasium framework
-  but using Direct Policy Search methods this time.
-						</div>
-					</aside>
-				</section>
+and for that I’ll introduce <b style="color:red">Direct Policy Search</b> methods.
+Actually, today’s lab will focus on this:
+we will continue to solve Reinforcement Learning problems
+in the Gymnasium framework
+but using Direct Policy Search methods this time.
+			</div>
+		</aside>
+	</section>
 
-				<!-- endregion -->
+	<!-- endregion -->

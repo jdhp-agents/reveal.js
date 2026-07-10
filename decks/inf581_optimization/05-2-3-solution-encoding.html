@@ -1,69 +1,69 @@
 <!-- @preview /inf581_optimization.html -->
-				<!-- #region -->
+<!-- #region -->
 
-				<section id="2.3-solution-encoding">
-					<h3>Solution encoding</h3>
+<section id="2.3-solution-encoding">
+	<h3>Solution encoding</h3>
 
-					<div>
-						The problem we want to solve is defined as a function to minimize (e.g. error, cost, ...)
-					</div>
-				
-					$$\boldsymbol{x}^* = \arg\min_{\boldsymbol{x} \in \mathcal{X}} f(\boldsymbol{x})$$
+	<div>
+		The problem we want to solve is defined as a function to minimize (e.g. error, cost, ...)
+	</div>
 
-					<div>
-						But how do we define the solution space in EA?
-					</div>
+	$$\boldsymbol{x}^* = \arg\min_{\boldsymbol{x} \in \mathcal{X}} f(\boldsymbol{x})$$
 
-					<p>
-						The efficiency of mutation and recombination operators (a.k.a. search operators) greatly depends on this definition !
-					</p>
-				
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
+	<div>
+		But how do we define the solution space in EA?
+	</div>
+
+	<p>
+		The efficiency of mutation and recombination operators (a.k.a. search operators) greatly depends on this definition !
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
 Ok, now let’s talk about the main distinction between Evolution Algorithms main branches: <b style="color:blue">solution encoding</b>
 
 The question is: how do we define the solution space $\mathcal{X}$ in EA?
 
 <b style="color:blue">[...]</b>
-						</div>
-					</aside>
-				</section>
+		</div>
+	</aside>
+</section>
 
-				<!-- ------------------------------------------------------ -->
+<!-- ------------------------------------------------------ -->
 
-				<section style="text-align: left; font-size: 75%;">
-					<h3 style="text-align: center;">Solution encoding</h3>
-				
-					<p>
-						In some evolutionary algorithms, the solution space is tailored for specific needs of <b>search operators</b>
-					</p>
+<section style="text-align: left; font-size: 75%;">
+	<h3 style="text-align: center;">Solution encoding</h3>
 
-					<p>
-						Then a distinction has to be made between:
-						<ul style="padding-left: 1em; display: block;">
-							<li>The solution space used by the objective function f : the <b>phenotype</b></li>
-							<li>The solution space used by the algorithm : the <b>genotype</b></li>
-						</ul>
-					</p>
+	<p>
+		In some evolutionary algorithms, the solution space is tailored for specific needs of <b>search operators</b>
+	</p>
 
-					<p>
-						The data structure used to store the genotype is a <b>chromosome</b>
-					</p>
+	<p>
+		Then a distinction has to be made between:
+		<ul style="padding-left: 1em; display: block;">
+			<li>The solution space used by the objective function f : the <b>phenotype</b></li>
+			<li>The solution space used by the algorithm : the <b>genotype</b></li>
+		</ul>
+	</p>
 
-					<p>
-						<b>Evolution Strategies</b> like classical optimization techniques don’t make this distinction and simply use vectors of real numbers
-					</p>
+	<p>
+		The data structure used to store the genotype is a <b>chromosome</b>
+	</p>
 
-					<p>
-						But <b>Genetic Algorithms</b> and <b>Genetic Programming</b> does !
-					</p>
-				
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
+	<p>
+		<b>Evolution Strategies</b> like classical optimization techniques don’t make this distinction and simply use vectors of real numbers
+	</p>
+
+	<p>
+		But <b>Genetic Algorithms</b> and <b>Genetic Programming</b> does !
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
 In some evolutionary algorithms, the solution space is tailored for specific needs of search operators
 
 Then a distinction has to be made between:
@@ -77,31 +77,31 @@ They simply use vectors of real numbers.
 
 But Genetic Algorithms and Genetic Programming does !
 </b>
-						</div>
-					</aside>
-				</section>
+		</div>
+	</aside>
+</section>
 
-				<!-- ------------------------------------------------------ -->
-				
-				<section>
-					<h3>Solution encoding</h3>
+<!-- ------------------------------------------------------ -->
 
-					<br>
-				
-					<div class="row">
-						<div style="float: left; width: 50%;">
-							<img width="78%" src="assets/inf581_optimization/phenotype.png" />
-						</div>
-						<div style="float: left; width: 50%;">
-							<img width="100%" src="assets/inf581_optimization/genotype.png" />
-						</div>
-					</div>
-					<p style="clear: both;"></p> 
-				
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
+<section>
+	<h3>Solution encoding</h3>
+
+	<br>
+
+	<div class="row">
+		<div style="float: left; width: 50%;">
+			<img width="78%" src="assets/inf581_optimization/phenotype.png" />
+		</div>
+		<div style="float: left; width: 50%;">
+			<img width="100%" src="assets/inf581_optimization/genotype.png" />
+		</div>
+	</div>
+	<p style="clear: both;"></p> 
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
 Here are some examples of solution encoding
 
 the result of the objective function is defined in the phenotype space
@@ -109,35 +109,35 @@ the result of the objective function is defined in the phenotype space
 genetic algorithms convert it in the genotype space
 either in the form of a bit string
 or a tuple of integer
-						</div>
-					</aside>
-				</section>
+		</div>
+	</aside>
+</section>
 
-				<!-- ------------------------------------------------------ -->
-				
-				<section style="text-align: left; font-size: 75%;">
-					<h3 style="text-align: center;">Genotype-Phenotype Mapping</h3>
-				
-					<p>
-						Can be convenient for combinatorial problems: Travelling salesman problem, Knapsack problem, …
-					</p>
+<!-- ------------------------------------------------------ -->
 
-					<p>
-						Be careful
-						<ul style="padding-left: 1em; display: block;">
-							<li>A point in the genotype space might not represent a valid point in the phenotype space</li>
-							<li>The genotype-phenotype mapping should avoid bias:</li>
-							<ul>
-								<li>Two individuals close in the genome space should be close in the phenotype space and vice versa</li>
-								<li>Another example of bias is when the mapping could map most of the genotype space to a small set of phenotypes</li>
-							</ul>
-						</ul>
-					</p>
-				
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
+<section style="text-align: left; font-size: 75%;">
+	<h3 style="text-align: center;">Genotype-Phenotype Mapping</h3>
+
+	<p>
+		Can be convenient for combinatorial problems: Travelling salesman problem, Knapsack problem, …
+	</p>
+
+	<p>
+		Be careful
+		<ul style="padding-left: 1em; display: block;">
+			<li>A point in the genotype space might not represent a valid point in the phenotype space</li>
+			<li>The genotype-phenotype mapping should avoid bias:</li>
+			<ul>
+				<li>Two individuals close in the genome space should be close in the phenotype space and vice versa</li>
+				<li>Another example of bias is when the mapping could map most of the genotype space to a small set of phenotypes</li>
+			</ul>
+		</ul>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
 The Genotype-Phenotype Mapping
 Can be convenient for combinatorial problems like the Travelling salesman problem, Knapsack problem, …
 
@@ -146,309 +146,309 @@ A point in the genotype space might not represent a valid point in the phenotype
 Also the genotype-phenotype mapping should avoid bias:
 Two individuals close in the genome space should be close in the phenotype space and vice versa
 Another example of bias is when the mapping could map most of the genotype space to a small set of phenotypes
-						</div>
-					</aside>
-				</section>
+		</div>
+	</aside>
+</section>
 
-				<!-- ------------------------------------------------------ -->
-				
-				<section style="text-align: left; font-size: 75%;">
-					<h3 style="text-align: center;">Hamming cliff</h3>
-				
-					<p>
-						Example of bias with the “classic” integer to binary mapping:
-					</p>
-					
-					<table style="font-size: 0.8em;">
-						<tbody>
-							<tr>
-								<td style="border-bottom: 0px; vertical-align: middle; color: #c53030;" rowspan="2">phenotype</td>
-								<td style="border-bottom: 0px;"><span style="color: #c53030;">7</span> = <span style="color: #3a853a;">0111</span></td>
-								<td style="border-bottom: 0px; vertical-align: middle; color: #3a853a;" rowspan="2">genotype</td>
-							</tr>
-							<tr>
-								<td style="border-bottom: 0px;"><span style="color: #c53030;">8</span> = <span style="color: #3a853a;">1000</span></td>
-							</tr>
-						</tbody>
-					</table>
+<!-- ------------------------------------------------------ -->
 
-					<p>
-						Individuals close in the phenotype space but “far” (according to the <b>Hamming distance</b>) in the genotype space
-						<ul style="padding-left: 1em; display: block;">
-							<li>To go from one individual to the other, <b>many mutations are required</b> despite their small distance in the phenotype space</li>
-							<li>This disturb <em>variation operators</em> (<em>crossover</em> and <em>mutation</em>)</li>
-							<li>Individuals are trapped by this distortion, that’s the "Hamming cliff"</li>
-						</ul>
-					</p>
+<section style="text-align: left; font-size: 75%;">
+	<h3 style="text-align: center;">Hamming cliff</h3>
 
-					<p>
-						Solution: use the <b>Gray code</b>
-					</p>
-				
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
+	<p>
+		Example of bias with the “classic” integer to binary mapping:
+	</p>
+	
+	<table style="font-size: 0.8em;">
+		<tbody>
+			<tr>
+				<td style="border-bottom: 0px; vertical-align: middle; color: #c53030;" rowspan="2">phenotype</td>
+				<td style="border-bottom: 0px;"><span style="color: #c53030;">7</span> = <span style="color: #3a853a;">0111</span></td>
+				<td style="border-bottom: 0px; vertical-align: middle; color: #3a853a;" rowspan="2">genotype</td>
+			</tr>
+			<tr>
+				<td style="border-bottom: 0px;"><span style="color: #c53030;">8</span> = <span style="color: #3a853a;">1000</span></td>
+			</tr>
+		</tbody>
+	</table>
+
+	<p>
+		Individuals close in the phenotype space but “far” (according to the <b>Hamming distance</b>) in the genotype space
+		<ul style="padding-left: 1em; display: block;">
+			<li>To go from one individual to the other, <b>many mutations are required</b> despite their small distance in the phenotype space</li>
+			<li>This disturb <em>variation operators</em> (<em>crossover</em> and <em>mutation</em>)</li>
+			<li>Individuals are trapped by this distortion, that’s the "Hamming cliff"</li>
+		</ul>
+	</p>
+
+	<p>
+		Solution: use the <b>Gray code</b>
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
 Here is an example of such a bias to avoid [...]
-						</div>
-					</aside>
-				</section>
+		</div>
+	</aside>
+</section>
 
-				<!-- ------------------------------------------------------ -->
-				
-				<section style="text-align: left; font-size: 75%;">
-					<h3 style="text-align: center;">Gray code</h3>
-					<h4 style="text-align: center;">decimal values (phenotype) ↔ bit strings (genotype)</h4>
-				
-					<div class="row">
-						<div style="float: left; width: 70%;">
-							<p style="font-size: 75%;">
-								A binary encoding such that
-								the binary representation of adjacent decimal numbers
-								only differ by one bit flip (Hamming distance = 1)
-							</p>
-							<br>
-							<pre style="font-size: 0.5em;"><code data-trim data-noescape>
-								def bin_to_gray(n):
-									return n ^ (n >> 1)   # N  XOR  (N  BITWISE_SHIFT_RIGHT  1)
+<!-- ------------------------------------------------------ -->
 
-								def gray_to_bin(n):
-									mask = n >> 1
-									while (mask != 0):
-										n = n ^ mask
-										mask = mask >> 1
-									return n
-							</code></pre>
-						</div>
-						<div style="float: left; width: 30%;">
-							<!-- <img width="60%" src="assets/inf581_optimization/gray_code.png" /> -->
-							<table style="font-size: 0.5em;">
-								<tr>
-									<th>Decimal</th>
-									<th>Binary</th>
-									<th>Gray</th>
-								</tr>
-								<tr>
-									<td>0</td>
-									<td>0000</td>
-									<td>0000</td>
-								</tr>
-								<tr>
-									<td>1</td>
-									<td>0001</td>
-									<td>0001</td>
-								</tr>
-								<tr>
-									<td>2</td>
-									<td>0010</td>
-									<td>0011</td>
-								</tr>
-								<tr>
-									<td>3</td>
-									<td>0011</td>
-									<td>0010</td>
-								</tr>
-								<tr>
-									<td>4</td>
-									<td>0100</td>
-									<td>0110</td>
-								</tr>
-								<tr>
-									<td>5</td>
-									<td>0101</td>
-									<td>0111</td>
-								</tr>
-								<tr>
-									<td>6</td>
-									<td>0110</td>
-									<td>0101</td>
-								</tr>
-								<tr>
-									<td>7</td>
-									<td>0111</td>
-									<td>0100</td>
-								</tr>
-								<tr>
-									<td>8</td>
-									<td>1000</td>
-									<td>1100</td>
-								</tr>
-								<tr>
-									<td>9</td>
-									<td>1001</td>
-									<td>1101</td>
-								</tr>
-								<tr>
-									<td>10</td>
-									<td>1010</td>
-									<td>1111</td>
-								</tr>
-								<tr>
-									<td>11</td>
-									<td>1011</td>
-									<td>1110</td>
-								</tr>
-								<tr>
-									<td>12</td>
-									<td>1100</td>
-									<td>1010</td>
-								</tr>
-								<tr>
-									<td>13</td>
-									<td>1101</td>
-									<td>1011</td>
-								</tr>
-								<tr>
-									<td>14</td>
-									<td>1110</td>
-									<td>1001</td>
-								</tr>
-								<tr>
-									<td>15</td>
-									<td>1111</td>
-									<td>1000</td>
-								</tr>
-							</table>
-						</div>
-					</div>
-					<p style="clear: both;"></p> 
-				
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
-						</div>
-					</aside>
-				</section>
+<section style="text-align: left; font-size: 75%;">
+	<h3 style="text-align: center;">Gray code</h3>
+	<h4 style="text-align: center;">decimal values (phenotype) ↔ bit strings (genotype)</h4>
 
-				<!-- ------------------------------------------------------ -->
+	<div class="row">
+		<div style="float: left; width: 70%;">
+			<p style="font-size: 75%;">
+				A binary encoding such that
+				the binary representation of adjacent decimal numbers
+				only differ by one bit flip (Hamming distance = 1)
+			</p>
+			<br>
+			<pre style="font-size: 0.5em;"><code data-trim data-noescape>
+				def bin_to_gray(n):
+					return n ^ (n >> 1)   # N  XOR  (N  BITWISE_SHIFT_RIGHT  1)
+
+				def gray_to_bin(n):
+					mask = n >> 1
+					while (mask != 0):
+						n = n ^ mask
+						mask = mask >> 1
+					return n
+			</code></pre>
+		</div>
+		<div style="float: left; width: 30%;">
+			<!-- <img width="60%" src="assets/inf581_optimization/gray_code.png" /> -->
+			<table style="font-size: 0.5em;">
+				<tr>
+					<th>Decimal</th>
+					<th>Binary</th>
+					<th>Gray</th>
+				</tr>
+				<tr>
+					<td>0</td>
+					<td>0000</td>
+					<td>0000</td>
+				</tr>
+				<tr>
+					<td>1</td>
+					<td>0001</td>
+					<td>0001</td>
+				</tr>
+				<tr>
+					<td>2</td>
+					<td>0010</td>
+					<td>0011</td>
+				</tr>
+				<tr>
+					<td>3</td>
+					<td>0011</td>
+					<td>0010</td>
+				</tr>
+				<tr>
+					<td>4</td>
+					<td>0100</td>
+					<td>0110</td>
+				</tr>
+				<tr>
+					<td>5</td>
+					<td>0101</td>
+					<td>0111</td>
+				</tr>
+				<tr>
+					<td>6</td>
+					<td>0110</td>
+					<td>0101</td>
+				</tr>
+				<tr>
+					<td>7</td>
+					<td>0111</td>
+					<td>0100</td>
+				</tr>
+				<tr>
+					<td>8</td>
+					<td>1000</td>
+					<td>1100</td>
+				</tr>
+				<tr>
+					<td>9</td>
+					<td>1001</td>
+					<td>1101</td>
+				</tr>
+				<tr>
+					<td>10</td>
+					<td>1010</td>
+					<td>1111</td>
+				</tr>
+				<tr>
+					<td>11</td>
+					<td>1011</td>
+					<td>1110</td>
+				</tr>
+				<tr>
+					<td>12</td>
+					<td>1100</td>
+					<td>1010</td>
+				</tr>
+				<tr>
+					<td>13</td>
+					<td>1101</td>
+					<td>1011</td>
+				</tr>
+				<tr>
+					<td>14</td>
+					<td>1110</td>
+					<td>1001</td>
+				</tr>
+				<tr>
+					<td>15</td>
+					<td>1111</td>
+					<td>1000</td>
+				</tr>
+			</table>
+		</div>
+	</div>
+	<p style="clear: both;"></p> 
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<section>
+	<h3 style="font-size: 75%; margin-bottom: 0.25em; margin-top: 0.25em;">Genotype-Phenotype mapping</h3>
+	<h4 style="font-size: 65%; margin-bottom: 0.25em; margin-top: 0.25em;">Genetic Algorithms</h4>
+
+	<div class="row">
+		<div style="float: left; width: 50%;">
+			<!-- <img width="70%" src="assets/inf581_optimization/algo_ga.png" /> -->
+			<div style="text-align: left; font-size: 0.4em;">
+				<b>Input</b>:<br>
+				$\quad\quad$ $f$: the objective function<br>
 				
-				<section>
-					<h3 style="font-size: 75%; margin-bottom: 0.25em; margin-top: 0.25em;">Genotype-Phenotype mapping</h3>
-					<h4 style="font-size: 65%; margin-bottom: 0.25em; margin-top: 0.25em;">Genetic Algorithms</h4>
+				<b>Algorithm parameter</b>:<br>
+				$\quad\quad$ $\mu$: number of parents per generation<br>
+				$\quad\quad$ $\rho$: number of parents used to make each child<br>
+				$\quad\quad$ $\lambda$: number of children per generation<br>
+				$\quad\quad$ mutation operator<br>
+				$\quad\quad$ mating selection operator<br>
+				$\quad\quad$ survivor selection operator<br>
+				$\quad\quad$ termination criterion<br>
+				$\quad\quad$ an initialization procedure<br><br>
 				
-					<div class="row">
-						<div style="float: left; width: 50%;">
-							<!-- <img width="70%" src="assets/inf581_optimization/algo_ga.png" /> -->
-							<div style="text-align: left; font-size: 0.4em;">
-								<b>Input</b>:<br>
-								$\quad\quad$ $f$: the objective function<br>
-								
-								<b>Algorithm parameter</b>:<br>
-								$\quad\quad$ $\mu$: number of parents per generation<br>
-								$\quad\quad$ $\rho$: number of parents used to make each child<br>
-								$\quad\quad$ $\lambda$: number of children per generation<br>
-								$\quad\quad$ mutation operator<br>
-								$\quad\quad$ mating selection operator<br>
-								$\quad\quad$ survivor selection operator<br>
-								$\quad\quad$ termination criterion<br>
-								$\quad\quad$ an initialization procedure<br><br>
-								
-								Initialize a population of $\mu$ individuals<br>
-								<span class="fragment highlight-current-red" data-fragment-index="1">Genotype-Phenotype mapping</span><br>
-								Evaluate each individual $\boldsymbol{x}$: $f(\boldsymbol{x})$<br><br>
-								
-								<b>FOR EACH</b> generation (until termination criterion)<br>
-								$\quad$ <b>FOR EACH</b> child $\boldsymbol{x}$<br>
-								$\quad\quad$ 1. select $\rho$ parents<br>
-								$\quad\quad$ 2. $\boldsymbol{x} \leftarrow$ recombinate selected parents (crossover)<br>
-								$\quad\quad$ 3. mutate $\boldsymbol{x}$<br>
-								$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="1">4. genotype-phenotype mapping</span><br>
-								$\quad\quad$ 5. evaluate $f(\boldsymbol{x})$<br>
-								$\quad$ Select the next generation of $\mu$ individuals<br><br>
-								
-								<b>RETURN</b> the best individual
-							</div>
-						</div>
-						<div style="float: left; width: 50%;">
-							<br><br>
-							<img width="100%" src="assets/inf581_optimization/ga.png" />
-						</div>
-					</div>
-					<p style="clear: both;"></p>
+				Initialize a population of $\mu$ individuals<br>
+				<span class="fragment highlight-current-red" data-fragment-index="1">Genotype-Phenotype mapping</span><br>
+				Evaluate each individual $\boldsymbol{x}$: $f(\boldsymbol{x})$<br><br>
 				
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
+				<b>FOR EACH</b> generation (until termination criterion)<br>
+				$\quad$ <b>FOR EACH</b> child $\boldsymbol{x}$<br>
+				$\quad\quad$ 1. select $\rho$ parents<br>
+				$\quad\quad$ 2. $\boldsymbol{x} \leftarrow$ recombinate selected parents (crossover)<br>
+				$\quad\quad$ 3. mutate $\boldsymbol{x}$<br>
+				$\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="1">4. genotype-phenotype mapping</span><br>
+				$\quad\quad$ 5. evaluate $f(\boldsymbol{x})$<br>
+				$\quad$ Select the next generation of $\mu$ individuals<br><br>
+				
+				<b>RETURN</b> the best individual
+			</div>
+		</div>
+		<div style="float: left; width: 50%;">
+			<br><br>
+			<img width="100%" src="assets/inf581_optimization/ga.png" />
+		</div>
+	</div>
+	<p style="clear: both;"></p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
 If we compare the common Genetic Algorithm procedure with the previously described “General” Evolutionary Algorithm framework,
 there are little differences :
 we insert a new “mapping” operator [...here and here…] to map from the genotype space of individuals to the phenotype space (used for evaluation of solutions)
-						</div>
-					</aside>
-				</section>
+		</div>
+	</aside>
+</section>
 
-				<!-- ------------------------------------------------------ -->
-				
-				<section style="text-align: left; font-size: 75%;">
-					<h3 style="text-align: center;">Solution encoding</h3>
-					<h4 style="text-align: center;">Genetic Programming: tree structure</h4>
+<!-- ------------------------------------------------------ -->
 
-					<br>
-				
-					<div class="row">
-						<div style="float: left; width: 50%;">
-							<br>
-							<ul>
-								<li>Symbolic representation</li>
-								<li>An individual</li>
-								<ul style="list-style: none;">
-									<li>= a program</li>
-									<li>= a tree of instructions</li>
-								</ul>
-								<li>Nodes</li>
-								<ul style="list-style: none;">
-									<li>= genes</li>
-									<li>= instructions, operators, ...</li>
-								</ul>
-							</ul>
-						</div>
-						<div style="float: left; width: 50%;">
-							<img width="100%" src="assets/inf581_optimization/gp.png" />
-						</div>
-					</div>
-					<p style="clear: both;"></p> 
-				
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
+<section style="text-align: left; font-size: 75%;">
+	<h3 style="text-align: center;">Solution encoding</h3>
+	<h4 style="text-align: center;">Genetic Programming: tree structure</h4>
+
+	<br>
+
+	<div class="row">
+		<div style="float: left; width: 50%;">
+			<br>
+			<ul>
+				<li>Symbolic representation</li>
+				<li>An individual</li>
+				<ul style="list-style: none;">
+					<li>= a program</li>
+					<li>= a tree of instructions</li>
+				</ul>
+				<li>Nodes</li>
+				<ul style="list-style: none;">
+					<li>= genes</li>
+					<li>= instructions, operators, ...</li>
+				</ul>
+			</ul>
+		</div>
+		<div style="float: left; width: 50%;">
+			<img width="100%" src="assets/inf581_optimization/gp.png" />
+		</div>
+	</div>
+	<p style="clear: both;"></p> 
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
 And finally, as I said earlier, with the 3rd family of EA algorithms, “genetic programming”, solutions are coded as a tree structure
 
 [...]
 
 Mutations and corssover occure on nodes and sub trees
-						</div>
-					</aside>
-				</section>
+		</div>
+	</aside>
+</section>
 
-				<!-- ------------------------------------------------------ -->
-				
-				<section>
-					<h3>Initial population</h3>
+<!-- ------------------------------------------------------ -->
 
-					<br>
+<section>
+	<h3>Initial population</h3>
 
-					<p style="text-align: left; font-size: 0.8em;">
-						Initial population should be spread over the solution space to increase chances that samples are close to best regions
-					</p>
+	<br>
 
-					<p style="text-align: left; font-size: 0.8em;">
-						Should define a region of interest to sample the initial population:
-						<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
-							<li>Hyper rectangle to sample into with a uniform distribution</li>
-							<li>Point to sample around with a multivariate normal distribution</li>
-						</ul>
-					</p>
+	<p style="text-align: left; font-size: 0.8em;">
+		Initial population should be spread over the solution space to increase chances that samples are close to best regions
+	</p>
 
-					<p style="text-align: left; font-size: 0.8em;">
-						For GA using bit string: a random combination of 0 and 1 is reasonable
-					</p>
+	<p style="text-align: left; font-size: 0.8em;">
+		Should define a region of interest to sample the initial population:
+		<ul style="font-size: 0.8em; padding-left: 1em; display: block;">
+			<li>Hyper rectangle to sample into with a uniform distribution</li>
+			<li>Point to sample around with a multivariate normal distribution</li>
+		</ul>
+	</p>
 
-					<aside class="notes">
-						<div class="fr-notes">
-						</div>
-						<div class="en-notes">
+	<p style="text-align: left; font-size: 0.8em;">
+		For GA using bit string: a random combination of 0 and 1 is reasonable
+	</p>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
 In all cases, the initial population
 
 should be spread over the solution space to increase chances that samples are close to best regions
@@ -458,8 +458,8 @@ Hyper rectangle to sample into with a uniform distribution
 Point to sample around with a multivariate normal distribution
 
 For GA using bit string: a random combination of 0 and 1 is reasonable
-						</div>
-					</aside>
-				</section>
+		</div>
+	</aside>
+</section>
 
-				<!-- endregion -->
+<!-- endregion -->
