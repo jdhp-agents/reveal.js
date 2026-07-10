@@ -1,0 +1,868 @@
+<!-- @preview /rl_distributional.html -->
+<!-- #region -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Motivation for Distributional RL -->
+<!-- <section>
+	<h3>Motivation</h3>
+	<h4>Beyond the Mean Value</h4>
+	<ul>
+		<li>Classic RL: estimates expected return (mean).</li>
+		<li>Distributional RL: models the full distribution of returns.</li>
+		<li>Captures risk, uncertainty, and variability in outcomes.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			La modélisation de la distribution complète des retours permet de mieux gérer le risque et
+			l’incertitude, et ouvre la voie à des politiques plus robustes ou adaptées à différents profils
+			d’utilisateurs.
+		</div>
+		<div class="en-notes">
+			Modeling the full return distribution enables reasoning about risk and uncertainty, not just
+			average performance.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Introduction & Motivation -->
+<section>
+	<h3>Categorical DQN (C51)</h3>
+	<h4>Introduction &amp; Motivation</h4>
+
+	<p style="font-size:0.6em; margin-top: 3em; text-align: left; margin-bottom: 0;"><b>Classic DQN</b>:</p>
+	<ul style="font-size:0.6em; margin-top: 0em; text-align: left; padding-left: 1em; display: block;">
+		<li>Learns only the expectation $Q(s,a)=\mathbb{E}[R \mid s,a]$</li>
+		<li>Bellman: \(Q(s,a) = R(s,a) + \gamma Q(s', a')\).</li>
+		<li>Lost information: variance, skewness, tail (risk) structure.</li>
+	</ul>
+	<p style="font-size:0.6em; margin-top: 1em; text-align: left; margin-bottom: 0em;"><b>Distributional RL</b>:</p>
+	<ul style="font-size:0.6em; margin-top: 0em; text-align: left; padding-left: 1em; display: block;">
+		<li>Model full return random variable \(Z(s,a)\) (not just its mean).</li>
+		<li>Distributional Bellman: \(\mathcal{T} Z(s,a) \stackrel{D}{=} R(s,a) + \gamma Z(s', a')\).</li>
+		<li>Benefits: richer training signal, more stable gradients, enables risk-sensitive objectives.</li>
+	</ul>
+	<p style="font-size:0.6em; margin-top: 1.5em;">
+		<b>Key idea</b>: preserve probabilistic structure throughout the backup,<br>then take \(\mathbb{E}[Z]\)
+		only for action selection.
+	</p>
+	<!-- Placeholder: diagram showing mean vs full return distribution (bell curve vs single point). Objective: illustrate loss of information when collapsing to expectation. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+In this section, I’ll introduce the motivation behind distributional reinforcement learning, and
+specifically the C51 algorithm.
+
+Let’s start by recalling that classic algorithms like DQN aim to approximate the value of an
+action in a given state, that is, the expected future return.
+However, this approach collapses all uncertainty, variance, and risk structure into a single
+number.
+We lose all information about the spread of possible returns, the probability of very good or
+very bad outcomes, and the overall shape of the distribution—such as whether it’s skewed or has
+heavy tails.
+
+This is where distributional RL comes in.
+Instead of modeling only the expectation, we aim to approximate the full distribution of
+possible returns, denoted Z(s,a).
+This allows us to capture not just the mean, but also the variance, the tails, and thus to have
+a much richer picture of what the agent might experience.
+
+Mathematically, the Bellman operator becomes distributional: we no longer propagate a scalar
+value, but a probability law, which is shifted and contracted at each step.
+The C51 algorithm represents this distribution by discretizing it onto 51 fixed points, called
+“atoms,” and projects the updated distribution onto this support at every iteration.
+
+What are the benefits? First, the learning signal is much richer: instead of a single number, we
+supervise the agent with an entire distribution, which improves stability and convergence speed.
+Second, this opens the door to risk-sensitive policies: we can choose to optimize not just the
+mean, but also Value-at-Risk or other utility criteria.
+
+Finally, it’s important to note that even though action selection is still done via the
+expectation of the distribution, the entire learning phase benefits from this probabilistic
+structure,
+which explains the empirical gains observed.
+
+In summary, moving from expectation to the full distribution allows us to capture the richness
+of uncertainty, improve learning, and lay the groundwork for more robust and adaptive agents.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Rappel DQN -->
+<section>
+	<h3>DQN Recap</h3>
+	<img src="assets/rl_distributional/dqn.jpg" alt="DQN Architecture" style="width: 50%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 2em;">
+		Source: Mnih et al. Human-level control through deep reinforcement learning. Nature 518, 529–533 (2015).
+	</figcaption>
+	<ul style="font-size:0.6em;">
+		<li><b>Goal</b>: approximate \( Q(s,a) = \mathbb{E}\left[\sum_{t} \gamma^t r_t \mid s,a\right] \)</li>
+		<li><b>Network</b>: input is state, output is vector \( Q(s,a) \) for all actions</li>
+		<li><b>Bellman backup (target)</b>: \( y = r + \gamma \max_{a'} Q(s',a') \)</li>
+		<li><b>Loss</b>: mean squared error \( (y - Q(s,a))^2 \)</li>
+		<li><b>Limitation</b>: collapses all uncertainty into a single scalar value</li><!-- TODO -->
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Classic DQN uses scalar regression toward bootstrapped expectation; no distributional structure
+preserved.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Distributional RL -->
+<section>
+	<h3>Distributional RL</h3>
+
+	<img src="assets/rl_distributional/dqn_vs_c51.png" alt="DQN vs C51" style="width: 60%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1806.06923" target="_blank">Implicit Quantile Networks for
+			Distributional Reinforcement Learning</a>, Dabney et al., 2018.
+	</figcaption>
+	<ul style="font-size:0.6em;">
+		<li><b>Random return</b>: \( Z(s,a) \) is a random variable over \( \mathbb{R} \)</li>
+		<li><b>Distributional Bellman</b>: \( \mathcal{T} Z(s,a) \stackrel{D}{=} r + \gamma Z(S', A') \), i.e., the law is transformed</li>
+		<li><b>Goal</b>: approximate the law of \( Z(s,a) \) (not just \( \mathbb{E}[Z] \))</li>
+		<li><b>Expectation recoverable</b>: \( Q(s,a) = \mathbb{E}[Z(s,a)] \)</li>
+		<!-- <li>Stronger contraction in the \( p \)-Wasserstein metric (on bounded support)</li> -->
+		<li>
+			<b>C51</b>: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on
+				Reinforcement Learning</a>, Bellemare et al., 2017.
+		</li>
+	</ul>
+	<!-- Placeholder: figure comparing scalar target vs full histogram shift after Bellman update. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Emphasize distributional Bellman operator and theoretical contraction in Wasserstein metric.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 -->
+<section>
+	<h3>Categorical Approximation (C51)</h3>
+
+	<img src="assets/rl_distributional/distrib.png" alt="C51 Distribution Support" style="width: 50%;">
+	<ul style="font-size:0.7em;">
+		<li>Fixed discrete support: \( \{z_i\}_{i=0}^{N-1} \), with \( N = 51 \)</li>
+		<li>Bounded interval: \( [V_{\min}, V_{\max}] \)</li>
+		<li>\( \Delta z = \frac{V_{\max} - V_{\min}}{N-1} \)</li>
+		<li>Network predicts logits \( \to \) softmax \( \to \) \( p_i(s,a) \)</li>
+		<li>Approximate distribution: \( \mathbb{P}(Z(s,a) = z_i) = p_i \)</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Choix fixe du support simplifie projection mais introduit rigidité si queue hors bornes.
+		</div>
+		<div class="en-notes">
+			Fixed categorical support enables simple cross-entropy optimization; clipping handles
+			out-of-range targets.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 (example of learned distribution) -->
+<section>
+	<h3>Distributional RL</h3>
+	<h4>Example of learned distribution</h4>
+
+	<img src="assets/rl_distributional/c51_space_inveder.png" alt="C51 Distribution"
+		style="width: 100%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Here is an example of the learned return distribution for different actions for a given
+state of the SPACE INVADERS Atari game.
+
+Learned value distribution during an episode of SPACE INVADERS.
+Different actions are shaded different colours.
+Returns below 0 (which do not occur in SPACE INVADERS) are not shown here as the agent
+assigns virtually no probability to them.
+
+This example illustrates the typical value distributions that can be observed.
+In this example, three actions (those including the button press) lead to the agent releasing its laser too early and eventually losing the game.
+The corresponding distributions reflect this: they assign a significant probability to 0 (the terminal value).
+The safe actions have similar distributions (LEFT, which tracks the invaders’ movement, is slightly favoured).
+This example helps explain why distributional RL approach is so successful:
+the distributional update keeps separated the low-value,
+“losing” event from the high-value,
+“survival” event,
+rather than average them into one (unrealizable) expectation.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 (example of learned distribution - video Space Invaders) -->
+<section>
+	<h3>Distributional RL</h3>
+	<h4>Example of learned distribution</h4>
+	<br>
+	<video src="assets/rl_distributional/c51.mp4" controls style="width: 80%; display: block; margin: 0 auto 1em auto;"></video>
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 (example of learned distribution - video Pong) -->
+<section>
+	<h3>Distributional RL</h3>
+	<h4>Example of learned distribution</h4>
+	<br>
+	<video src="assets/rl_distributional/c51_pong.mp4" controls style="width: 80%; display: block; margin: 0 auto 1em auto;"></video>
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Projection & Bellman Update -->
+<!-- <section>
+	<h3>C51</h3>
+	<h4>Bellman Update &amp; Projection</h4>
+	<img src="assets/rl_distributional/c51_distribution_support_simple.png" alt="C51 Distribution Support" style="width: 40%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section> -->
+
+<!-- <section>
+	<h3>C51</h3>
+	<h4>Bellman Update &amp; Projection</h4>
+	<img src="assets/rl_distributional/c51_distribution_support.png" alt="C51 Distribution Support" style="width: 60%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<ul style="font-size:0.6em;">
+		<li>Backup distribution: \( r + \gamma z_i \) (or \( r \) if terminal)</li>
+		<li>Clip to interval \([V_{\min}, V_{\max}]\)</li>
+		<li>Redistribute probability mass by linear interpolation to neighboring atoms</li>
+		<li>Projection operator \(\Phi\): maps shifted/scaled distribution onto fixed support</li>
+		<li>Approximately preserves expectation, stabilizes learning</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			### Que représente (P^\pi) ici ?
+
+			* (P^\pi) est **l’opérateur de transition sous la politique (\pi)**.
+
+			* Formellement :
+			[
+			(P^\pi Z)(s,a) ;\overset{d}{=}; Z\big(s',a'\big) \quad \text{avec } s' \sim P(\cdot|s,a),; a' \sim \pi(\cdot|s').
+			]
+			Autrement dit, on prend la distribution (Z) mais **vue depuis l’état suivant (s')**, en suivant la politique (\pi).
+
+			* Intuition : (P^\pi Z) est la **distribution des retours futurs** si on part du prochain état (s'), puis on continue à suivre (\pi).
+
+			---
+
+			### Explication de la figure :
+
+			1. **(a) (P^\pi Z)** (en bleu)
+
+			* On prend la distribution (Z) associée aux retours futurs, mais décalée pour refléter le fait qu’on regarde maintenant les retours **à partir du prochain état**.
+			* C’est la "matière première" du Bellman opérateur distributionnel.
+
+			2. **(b) (\gamma P^\pi Z)** (en violet)
+
+			* On applique le **facteur d’actualisation (\gamma)** : la distribution est **contractée vers 0** (les valeurs sont "compressées").
+
+			3. **(c) (R + \gamma P^\pi Z)** (en vert)
+
+			* On ajoute la récompense immédiate (R).
+			* Cela a pour effet de **translater** la distribution (on la déplace sur l’axe des x).
+
+			4. **(d) (\Phi \mathcal{T}^\pi Z)** (en orange)
+
+			* Enfin, comme C51 approxime la distribution par une **distribution discrète sur un support fixe** (les "51 atomes"), il faut une étape de **projection (\Phi)**.
+			* Cela "replaque" la distribution résultante sur le support fixe choisi (par exemple entre ([V_\text{min}, V_\text{max}])).
+
+			---
+
+			✅ Donc, **(P^\pi) correspond à l’opérateur de transition sous la politique (\pi)** : il prend la distribution de retours futurs et la "fait passer au pas de temps suivant", en tirant le prochain état (s') selon la dynamique (P(\cdot|s,a)) et la prochaine action (a') selon la politique (\pi(\cdot|s')).
+		</div>
+		<div class="en-notes">
+			Explain linear redistribution of probability mass to adjacent atoms after shift/scale.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Fonction de perte -->
+<!-- <section>
+	<h3>C51</h3>
+	<h4>Loss Function</h4>
+	<ul style="font-size:0.8em;">
+		<li><b>Target:</b> \( m' = \Phi \left( r + \gamma Z_{\theta^-}(s', a^*) \right) \)</li>
+		<li><b>Loss:</b> \( \mathrm{CE}(m', p_\theta) = - \sum_{i} m'_i \log p_\theta(z_i \mid s, a) \)</li>
+		<li><b>Comparison:</b> DQN uses MSE on a scalar value</li>
+		<li><b>Advantage:</b> Multi-bin signal &rarr; more informative gradients</li>
+		<li><b>Empirical result:</b> Improved stability on Atari benchmarks</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Cross-entropy agit comme maximum likelihood sur distribution projetée; meilleure propagation
+			d'information que MSE scalaire.
+		</div>
+		<div class="en-notes">
+			Cross-entropy between projected target distribution and predicted categorical distribution;
+			richer supervision.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 (architecture) -->
+<section>
+	<h3>C51 Architecture</h3>
+	<!-- <h4>Architecture</h4> -->
+
+	<div class="r-stack">
+		<div class="fragment current-visible" data-fragment-index="1">
+			<img src="assets/rl_distributional/dqn_architecture.png" alt="DQN Architecture" style="width: 75%;">
+			<figcaption style="font-size: 0.5em; text-align: center; margin-bottom: 0.5em; font-weight: bold;">
+				DQN
+			</figcaption>
+			<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 2em;">
+				Source: Bellemare, M. G., Dabney, W., &amp; Rowland, M. (2023). <i>Distributional Reinforcement Learning</i>. MIT Press.
+			</figcaption>
+		</div>
+		<div class="fragment" data-fragment-index="2">
+			<img src="assets/rl_distributional/c51_architecture.png" alt="C51 Architecture" style="width: 75%;">
+			<figcaption style="font-size: 0.5em; text-align: center; margin-bottom: 0.5em; font-weight: bold;">
+				C51 / QR-DQN
+			</figcaption>
+			<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 2em;">
+				Source: Bellemare, M. G., Dabney, W., &amp; Rowland, M. (2023). <i>Distributional Reinforcement Learning</i>. MIT Press.
+			</figcaption>
+		</div>
+	</div>
+	<ul style="font-size:0.6em;">
+		<li>Backbone identical to DQN: convolutional layers followed by fully connected layers.</li>
+		<li>Output: $(\#\text{actions} \times N)$ logits, reshaped to $(\#\text{actions}, N)$.</li>
+		<li>Softmax over atoms for each action: $p_i(s,a)$.</li>
+		<li>Action selection: $a^* = \arg\max_a \sum_i p_i(s,a) z_i$.</li>
+		<li>Target: uses frozen (target) network and projection onto fixed support.</li>
+	</ul>
+	<!-- Placeholder: diagram: shared feature extractor → branch per action → 51-way softmax. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Implementation detail: flatten logits, apply grouped softmax; expectation used for policy.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: But wait... -->
+<section>
+	<h3>But wait...</h3>
+
+	<p>
+		Why model the full value distribution if action selection is based only on the expected value?
+	</p>
+	<img src="assets/rl_distributional/c51_space_inveder.png" alt="C51 Distribution" style="width: 100%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+<b>Key idea of the figure</b>
+In <i>Space Invaders</i>, some actions ("Laser", etc.) often lead to immediate death &rarr; return ≈ <b>0</b>. Others ("Left/Right/Noop") are "safe" &rarr; higher return (6–9).
+<b>The return distribution is thus bimodal</b>: a mass near 0 ("lose") + a higher mass ("survive").
+
+If we only learn a scalar (<code>Q(s,a)=\mathbb{E}[Z(s,a)]</code>), we <b>collapse these two events into a mean</b> (e.g., 5.3).
+This mean can be "unrealizable" (we never actually observe 5.3: we either die or survive). As a result, each transition pulls the network in opposite directions (one update toward 0, one toward 8), leading to <b>very "blurry" targets</b> and <b>contradictory gradients</b>.
+
+In contrast, C51 learns the <b>entire distribution</b> (<code>Z(s,a)</code>) (a histogram over "atoms" <code>z_i</code>). The update distributes mass where it should go (closer to 0 after a death, higher after survival) <b>without mixing</b> these modes. This is what the text calls "keeping the 'lose' event separate from the 'survive' event".
+
+<b>So, why model the distribution if the policy still uses argmax of the expectation?</b>
+
+Even if we select actions using <code>\mathbb{E}[Z]</code> at evaluation, <b>learning the distribution improves optimization</b>:
+1. More informative targets and more stable gradients.
+   We align a probability vector (cross-entropy / categorical projection) rather than a single number (TD-error). Each transition updates <b>all</b> atoms &rarr; richer learning signal, lower variance, less oscillation due to mode mixing.
+2. Better generalization under multimodality and heteroscedasticity.
+   Two state/action pairs may have the same mean but <b>very different risk</b>. The distributional model does not merge these cases, so it generalizes better and propagates information more faithfully via bootstrapping.
+3. Favorable theory.
+   The <i>distributional</i> Bellman operator (<code>T^\pi</code>) is a contraction (in Wasserstein distance): we learn a mathematically well-posed object. (C51 adds a discrete projection that works very well in practice.)
+4. "Free" bonus: risk & exploration.
+   Even if C51 uses the expectation for acting, having <code>Z(s,a)</code> allows, if desired, <b>risk-sensitive</b> (quantiles, expectiles) or <b>exploratory</b> (optimism via variance) policies without retraining another network.
+
+<b>In one sentence</b>
+The policy may remain based on the expectation, but <b>learning the distribution avoids the "blurriness" of the mean</b>, provides <b>better-conditioned gradients</b>, and <b>accelerates/stabilizes</b> learning—which explains the empirical gains of C51.
+
+(texte original du papier Bellemare et al. 2017)
+This previously seen example illustrates the typical value distributions that can be observed.
+In this example, three actions (those including the button press) lead to the agent releasing its laser too early and eventually losing the game.
+The corresponding distributions reflect this: they assign a significant probability to 0 (the terminal value).
+The safe actions have similar distributions (LEFT, which tracks the invaders’ movement, is slightly favoured).
+This example helps explain why distributional RL approach is so successful:
+the distributional update keeps separated the low-value,
+“losing” event from the high-value,
+“survival” event,
+rather than average them into one (unrealizable) expectation.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: DQN Algorithm -->
+<section>
+	<h3>DQN Algorithm</h3>
+	<!-- <h4>DQN (recall)</h4> -->
+
+	<div style="font-size: 0.3em; text-align: left; margin-left: 10em;">
+		<b>Input</b>:<br>
+			$\quad\quad$ none<br>
+		<b>Algorithm parameter</b>:<br>
+			$\quad\quad$ discount factor $\gamma$<br>
+			$\quad\quad$ step size $\alpha \in (0,1]$<br>
+			$\quad\quad$ small $\epsilon > 0$<br>
+			$\quad\quad$ capacity of the experience replay memory $M$<br>
+			$\quad\quad$ batch size $m$<br>
+			$\quad\quad$ target network update frequency $\tau$<br><br>
+
+		<b>Initialize</b> replay memory $\mathcal{D}$ to capacity $M$<br>
+		<b>Initialize</b> action-value function $\hat{Q}_{\mathbf{\omega_1}}$ with random weights $\mathbf{\omega_1}$<br>
+		<b>Initialize</b> target action-value function $\hat{Q}_{\mathbf{\omega_2}}$ with weights $\mathbf{\omega_2} = \mathbf{\omega_1}$<br><br>
+
+		<b>FOR EACH</b> episode<br>
+			$\quad$ $\mathbf{s} \leftarrow \text{env.reset}()$<br>
+			$\quad$ <b>DO</b> <br>
+				$\quad\quad$ $\mathbf{a} \leftarrow $<span class="fragment highlight-current-red" data-fragment-index="1">$\epsilon\text{-greedy}(\mathbf{s}, \hat{Q}_{\mathbf{\omega_1}})$</span><br>
+				$\quad\quad$ $r, \mathbf{s'} \leftarrow \text{env.step}(\mathbf{a})$<br>
+				$\quad\quad$ Store transition $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ in $\mathcal{D}$<br>
+				$\quad\quad$ If $\mathcal{D}$ contains "enough" transitions<br>
+					$\quad\quad\quad$ Sample random batch of transitions $(\mathbf{s}_j, \mathbf{a}_j, r_j, \mathbf{s'}_j)$ from $\mathcal{D}$ with $j=1$ to $m$<br>
+					<span class="fragment highlight-current-red" data-fragment-index="1">$\quad\quad\quad$ For each $j$, set $y_j = 
+					\begin{cases} 
+					r_j & \text{for terminal } \mathbf{s'}_j\\
+					r_j + \gamma \max_{\mathbf{a}^\star} \hat{Q}_{\mathbf{\omega_{2}}} (\mathbf{s'}_j)_{\mathbf{a}^\star} & \text{for non-terminal } \mathbf{s'}_j
+					\end{cases}$</span><br>
+					$\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="1">Perform a gradient descent step on $\left( y_j - \hat{Q}_{\mathbf{\omega_1}}(\mathbf{s}_j)_{\mathbf{a}_j} \right)^2$ with respect to the weights $\mathbf{\omega_1}$</span><br>
+					$\quad\quad\quad$ Every $\tau$ steps reset $\hat{Q}_{\mathbf{\omega_2}}$ to $\hat{Q}_{\mathbf{\omega_1}}$, i.e., set $\mathbf{\omega_2} \leftarrow \mathbf{\omega_1}$<br>
+				$\quad\quad$ $\mathbf{s} \leftarrow \mathbf{s'}$ <br>
+			$\quad$ <b>UNTIL</b> $\mathbf{s}$ is final<br><br>
+		<b>RETURN</b> $\mathbf{\omega_1}$ <br>
+	</div>
+
+	<aside class="notes">
+		<div class="fr-notes"></div>
+		<div class="en-notes"></div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: C51 Algorithm -->
+<section>
+	<h3>C51 Algorithm</h3>
+	<!-- <h4>C51, Categorical DQN</h4> -->
+
+	<div style="font-size: 0.3em; text-align: left; margin-left: 10em;">
+		<!-- <b>Input</b>:<br>
+			$\quad\quad$ none<br>
+		<b>Algorithm parameter</b>:<br>
+			$\quad\quad$ discount factor $\gamma$<br>
+			$\quad\quad$ step size $\alpha \in (0,1]$<br>
+			$\quad\quad$ small $\epsilon > 0$<br>
+			$\quad\quad$ capacity of the experience replay memory $M$<br>
+			$\quad\quad$ batch size $m$<br>
+			$\quad\quad$ target network update frequency $\tau$<br><br>
+
+		<b>Initialize</b> replay memory $\mathcal{D}$ to capacity $M$<br>
+		<b>Initialize</b> action-value distribution function <span class="fragment highlight-current-red" data-fragment-index="0">$\hat{Z}_{\mathbf{\omega_1}}$</span> with random weights $\mathbf{\omega_1}$<br>
+		<b>Initialize</b> target action-value distribution function <span class="fragment highlight-current-red" data-fragment-index="0">$\hat{Z}_{\mathbf{\omega_2}}$</span> with weights $\mathbf{\omega_2} = \mathbf{\omega_1}$<br><br> -->
+
+		<b>FOR EACH</b> episode<br>
+			$\quad$ $\mathbf{s} \leftarrow \text{env.reset}()$<br>
+			$\quad$ <b>DO</b> <br>
+				$\quad\quad$ $\mathbf{a} \leftarrow $<span class="fragment highlight-current-red" data-fragment-index="1">$\epsilon\text{-greedy}(\mathbf{s}, \hat{Z}_{\mathbf{\omega_1}})$</span><br>
+				$\quad\quad$ $r, \mathbf{s'} \leftarrow \text{env.step}(\mathbf{a})$<br>
+				$\quad\quad$ Store transition $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ in $\mathcal{D}$<br>
+				$\quad\quad$ <b>IF</b> $\mathcal{D}$ contains "enough" transitions<br>
+					$\quad\quad\quad$ Sample random batch of transitions $(\mathbf{s}_j, \mathbf{a}_j, r_j, \mathbf{s'}_j)$ from $\mathcal{D}$ with $j=1$ to $m$<br>
+					$\quad\quad\quad$ <b>FOR EACH</b> transitions $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ of this batch<br>
+					    <!-- $\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="2">$\mathbf{a}^\star \leftarrow \arg\max_{\mathbf{a'}} \sum_i z_i p_i (\mathbf{s}',\mathbf{a'})$</span><br> -->
+						<!-- $\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="3">Obtain the value distribution for the next state \( s' \) and action \( a^\star \)</span><br> -->
+						$\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="4">Apply the Bellman operator</span><br>
+					    $\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="5">Compute the projection $\Phi$ of $\mathcal{T}^{\pi}Z$ onto the support $\{z_i\}$</span><br>
+					    $\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="6">Perform a gradient descent step to minimize the cross-entropy</span><br>
+					$\quad\quad\quad$ Every $\tau$ steps reset <span class="fragment highlight-current-red" data-fragment-index="0">$\hat{Z}_{\mathbf{\omega_2}}$</span> to <span class="fragment highlight-current-red" data-fragment-index="0">$\hat{Z}_{\mathbf{\omega_1}}$</span>, i.e., set $\mathbf{\omega_2} \leftarrow \mathbf{\omega_1}$<br>
+				$\quad\quad$ $\mathbf{s} \leftarrow \mathbf{s'}$ <br>
+			$\quad$ <b>UNTIL</b> $\mathbf{s}$ is final<br><br>
+		<b>RETURN</b> $\mathbf{\omega_1}$ <br>
+	</div>
+	<div class="r-stack">
+		<p class="fragment current-visible" data-fragment-index="0" style="font-size: 0.45em;">
+			$$Q(s,a) = \mathbb{E}[Z(s,a)] = \sum_i z_i , p_\omega(z_i \mid s,a).$$
+			The value $Q$ can be obtained as the expectation of $Z$.
+		</p>
+		<p class="fragment current-visible" data-fragment-index="1" style="font-size: 0.5em;">
+			<b>Behavior policy</b>: with probability $1-\epsilon$, take the action that maximizes the expected value<br>according to the current distributional estimate.
+		</p>
+		<!-- <p class="fragment current-visible" data-fragment-index="2" style="font-size: 0.5em; margin-top: 2em;">
+			For the state $s_j'$, compute the greedy action \( a^\star \) using the main network (expectation of the distributions).
+		</p> -->
+		<!-- <p class="fragment current-visible" data-fragment-index="3" style="font-size: 0.5em; margin-top: 2em;">
+			Use the target network to obtain the value distribution for the next state \( s' \) and action \( a^\star \)
+		</p> -->
+		<p class="fragment current-visible" data-fragment-index="4" style="font-size: 0.5em;">
+			<!-- Apply the distributional Bellman operator: \( r + \gamma Z(s', a^*) \). -->
+			<img src="assets/rl_distributional/belman_operator.png" alt="C51 Projection" style="width: 60%;">
+		</p>
+		<p class="fragment current-visible" data-fragment-index="5" style="font-size: 0.35em; margin: 2em;">
+			Since the support of the target distribution does not necessarily fall exactly on the fixed support of the predicted distribution,<br>we project it using the operator $(\Phi)$.<br>
+			<img src="assets/rl_distributional/c51_projection.png" alt="C51 Projection" style="width: 25%;">
+		</p>
+		<p class="fragment current-visible" data-fragment-index="6" style="font-size: 0.4em;">
+			Perform a gradient descent step to minimize the cross-entropy between<br>the predicted distribution and the target distribution.
+			$$L(\omega) = - \sum_i p_i^{\text{target}} \log p_i^{\text{pred}}$$
+		</p>
+	</div>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes"></div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Résultats expérimentaux -->
+<section>
+	<h3>C51</h3>
+	<h4>Atari Results (Summary)</h4>
+	<img src="assets/rl_distributional/c51_results_2.png" alt="C51 results" style="width: 70%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Percentage improvement, per-game (Atari benchmark), of C51 over Double DQN.<br>
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<ul style="font-size:0.6em;">
+		<li>Improved median score compared to vanilla DQN</li>
+		<li>Faster convergence in the first millions of frames</li>
+		<li>Reduced training variance</li>
+		<li>Foundation for Rainbow (integration of further improvements)</li>
+	</ul>
+	<!-- Placeholder: line chart comparing median human-normalized score vs frames (DQN vs C51). Source: Bellemare et al. 2017. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Empirical gains largely attributed to richer target signal and improved optimization landscape.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Résultats expérimentaux -->
+<section>
+	<h3>C51</h3>
+	<h4>Atari Results (varying number of atoms)</h4>
+
+	<img src="assets/rl_distributional/c51_results_1.png" alt="C51 results" style="width: 100%; margin-top: 2em;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		Varying number of atoms in the discrete distribution.<br>
+		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on
+			Reinforcement Learning</a>, Bellemare et al., 2017.
+	</figcaption>
+	<!-- Placeholder: line chart comparing median human-normalized score vs frames (DQN vs C51). Source: Bellemare et al. 2017. -->
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Limites & Extensions -->
+<section>
+	<h3>C51</h3>
+	<h4>Limitations &amp; Extensions</h4>
+
+	<ul style="font-size:0.65em; margin-top: 2em;">
+		<li><b>Fixed support:</b> risk of saturation if returns fall outside $[V_{\min}, V_{\max}]$</li>
+		<li><b>Uniform resolution:</b> inefficient for modeling sharp tails or skewed distributions</li>
+		<li><b>Extensions:</b>
+			<ul>
+				<li><b>QR-DQN:</b> learns quantiles, reducing projection bias</li>
+				<li><b>IQN:</b> continuous implicit quantile function for flexible modeling</li>
+				<!-- <li><b>FQF:</b> learnable fraction proposal for adaptive quantile allocation</li> -->
+			</ul>
+		</li>
+		<li><b>Paradigm:</b> working with distributions enables risk-sensitive and utility-based RL</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Limitations of fixed categorical grid motivate quantile-based and adaptive approaches.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Conclusion & Discussion -->
+<section>
+	<h3>C51</h3>
+	<h4>Conclusion &amp; Discussion</h4>
+
+	<ul style="font-size:0.7em; margin-top: 2em;">
+		<li>Moving from expectation to distribution provides a richer learning signal.</li>
+		<li>C51 is simple, effective, and forms the basis for many improvements.</li>
+		<li>Actions are selected via the expectation: the full distribution is valuable for training and for
+			future risk-sensitive objectives.</li>
+		<li>Enables risk-sensitive RL, robustness, and informed exploration.</li>
+		<li>Open questions: how to choose the support? How to combine with epistemic uncertainty?</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Even if acting greedily on expectation, learning benefits from structured multi-target
+supervision; distribution reusable for risk measures.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Value Distribution & Maximum Utility RL -->
+<!-- <section>
+	<h3>Value Distribution &amp; Maximum Utility RL</h3>
+	<h4>From Value to Utility</h4>
+	<ul>
+		<li>Value distribution: probability distribution over possible returns.</li>
+		<li>Maximum utility RL: optimize for user-defined utility, not just mean.</li>
+		<li>Allows risk-sensitive or robust decision making.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			On peut choisir d’optimiser une fonction d’utilité (par exemple, aversion au risque) plutôt que
+			la simple espérance, ce qui est crucial dans de nombreux domaines (finance, robotique, etc.).
+		</div>
+		<div class="en-notes">
+			Utility-based RL enables agents to be risk-averse or risk-seeking, depending on the application.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Probability-based Algorithms -->
+<!-- <section>
+	<h3>Probability-based Algorithms</h3>
+	<h4>C51, Categorical DQN</h4>
+	<ul>
+		<li><b>C51</b>: models value distribution as a categorical distribution over fixed atoms.</li>
+		<li><b>Categorical DQN with utility</b>: incorporates utility functions into categorical value
+			distributions.</li>
+	</ul>
+	<ul style="font-size: 0.7em;">
+		<li>
+			<a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.<br>
+			<b>Algorithm:</b> C51
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Ces algorithmes représentent la distribution des valeurs par une discrétisation (catégories
+			fixes), ce qui permet une estimation efficace et stable.
+		</div>
+		<div class="en-notes">
+			Probability-based methods discretize the value distribution, enabling tractable learning and
+			inference.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Quantile-based Algorithms -->
+<!-- <section>
+	<h3>Quantile-based Algorithms</h3>
+	<h4>QR-DQN, IQN</h4>
+	<ul>
+		<li><b>QR-DQN</b>: models value distribution via quantile regression.</li>
+		<li><b>IQN</b>: Implicit Quantile Networks, learn arbitrary quantile functions.</li>
+		<li>Extensions: QR with utility for risk-sensitive RL.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			Les méthodes basées sur les quantiles offrent une meilleure flexibilité et précision pour
+			approximer la distribution des retours, notamment dans des environnements complexes.
+		</div>
+		<div class="en-notes">
+			Quantile-based approaches provide flexible and accurate modeling of return distributions,
+			supporting advanced risk-sensitive policies.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: QR-DQN (Quantile Regression DQN) -->
+<section>
+	<h3 style="font-size: 1.2em;">Quantile Regression Deep Q-Network</h3>
+	<!-- <h4>Quantile Regression Deep Q-Network</h4> -->
+
+	<img src="assets/rl_distributional/networks_output.png" alt="QR-DQN Architecture"	style="width: 45%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 2em;">
+		Source: <a href="https://arxiv.org/abs/1806.06923" target="_blank">Implicit Quantile Networks for Distributional Reinforcement Learning</a>, Dabney et al., 2018.
+	</figcaption>
+	<ul style="font-size: 0.6em; margin-bottom: 0;">
+		<li>Represents the value distribution by estimating a fixed set of quantiles.</li>
+		<li>Uses quantile regression loss to train the network.</li>
+		<li>Improves stability and expressiveness over categorical methods.</li>
+	</ul>
+	<p style="font-size: 0.6em; margin-top: 0.5em;">
+		<a href="https://arxiv.org/abs/1710.10044" target="_blank">Distributional Reinforcement Learning with Quantile Regression</a>, Dabney et al., 2017.
+	</p>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+QR-DQN models the return distribution using quantiles, enabling more precise and robust value
+estimation than fixed categorical bins.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: IQN (Implicit Quantile Networks) -->
+<!-- <section>
+	<h3>IQN</h3>
+	<h4>Implicit Quantile Networks</h4>
+	<ul>
+		<li>Generalizes QR-DQN by learning a continuous quantile function.</li>
+		<li>Samples arbitrary quantile fractions during training and inference.</li>
+		<li>Provides a flexible and expressive model for return distributions.</li>
+	</ul>
+	<ul style="font-size: 0.7em;">
+		<li>
+			<a href="https://arxiv.org/abs/1806.06923" target="_blank">Implicit Quantile Networks for Distributional Reinforcement Learning</a>, Dabney et al., 2018.<br>
+			<b>Algorithm:</b> IQN
+		</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+			IQN permet d’approximer n’importe quelle fonction de quantile, offrant une modélisation très fine de la distribution des retours et une adaptation à des profils de risque variés.
+		</div>
+		<div class="en-notes">
+			IQN learns a continuous quantile function, allowing for highly flexible modeling of return distributions and risk profiles.
+		</div>
+	</aside>
+</section> -->
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Extensions – QR with Utility and Risk Sensitivity -->
+<section>
+	<h3>Extensions</h3>
+	<h4>QR with Utility / Risk-sensitive RL</h4>
+
+	<ul style="font-size:0.9em; margin-top: 2em;">
+		<li>Integrate utility functions into quantile-based RL<br>for risk-sensitive objectives.</li>
+		<li>Customize agent behavior: risk-averse, risk-seeking,<br>or robust policies.</li>
+		<li>Applications in finance, robotics, and safety-critical domains.</li>
+	</ul>
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+Extensions of quantile-based RL incorporate utility or risk criteria, enabling agents to
+optimize for specific risk preferences or robust performance.
+		</div>
+	</aside>
+</section>
+
+<!-- ------------------------------------------------------ -->
+
+<!-- Slide: Open-Access Monograph – MIT Press -->
+<section>
+	<h3>Further Reading</h3>
+
+	<div class="row">
+		<div style="float: left; width: 50%;">
+			<br><br><br><br>
+			<p style="font-size: 0.45em;">
+				<a href="http://direct.mit.edu/books/oa-monograph-pdf/2111075/book_9780262374026.pdf"
+					target="_blank">
+					Bellemare, M. G., Dabney, W., &amp; Rowland, M. (2023). <i>Distributional Reinforcement
+						Learning</i>. MIT Press.
+				</a><br>
+				Freely available as an open-access PDF from MIT Press.
+			</p>
+		</div>
+		<div style="float: left; width: 50%;">
+			<img src="assets/rl_distributional/mit_press_distributional_rl.png"
+				alt="MIT Press Distributional RL" style="width: 80%;">
+		</div>
+	</div>
+
+	<aside class="notes">
+		<div class="fr-notes">
+		</div>
+		<div class="en-notes">
+This open-access MIT Press monograph provides a comprehensive and up-to-date overview of deep
+reinforcement learning, including theory, algorithms, and applications.
+		</div>
+	</aside>
+</section>
+
+<!-- TODO: see also https://www.youtube.com/watch?v=5nFtBFD2Od8 -->
+
+<!-- endregion -->
