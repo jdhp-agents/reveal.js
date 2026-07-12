@@ -84,6 +84,21 @@ Le même `<script type="module">` peut être colocalisé dans chaque `<section>`
 les navigateurs ne l'exécutent qu'une fois (même URL), et il gère toutes les figures de
 la page.
 
+**Zoom progressif** (variante recalculée d'`assets/optimization_cem/`) : le CEM concentrant
+échantillons et ellipses sur une zone de plus en plus petite, les figures pilotées par
+fragments n'affichent pas toujours le domaine complet mais la fenêtre (range x/y) définie
+pour l'itération courante dans `config.zoom.views`, indexée par le numéro d'itération
+(carry-forward : une itération sans entrée garde la dernière fenêtre définie). Le passage
+d'une fenêtre à l'autre est animé (`config.zoom.transitionDuration`, ~1 s) : les échelles
+d3 sont interpolées et tout est repositionné à chaque pas — le fond (contours, étiquettes)
+par transformation affine du tracé fait une fois au domaine complet (`vector-effect:
+non-scaling-stroke` garde l'épaisseur des traits), les ellipses/échantillons par redessin,
+les axes passent en graduations automatiques hors du domaine complet. La grille des
+contours est calculée sur l'union du domaine complet et de toutes les fenêtres (+ marge),
+pas seulement sur le domaine des axes : les courbes de niveau restent définies quand une
+fenêtre déborde, sans segment artificiel de bord de grille. Les figures statiques
+(`data-iteration`) gardent le domaine complet pour rester comparables entre elles.
+
 Attention aux `<svg>` dans les conteneurs flex `r-hstack`/`r-vstack` : la règle
 `min-width: 0; object-fit: contain` de reveal ne s'applique qu'aux `img`/`video`, donc un
 `<svg>` ne rétrécit pas comme une image — donner directement la taille voulue via les
