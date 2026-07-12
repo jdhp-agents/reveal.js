@@ -51,8 +51,8 @@
   "samples": {
     "color": "#000000",
     "eliteColor": "#ff0000",
-    "radius": 4.5,
-    "strokeWidth": 1.5
+    "radius": 2.25,
+    "strokeWidth": 0.75
   },
   "axes": {
     "xTicks": [-2, -1, 0, 1, 2],
