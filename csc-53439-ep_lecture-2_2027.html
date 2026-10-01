@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+
+	<title>CSC 53439 EP 2026 - Exploration and Distributional Methods in RL</title>
+
+	<meta name="description" content="Advanced RL Topics">
+	<meta name="author" content="Jérémie Decock">
+
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="dist/reset.css">
+	<link rel="stylesheet" href="dist/reveal.css">
+	<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+
+	<!-- Theme used for syntax highlighting of code -->
+	<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+
+	<link rel="stylesheet" href="jdhp.css">
+</head>
+
+<!--
+
+TODO:
+- [ ] Pour chaque section, ajouter des exemples concrets d'application (c.f. https://chat.mistral.ai/chat/adf399b0-bee4-474e-9f8a-c017fc972faf)
+- [ ] Remarques et suggestions faites dans https://chat.mistral.ai/chat/06ba8113-badf-4a3f-b065-3455576896f7
+- [ ] Pour chaque section:
+    - Expliquer les motivations (problématique adressée face à l'existant, ...)
+		- Quel est l'existant et ses limites (la problématique à résoudre)
+		- La motivation des auteurs
+		- cas d'usages
+	- Ajouter des **références bibliographiques** clés
+		- Année de publication, auteurs, références
+		- implémentations existantes / de référence
+  	- Analyse structurelle
+		- "qu'est-ce qu'il y a dedans" / quelle classe / famille de méthodes ça utilise
+		- Hypothèses / périmètre d'application (domaines, types d'environnements, hypothèses, ...)
+		- Avantages / inconvénients
+		- Limites
+	- Algos
+	- Fondements théoriques / pourquoi ça marche
+	- Ajouter des illustrations (schémas, graphiques)
+	- Ajouter des **exemples concrets d'application**
+	- Ajouter des liens vers des implémentations open-source
+
+Plan: Organisation en **blocs thématiques** avec une progression logique :
+
+1. **Explorer au-delà de l’algorithme standard** (exploration et incertitude)
+2. **Mieux représenter et optimiser les valeurs** (distributional RL, maximum entropy RL)
+3. **Échelle et efficacité computationnelle** (distributed RL)
+4. **Structurer la prise de décision** (hierarchical RL)
+5. **Vers l’adaptation et la généralisation** (meta-learning)
+
+Logique de progression : on commence par l'exploration, puis on passe à la modélisation des valeurs, ensuite à l'optimisation et à la scalabilité, et enfin à la structuration de la prise de décision et à l'adaptation.
+
+Exploration → Modélisation → Efficacité → Structure → Adaptation
+
+Elle part des fondations (exploration) vers des concepts plus abstraits (méta-apprentissage), en passant par des outils concrets (distributional RL, distributed RL).
+
+Chaque bloc prépare naturellement le suivant. Par exemple, l’exploration (bloc 1) est essentielle pour comprendre l’importance de la distribution des valeurs (bloc 2) et de l’entropie (bloc 3).
+
+---
+
+# 1. Exploration et incertitude
+
+C.f. Plaat p.90
+
+*(comment améliorer la recherche d’actions efficaces dans des environnements complexes)*
+
+---
+
+- **Exploration-Exploitation Dilemma** : L’agent doit équilibrer exploration (découvrir) et exploitation (utiliser ce qu’il sait) pour apprendre efficacement.
+- **Unstructured Exploration** : Les méthodes simples comme ε-greedy ou le bruit gaussien introduisent de l’aléa mais restent limitées dans les environnements complexes.
+  - **ε-greedy Exploration Details** : ε-greedy garantit une exploration minimale mais manque de diversité et d’efficacité dans les tâches difficiles.
+  - **Gaussian Noise Exploration Details** : Ajouter du bruit gaussien à l’action favorise une exploration locale, adaptée aux espaces d’actions continus.
+  - **Limits of Unstructured Exploration** : Les méthodes non structurées échouent dans les environnements à récompense rare comme Montezuma’s Revenge.
+- **Maximum Entropy RL** : ...
+- **Parameter Noise-based Exploration** : Le bruit sur les paramètres du réseau (Noisy Nets, Parameter Space Noise) permet une exploration plus cohérente et globale.
+  - Soft Q-Learning (SQL) et Soft Actor-Critic (SAC) intègrent l’entropie pour encourager l’exploration. [DÉJÀ TRAITÉ PAR JESSE DANS LA PREMIÈRE PATIE DU COURS]
+- **Intrinsic Rewards as Exploration Bonuses** : On encourage l’exploration en ajoutant une récompense intrinsèque basée sur la nouveauté ou la surprise.
+  - **Count-based Exploration** : Les bonus d’exploration basés sur le comptage d’états visités sont efficaces en petit espace mais limités en grande dimension.
+  - **Prediction-based Exploration** : Récompenser l’erreur de prédiction du modèle dynamique pousse l’agent vers des états inconnus, mais peut être trompé par le bruit.
+    - **Random Network Distillation (RND)** : RND utilise l’erreur entre un réseau cible aléatoire et un prédicteur pour estimer la nouveauté et guider l’exploration.
+    - **Key Publications on Intrinsic Motivation** : Principales références sur les méthodes d’exploration par motivation intrinsèque et curiosité.
+    - **Limits of Intrinsic Reward and Memory-based Exploration** : Les limites des récompenses intrinsèques motivent l’ajout d’une mémoire externe pour stabiliser et fiabiliser l’exploration.
+- **Structured Exploration via State Archive (Go-Explore)** : Go-Explore archive explicitement les états visités et systématise l’exploration en revenant sur des états prometteurs.
+  - **(Vidéo Go-Explore)** : Illustration vidéo de l’approche Go-Explore dans Montezuma’s Revenge.
+- **Further Reading on Exploration** : Ressources complémentaires pour approfondir les stratégies d’exploration en RL.
+
+---
+
+# 2. Distributional RL
+
+Cf. Xiao 2024 (chap. 12) et Plaat p.90
+
+*(modéliser non seulement l’espérance de la valeur, mais la distribution complète des retours)*
+
+* Motivation : au-delà de la valeur moyenne
+* Value distribution & Maximum utility RL
+* **Probability-based algorithms :**
+
+  * C51
+  * Categorical DQN with utility
+* **Quantile-based algorithms :**
+
+  * QR-DQN
+  * IQN (Implicit Quantile Networks)
+  * QR with utility
+
+
+---
+
+  - Les algorithmes de RL que nous avons vu jusqu'à pésent modélisent la valeur d'un état $s$ ou d'une paire état-action $(s,a)$ par une valeur scalaire $V(s)$ ou $Q(s,a)$, qui correspond à l'espérance $\mathbb{E}...$ du retour.
+  - Cependant, le retour est une variable aléatoire, et dans certains cas, connaître la distribution complète du retour peut être bénéfique.
+  - Par exemple, dans des environnements stochastiques ou lorsque l'on souhaite optimiser une fonction d'utilité plus complexe que l'espérance (comme la minimisation du risque).
+
+
+---
+
+
+Plan GPT
+
+**Slide 1 – Introduction & Motivation**
+
+* Rappel rapide : limites de DQN classique (approximation de la valeur espérée)
+* Motivation : pourquoi modéliser la **distribution des retours** plutôt que leur espérance ?
+* Exemples d’intuition (risque, incertitude, variance).
+
+---
+
+**Slide 2 – Rappel DQN**
+
+* Fonction de valeur d’action ( Q(s,a) = \mathbb{E}[R|s,a] )
+* Approximation par réseau de neurones
+* Apprentissage via Bellman expectation operator.
+
+---
+
+**Slide 3 – Distributional RL : idée clé**
+
+* Modéliser la **loi de probabilité** du retour au lieu de son espérance.
+* Distributional Bellman operator.
+* Illustration graphique : distribution vs moyenne.
+
+---
+
+**Slide 4 – L’approche C51**
+
+* Nom : Categorical DQN, 51 atomes (points de support fixes).
+* Approximation discrète de la distribution des retours.
+* Réseau de neurones prédit une distribution (softmax sur 51 logits).
+
+---
+
+**Slide 5 – Projection & Bellman Update**
+
+* Définition des atomes ( z_i = V_{\min} + i \cdot \Delta z ).
+* Application de l’opérateur de Bellman sur la distribution.
+* Projection sur les 51 atomes fixes (contrainte de discrétisation).
+* Illustration visuelle (shifting/scaling des distributions projetées).
+
+---
+
+**Slide 6 – Fonction de perte**
+
+* Perte de type **cross-entropy** entre distribution prédite et distribution cible projetée.
+* Comparaison avec la perte MSE de DQN classique.
+* Rappel sur la stabilité et la richesse de l’apprentissage distributionnel.
+
+---
+
+**Slide 7 – Architecture & Implémentation**
+
+* Réseau similaire à DQN, mais sortie = vecteur [#actions × 51].
+* Normalisation via softmax pour obtenir des probabilités.
+* Sélection d’action via **espérance** :
+  (\pi(s) = \arg\max_a \sum_i p_i(s,a) z_i).
+
+---
+
+**Slide 8 – Résultats expérimentaux (Atari)**
+
+* C51 vs DQN : meilleures performances.
+* Gains de stabilité et rapidité d’apprentissage.
+* Illustration par un graphe comparatif.
+
+---
+
+**Slide 9 – Limites et extensions**
+
+* Support discret fixé = rigidité (choix de (V_{\min}, V_{\max})).
+* Extensions : QR-DQN (quantile regression), IQN, FQF.
+* Distributional RL comme nouveau paradigme.
+
+---
+
+**Slide 10 – Conclusion & Discussion**
+
+* Bilan : passage de l’espérance à la distribution = progrès majeur.
+* Impact sur la recherche en RL moderne.
+* Questions / discussion ouverte (risque, incertitude, exploration).
+
+---
+
+
+
+
+Questions :
+- [x] Comment la reward est intégrée/propagé dans la mise à jour de la distribution dans C51 ? => ok c'est comme pour TD, etc. on part avec une estimation bidon et on améliore au fur et à mesure en minimisant la TD error jusqu'à converger vers les vraies distributions.
+- [x] Pourquoi modéliser la distribution complète des valeurs si le choix des actions repose uniquement sur l'espérance de la valeur ?
+- [x] A quoi correspond $P^\pi$ dans la figure 4 du papier C51 ?
+
+-->
+
+<body>
+
+	<div class="reveal">
+
+		<!-- Any section element inside of this container is displayed as a slide -->
+		<div class="slides">
+
+			<!-- Slide: Titre -->
+			<section>
+				<h1 style="font-size: 1.4em;">CSC 53439 EP</h1>
+				<h2 style="font-size: 0.8em;">Lecture 2</h2>
+				<h2 style="font-size: 0.8em;">Exploration and Distributional Methods in RL</h2>
+				<!--<p style="font-size: 1.5em;"><small>Pour une collaboration efficace</small></p>-->
+				<br>
+				<br>
+				<p style="font-size: 1em;"><small><a href="https://www.jdhp.org/">Jérémie Decock</a></small></p>
+				<p style="font-size: 1em;"><small>October 2, 2027</small></p>
+
+				<aside class="notes">
+					<div class="fr-notes"></div>
+					<div class="en-notes"></div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+			<!-- 1.: OUTLINE ------------------------------------------ -->
+			<!-- ------------------------------------------------------ -->
+			<!-- #region -->
+
+			<!-- Section: Outline -->
+			<section>
+				<h3>Outline</h3>
+
+				<ol>
+					<li><a href="#/part1-exploration">Exploration and Uncertainty</a></li>
+					<li><a href="#/part2-distributional-rl">Distributional RL</a></li>
+					<!-- <li><a href="#/part4-distributed-rl">Distributed RL</a></li> -->
+					<!-- <li><a href="#/part5-hierarchical-rl">Hierarchical RL</a></li> -->
+					<!-- <li><a href="#/part6-meta-learning-transfer">Meta-learning and Transfer</a></li> -->
+				</ol>
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+In this lecture, we will cover two main topics:
+exploration, and distributional reinforcement learning.
+
+The goal is to give you an overview of advanced RL techniques that go beyond the standard algorithms you have already seen.
+
+We will not go into every technical detail, but instead focus on the motivations, core principles of each method.
+					</div>
+				</aside>
+			</section>
+
+			<!-- endregion -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- PART 1: Exploration and Uncertainty----------------------------------------------------------------------------------------- -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- #region -->
+
+			<!-- Slide: Part 1 -->
+			<section id="part1-exploration">
+				<h3>Part 1</h3>
+				<h4>Exploration and Uncertainty</h4>
+
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+So we start with exploration.
+					</div>
+				</aside>
+			</section>
+
+			<!-- @include decks/rl_exploration/rl_exploration.html -->
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Limits of Intrinsic Reward and Memory-based Exploration -->
+			<section>
+				<h3>Limits of Intrinsic Reward</h3>
+				<h4>Motivation for Memory-based Exploration</h4>
+						<ul style="font-size: 0.7em;">
+							<li><b>Intrinsic reward methods</b> (e.g., novelty, prediction error) encourage exploration by rewarding new or surprising states.</li>
+							<li><b>Key limitations:</b>
+								<ul>
+									<li><b>Slow function approximation:</b> Neural networks may lag in updating, so states can appear "novel" longer than they are.</li>
+									<li><b>Non-stationary bonus:</b> What is surprising changes as the agent learns, making the intrinsic reward unstable.</li>
+									<li><b>Knowledge fading:</b> Once a state is no longer novel, the agent may forget its importance, even if it is crucial for solving the task.</li>
+								</ul>
+							</li>
+							<li><b>Alternative:</b> <b>Memory-based exploration</b> augments the agent with an explicit memory module to track visited states and contexts.</li>
+							<li>This enables more reliable novelty detection, stabilizes exploration signals, and helps retain knowledge of key states.</li>
+							<li><b>Example:</b> <i>Never Give Up (NGU)</i> combines short-term episodic memory with long-term novelty signals (e.g., RND) to avoid forgetting useful states.</li>
+						</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Les méthodes à récompense intrinsèque présentent trois limites majeures : lenteur de l’approximation par réseau de neurones (décalage entre la réalité et le signal), instabilité du bonus (non-stationnarité), et oubli de certains états importants (knowledge fading). Les approches à mémoire externe (memory-based exploration) permettent de stabiliser le signal d’exploration et de conserver la trace des états clés, comme dans Never Give Up (NGU).
+					</div>
+					<div class="en-notes">
+						Intrinsic reward approaches have key drawbacks: slow adaptation of neural approximators, non-stationary exploration bonuses, and forgetting of important states. Memory-based exploration methods address these by explicitly tracking visited states, providing more stable and persistent exploration signals (e.g., NGU).
+
+Les bonus d’exploration basés uniquement sur des récompenses intrinsèques ont des limites (instabilité, oubli, lenteur).
+Pour les corriger, certaines méthodes donnent à l’agent une **mémoire externe** qui lui permet de juger la nouveauté et l’importance des états de manière plus stable et durable.
+
+### Contexte
+
+Dans le RL, beaucoup de méthodes d’exploration donnent à l’agent un **bonus de récompense intrinsèque** (par ex. basé sur la nouveauté ou l’erreur de prédiction).
+L’idée est : « si tu vois quelque chose de nouveau ou difficile à prédire, tu reçois un bonus, donc tu es encouragé à explorer davantage. »
+
+Mais ces **reward bonuses** posent plusieurs problèmes :
+
+### Les trois inconvénients cités
+
+1. **Function approximation is slow to catch up**
+
+   * Dans le DRL, la fonction de valeur ou de bonus est approximée par un réseau de neurones.
+   * Ce réseau met du temps à s’ajuster → un état peut rester considéré comme « nouveau » ou « surprenant » pendant plusieurs pas, même après avoir déjà été vu plusieurs fois.
+   * Cela crée un décalage entre la réalité et le signal de bonus.
+
+2. **Exploration bonus is non-stationary**
+
+   * Comme l’agent apprend en permanence, ce qui est « surprenant » change sans cesse.
+   * La fonction de récompense intrinsèque n’est donc pas stable : aujourd’hui un état donne un gros bonus, demain presque plus rien.
+   * Cette instabilité complique l’apprentissage, car la politique poursuit un signal mouvant.
+
+3. **Knowledge fading**
+
+   * Au fur et à mesure que l’agent apprend, un état cesse de paraître « nouveau » et n’apporte plus de récompense intrinsèque.
+   * Conséquence : l’agent peut oublier l’intérêt de certains états cruciaux pour résoudre la tâche (par exemple une clé ou un couloir important dans un jeu comme Montezuma’s Revenge), car ils ne donnent plus de bonus même s’ils sont essentiels.
+
+### Alternative
+
+Les méthodes de **memory-based exploration** ajoutent un **module de mémoire externe** (parfois inspiré de la mémoire épisodique biologique).
+
+* Au lieu de se fier uniquement à un bonus instantané et évanescent, l’agent garde une trace explicite de **ce qu’il a vu** et **dans quel contexte**.
+* Cette mémoire permet :
+
+  * de comparer un nouvel état à ceux déjà rencontrés (détection plus fiable de nouveauté),
+  * de stabiliser le signal d’exploration (moins dépendant des fluctuations de l’approximation),
+  * de rappeler à l’agent des états clés même s’ils ne sont plus « intrinsèquement nouveaux ».
+
+Exemple : dans **Never Give Up (NGU)**, l’agent combine une mémoire à court terme (dans l’épisode) et un signal de nouveauté à long terme (RND), ce qui lui évite d’oublier des états utiles.
+
+chatgpt.com/c/68dd976b-1440-8332-a0e8-7494f01f1fdb
+					</div>
+				</aside>
+			</section>
+
+			<!-- Slide: Structured Exploration via State Archive (Go-Explore) -->
+			<section>
+			<h3>Memory-based Exploration</h3>
+			<h4>Archive-based / Return-based Exploration</h4>
+			<ul style="font-size: 0.8em;">
+				<li>
+					<b>Go-Explore</b> (Ecoffet et al., 2019): systematic exploration by explicitly archiving and revisiting states.
+					<a href="https://arxiv.org/abs/1901.10995" target="_blank">[arXiv]</a>
+					&nbsp;|&nbsp;
+					<a href="https://www.uber.com/en-FR/blog/go-explore/" target="_blank">[Uber AI blog]</a>
+				</li>
+				<li>Two phases:
+				<ul>
+					<li><b>Exploration:</b> Build an archive of visited states ("cells"), return to promising states, and explore from there.</li>
+					<li><b>Robustification:</b> Learn robust policies to reliably reach and exploit discovered trajectories.</li>
+				</ul>
+				</li>
+				<li>Highly effective in environments with <b>sparse rewards</b> (e.g., Montezuma's Revenge).</li>
+				<li>Distinct from intrinsic reward or parameter noise approaches: relies on <b>explicit state memory and systematic return</b>.</li>
+			</ul>
+			<!-- Placeholder: insert a diagram showing the Go-Explore process (archive, return, explore, robustify).
+				Objective: illustrate the two-phase approach and the concept of returning to archived states for systematic exploration. -->
+			<aside class="notes">
+				<div class="fr-notes">					
+				Go-Explore inaugure une nouvelle catégorie d’exploration structurée : l’agent archive explicitement les états visités, retourne à des états prometteurs, puis explore systématiquement à partir de là. Cette approche contourne les limites des méthodes basées sur la curiosité ou le bruit, et a permis des percées sur des environnements à récompense très rare comme Montezuma’s Revenge.
+				</div>
+				<div class="en-notes">
+				Go-Explore represents a new family of structured exploration: the agent explicitly archives visited states, returns to promising ones, and systematically explores from there. This approach overcomes the limitations of curiosity- or noise-based methods and has achieved breakthroughs in hard-exploration environments such as Montezuma’s Revenge.
+				</div>
+			</aside>
+			</section>
+
+			<section data-background-video="assets/csc-53439-ep_lecture-2_2025/montezuma_revenge_go-explore.mp4"
+					data-background-video-loop data-background-video-muted>
+			<h2>Video</h2>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- TODO: Une slide sur les application concrètres aurait été bien... -->
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- endregion -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- PART 2: Distributional RL -------------------------------------------------------------------------------------------------- -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- #region -->
+
+			<section id="part2-distributional-rl">
+				<h3>Part 2</h3>
+				<h4>Distributional RL</h4>
+
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+					</div>
+				</aside>
+			</section>
+
+			<!-- @include decks/rl_distributional/rl_distributional.html -->
+
+			<!-- endregion -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- PART 4: Distributed RL ----------------------------------------------------------------------------------------------------- -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- #region -->
+
+			<section id="part4-distributed-rl">
+				<h3>Part 4</h3>
+				<h4>Distributed RL / Scaling RL</h4>
+
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: A3C (Asynchronous Advantage Actor-Critic) -->
+			<section>
+				<h3>A3C</h3>
+				<h4>Asynchronous Advantage Actor-Critic</h4>
+				<ul>
+					<li>Multiple agents run in parallel, each with its own environment copy.</li>
+					<li>Asynchronous updates to shared parameters.</li>
+					<li>Improves exploration and training speed.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						A3C permet une exploration diversifiée et une accélération de l’apprentissage grâce à la
+						parallélisation et à la mise à jour asynchrone des paramètres.
+					</div>
+					<div class="en-notes">
+						A3C leverages parallelism and asynchronous updates to stabilize and speed up RL training.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Ape-X -->
+			<section>
+				<h3>Ape-X</h3>
+				<h4>Distributed Prioritized Experience Replay</h4>
+				<ul>
+					<li>Many actors generate experience in parallel.</li>
+					<li>Centralized learner updates the policy using prioritized replay.</li>
+					<li>Scalable to large clusters, efficient data collection.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Ape-X sépare la collecte d’expérience (acteurs) et l’apprentissage (learner), ce qui permet de
+						tirer parti de ressources distribuées à grande échelle.
+					</div>
+					<div class="en-notes">
+						Ape-X architecture enables scalable RL by decoupling experience generation and learning.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: IMPALA -->
+			<section>
+				<h3>IMPALA</h3>
+				<h4>Importance Weighted Actor-Learner Architecture</h4>
+				<ul>
+					<li>Many actors send trajectories to a central learner.</li>
+					<li>Uses V-trace for off-policy correction.</li>
+					<li>Highly scalable, supports thousands of actors.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						IMPALA permet un apprentissage efficace à grande échelle grâce à la correction off-policy
+						(V-trace) et à une architecture centralisée.
+					</div>
+					<div class="en-notes">
+						IMPALA achieves high throughput and scalability with off-policy corrections and centralized
+						learning.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: R2D2 -->
+			<section>
+				<h3>R2D2</h3>
+				<h4>Recurrent Experience Replay in Distributed RL</h4>
+				<ul>
+					<li>Distributed experience replay with recurrent networks (LSTM).</li>
+					<li>Handles partial observability and long-term dependencies.</li>
+					<li>Combines scalability with memory-based policies.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						R2D2 combine la scalabilité du replay distribué avec la capacité des réseaux récurrents à gérer
+						des dépendances temporelles longues.
+					</div>
+					<div class="en-notes">
+						R2D2 enables distributed RL with recurrent policies, suitable for partially observable
+						environments.
+					</div>
+				</aside>
+			</section>
+
+			<!-- Slide: Distributed RL – Key References -->
+			<section>
+				<h3>Distributed RL</h3>
+				<h4>Key Publications</h4>
+				<ul style="font-size: 0.5em;">
+					<li>
+						<a href="https://arxiv.org/abs/1803.02811" target="_blank">Accelerated Methods for Deep Reinforcement Learning</a>, Stooke and Abbeel, 2018.<br>
+						<b>Contribution:</b> Systematic analysis of parallelization in deep RL across algorithms.
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1802.01561" target="_blank">IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures</a>, Espeholt et al., 2018.<br>
+						<b>Algorithm:</b> IMPALA
+					</li>
+					<li>
+						<a href="https://openreview.net/forum?id=H1Dy---0Z" target="_blank">Distributed Prioritized Experience Replay</a>, Horgan et al., 2018.<br>
+						<b>Algorithm:</b> Ape-X
+					</li>
+					<li>
+						<a href="https://openreview.net/forum?id=r1lyTjAqYX" target="_blank">Recurrent Experience Replay in Distributed Reinforcement Learning</a>, Anonymous, 2018.<br>
+						<b>Algorithm:</b> R2D2
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1712.09381" target="_blank">RLlib: Abstractions for Distributed Reinforcement Learning</a>, Liang et al., 2017.<br>
+						<b>Contribution:</b> A scalable library of RL algorithm implementations.
+						<a href="https://ray.readthedocs.io/en/latest/rllib.html" target="_blank">Documentation link</a>
+					</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Principales références sur l’apprentissage par renforcement distribué, couvrant les architectures, algorithmes et outils logiciels majeurs.
+					</div>
+					<div class="en-notes">
+						Key references for distributed reinforcement learning, including major architectures, algorithms, and software libraries.
+					</div>
+				</aside>
+			</section>
+
+			<!-- endregion -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- PART 5: Hierarchical RL ----------------------------------------------------------------------------------------------------- -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- #region -->
+
+			<section id="part1-hierarchical">
+				<h3>Part 5</h3>
+				<h4>Hierarchical Reinforcement Learning</h4>
+
+				<aside class="notes">
+					<div class="fr-notes"></div>
+					<div class="en-notes"></div>
+				</aside>
+			</section>
+
+			<!-- @include decks/rl_hierarchical/rl_hierarchical.html -->
+
+			<!-- endregion -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- PART 6: Meta-learning and Transfer ------------------------------------------------------------------------------------------ -->
+			<!-- ---------------------------------------------------------------------------------------------------------------------------- -->
+			<!-- #region -->
+
+			<section id="part6-meta-learning-transfer">
+				<h3>Part 6</h3>
+				<h4>Meta-learning and Transfer</h4>
+
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Knowledge Transfer -->
+			<section>
+				<h3>Knowledge Transfer</h3>
+				<h4>Transferring Skills Across Tasks</h4>
+				<ul>
+					<li>Reuse knowledge from previous tasks to accelerate learning.</li>
+					<li>Methods: policy transfer, value transfer, feature reuse.</li>
+					<li>Reduces sample complexity in new environments.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Le transfert de connaissances permet à un agent de réutiliser des compétences ou représentations
+						apprises, accélérant l’apprentissage sur de nouvelles tâches.
+					</div>
+					<div class="en-notes">
+						Knowledge transfer leverages prior learning to improve efficiency and performance on related
+						tasks.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Pretraining -->
+			<section>
+				<h3>Pretraining</h3>
+				<h4>Leveraging Prior Experience</h4>
+				<ul>
+					<li>Train on large datasets or simpler tasks before target task.</li>
+					<li>Improves initial performance and convergence speed.</li>
+					<li>Common in robotics, vision, and language RL.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Le pré-entraînement consiste à préparer l’agent sur des tâches génériques ou des données
+						abondantes, facilitant l’adaptation à des tâches spécifiques.
+					</div>
+					<div class="en-notes">
+						Pretraining provides a strong initialization, making subsequent learning faster and more stable.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Model-Agnostic Meta-Learning (MAML) -->
+			<section>
+				<h3>Model-Agnostic Meta-Learning (MAML)</h3>
+				<h4>Learning to Learn</h4>
+				<ul>
+					<li>Meta-learns an initialization for fast adaptation to new tasks.</li>
+					<li>Few-shot learning: adapts with minimal data.</li>
+					<li>Applicable to policy gradients and value-based RL.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						MAML apprend une initialisation des paramètres permettant une adaptation rapide à de nouvelles
+						tâches avec peu d’exemples.
+					</div>
+					<div class="en-notes">
+						MAML enables agents to quickly adapt to new tasks by optimizing for rapid learning.
+					</div>
+				</aside>
+			</section>
+
+			<!-- Slide: Transfer and Multitask RL – Key References -->
+			<section>
+				<h3>Transfer and Multitask RL</h3>
+				<h4>Key Publications</h4>
+				<ul style="font-size: 0.5em;">
+					<li>
+						<a href="https://arxiv.org/abs/1606.04671" target="_blank">Progressive Neural Networks</a>, Rusu et al., 2016.<br>
+						<b>Algorithm:</b> Progressive Networks
+					</li>
+					<li>
+						<a href="http://proceedings.mlr.press/v37/schaul15.pdf" target="_blank">Universal Value Function Approximators</a>, Schaul et al., 2015.<br>
+						<b>Algorithm:</b> UVFA
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1611.05397" target="_blank">Reinforcement Learning with Unsupervised Auxiliary Tasks</a>, Jaderberg et al., 2016.<br>
+						<b>Algorithm:</b> UNREAL
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1707.03300" target="_blank">The Intentional Unintentional Agent: Learning to Solve Many Continuous Control Tasks Simultaneously</a>, Cabi et al., 2017.<br>
+						<b>Algorithm:</b> IU Agent
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1701.08734" target="_blank">PathNet: Evolution Channels Gradient Descent in Super Neural Networks</a>, Fernando et al., 2017.<br>
+						<b>Algorithm:</b> PathNet
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1707.07907" target="_blank">Mutual Alignment Transfer Learning</a>, Wulfmeier et al., 2017.<br>
+						<b>Algorithm:</b> MATL
+					</li>
+					<li>
+						<a href="https://openreview.net/forum?id=rk07ZXZRb&noteId=rk07ZXZRb" target="_blank">Learning an Embedding Space for Transferable Robot Skills</a>, Hausman et al., 2018.
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1707.01495" target="_blank">Hindsight Experience Replay</a>, Andrychowicz et al., 2017.<br>
+						<b>Algorithm:</b> Hindsight Experience Replay (HER)
+					</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Principales références sur le transfert et l’apprentissage multitâche en RL. À citer pour approfondir ou justifier les choix méthodologiques.
+					</div>
+					<div class="en-notes">
+						Key references for transfer and multitask reinforcement learning. Useful for further reading or methodological justification.
+					</div>
+				</aside>
+			</section>
+
+			<!-- Slide: Meta-RL – Key References -->
+			<section>
+				<h3>Meta-RL</h3>
+				<h4>Key Publications</h4>
+				<ul style="font-size: 0.5em;">
+					<li>
+						<a href="https://arxiv.org/abs/1611.02779" target="_blank">RL<sup>2</sup>: Fast Reinforcement Learning via Slow Reinforcement Learning</a>, Duan et al., 2016.<br>
+						<b>Algorithm:</b> RL<sup>2</sup>
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1611.05763" target="_blank">Learning to Reinforcement Learn</a>, Wang et al., 2016.
+					</li>
+					<li>
+						<a href="https://arxiv.org/abs/1703.03400" target="_blank">Model-Agnostic Meta-Learning for Fast Adaptation of Deep Networks</a>, Finn et al., 2017.<br>
+						<b>Algorithm:</b> MAML
+					</li>
+					<li>
+						<a href="https://openreview.net/forum?id=B1DmUzWAW&noteId=B1DmUzWAW" target="_blank">A Simple Neural Attentive Meta-Learner</a>, Mishra et al., 2018.<br>
+						<b>Algorithm:</b> SNAIL
+					</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+						Principales références sur le meta-apprentissage en RL, couvrant les approches historiques et les algorithmes majeurs (RL², MAML, SNAIL).
+					</div>
+					<div class="en-notes">
+						Key references for meta-reinforcement learning, including foundational works and major algorithms (RL², MAML, SNAIL).
+					</div>
+				</aside>
+			</section>
+
+			<!-- endregion -->
+			<!-- ------------------------------------------------------ -->
+			<!-- CONCLUSION ------------------------------------------- -->
+			<!-- ------------------------------------------------------ -->
+			<!-- #region -->
+
+			<!-- Slide: Conclusion -->
+			<section>
+				<h3>Conclusion</h3>
+				<ul style="font-size:0.85em;">
+					<li>Advanced RL methods address key challenges: <b>exploration</b>, <b>uncertainty</b>, and <b>value modeling</b>.</li>
+					<li>Structured exploration (intrinsic rewards, memory, Go-Explore) enables progress in sparse and complex environments.</li>
+					<li>Distributional RL provides richer learning signals and opens the door to <b>risk-sensitive</b> and <b>robust</b> agents.</li>
+					<li>These advances are foundational for scaling RL to real-world, high-stakes applications.</li>
+				</ul>
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+This session covered advanced methods to overcome the limitations of classic RL algorithms,
+especially regarding exploration and uncertainty modeling.
+These tools are essential for tackling complex environments and scaling RL to real-world
+problems.
+					</div>
+				</aside>
+			</section>
+
+			<!-- ------------------------------------------------------ -->
+
+			<!-- Slide: Conclusion -->
+			<section>
+				<h3>Perspectives &amp; Open Questions</h3>
+				<ul style="font-size:0.85em;">
+					<li>How to combine exploration, distributional modeling, and scalability in unified frameworks?</li>
+					<li>What are the best strategies for <b>generalization</b> and <b>transfer</b> to new tasks?</li>
+					<li>How to ensure <b>safety</b>, <b>robustness</b>, and <b>interpretability</b> in RL agents?</li>
+					<li>Other advanced topics: hierarchical RL, meta-learning, large-scale distributed RL, Multi-agent RL.</li>
+				</ul>
+				<p style="font-size:0.7em; margin-top:1em;">
+					<b>Key takeaway:</b> Modern RL is a rapidly evolving field—mastering these advanced concepts is
+					crucial for both research and practical applications.
+				</p>
+				<aside class="notes">
+					<div class="fr-notes">
+					</div>
+					<div class="en-notes">
+Open questions include combining advances, generalization, safety, and interpretability. Modern
+RL evolves rapidly—understanding these concepts is key for research and real-world impact.
+					</div>
+				</aside>
+			</section>
+
+			<!-- endregion -->
+
+		</div>
+	</div>
+
+	<script src="dist/reveal.js"></script>
+	<script src="dist/plugin/zoom.js"></script>
+	<script src="dist/plugin/notes.js"></script>
+	<script src="dist/plugin/search.js"></script>
+	<script src="dist/plugin/markdown.js"></script>
+	<script src="dist/plugin/highlight.js"></script>
+	<script src="dist/plugin/math.js"></script>
+
+	<script>
+
+		// Also available as an ES module, see:
+		// https://revealjs.com/initialization/
+		Reveal.initialize({
+			controls: true,
+			progress: true,
+			center: true,
+			hash: true,
+			autoAnimateDuration: 0.25,
+			slideNumber: 'h.v',
+
+			// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+			maxScale: 4.0,
+			mathjax2: {
+				//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+				//mathjax: 'mathjax/MathJax.js',
+				config: 'TeX-AMS_HTML-full',
+				// pass other options into `MathJax.Hub.Config()`
+				TeX: {
+					Macros: {
+						R: '\\mathbb{R}',
+						set: ['\\left\\{#1 \\; ; \\; #2\\right\\}', 2]
+					}
+				}
+			},
+
+			// Learn about plugins: https://revealjs.com/plugins/
+			plugins: [RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2]
+
+			//// Reveal.js plugins
+			//dependencies: [
+			//	{ src: 'revealjs/plugin/reveald3.js' },
+			//]
+		});
+
+	</script>
+
+	<!-- Assurez-vous que jdhp.js est référencé après tous les autres scripts -->
+	<script src="jdhp.js"></script>
+
+</body>
+
+</html>

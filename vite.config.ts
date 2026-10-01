@@ -35,6 +35,13 @@ export default defineConfig({
 			},
 		},
 	},
+	optimizeDeps: {
+		// Dev-server dependency scan (pre-bundles qunit, d3, ... at startup). The default
+		// '**/*.html' also picks up the decks/ chapter fragments, whose figure srcs are
+		// relative to their master page, not to the chapter file: the scan then fails and
+		// pre-bundling is skipped altogether. Skip the fragments and scan the figures directly.
+		entries: ['**/*.html', '!decks/**', '!archives/decks/**', '!_site/**', 'assets/**/*.ts'],
+	},
 	resolve: {
 		alias: {
 			// Matches the exported paths in package.json

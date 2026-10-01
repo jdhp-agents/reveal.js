@@ -31,8 +31,8 @@
 	// Use 'mounts' to mount a host path or volume into the container.
 	"mounts": [
 		{
-			"source": "claude-code-home",       // My personal Claude Code subscription
-			// "source": "claude-code-home-accenta",  // Accenta's Claude Code subscription
+			// "source": "claude-code-home",       // My personal Claude Code subscription
+			"source": "claude-code-home-accenta",  // Accenta's Claude Code subscription
 			"target": "/home/user",
 			"type": "volume"
 		}
@@ -47,6 +47,7 @@
 			"settings": {},
 			"extensions": [
 				"anthropic.claude-code",  // Claude Code extension for VS Code (https://marketplace.visualstudio.com/items?itemName=anthropic.claude-code)
+				"openai.chatgpt",         // OpenAI Codex extension for VS Code (https://marketplace.visualstudio.com/items?itemName=openai.chatgpt ; https://learn.chatgpt.com/docs/codex/ide)
 				"charliermarsh.ruff",
 				"ms-python.debugpy",
 				"ms-python.isort",
