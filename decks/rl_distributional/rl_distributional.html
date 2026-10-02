@@ -99,8 +99,8 @@ of uncertainty, improve learning, and lay the groundwork for more robust and ada
 <!-- Slide: Rappel DQN -->
 <section>
 	<h3>DQN Recap</h3>
-	<img src="assets/rl_distributional/dqn.jpg" alt="DQN Architecture" style="width: 50%;">
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 2em;">
+	<img src="assets/rl_distributional/dqn.jpg" alt="DQN Architecture" style="width: 45%;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
 		Source: Mnih et al. Human-level control through deep reinforcement learning. Nature 518, 529–533 (2015).
 	</figcaption>
 	<ul style="font-size:0.6em;">
@@ -127,7 +127,7 @@ preserved.
 	<h3>Distributional RL</h3>
 
 	<img src="assets/rl_distributional/dqn_vs_c51.png" alt="DQN vs C51" style="width: 60%;">
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1.5em;">
 		Source: <a href="https://arxiv.org/abs/1806.06923" target="_blank">Implicit Quantile Networks for
 			Distributional Reinforcement Learning</a>, Dabney et al., 2018.
 	</figcaption>
@@ -369,7 +369,7 @@ rather than average them into one (unrealizable) expectation.
 	<!-- <h4>Architecture</h4> -->
 
 	<div class="r-stack">
-		<div class="fragment current-visible" data-fragment-index="1">
+		<div class="fragment fade-out" data-fragment-index="1">
 			<img src="assets/rl_distributional/dqn_architecture.png" alt="DQN Architecture" style="width: 75%;">
 			<figcaption style="font-size: 0.5em; text-align: center; margin-bottom: 0.5em; font-weight: bold;">
 				DQN
@@ -378,7 +378,7 @@ rather than average them into one (unrealizable) expectation.
 				Source: Bellemare, M. G., Dabney, W., &amp; Rowland, M. (2023). <i>Distributional Reinforcement Learning</i>. MIT Press.
 			</figcaption>
 		</div>
-		<div class="fragment" data-fragment-index="2">
+		<div class="fragment" data-fragment-index="1">
 			<img src="assets/rl_distributional/c51_architecture.png" alt="C51 Architecture" style="width: 75%;">
 			<figcaption style="font-size: 0.5em; text-align: center; margin-bottom: 0.5em; font-weight: bold;">
 				C51 / QR-DQN
@@ -467,7 +467,7 @@ rather than average them into one (unrealizable) expectation.
 	<h3>DQN Algorithm</h3>
 	<!-- <h4>DQN (recall)</h4> -->
 
-	<div style="font-size: 0.3em; text-align: left; margin-left: 10em;">
+	<div style="font-size: 0.3em; text-align: left; width: fit-content; margin: 0 auto;">
 		<b>Input</b>:<br>
 			$\quad\quad$ none<br>
 		<b>Algorithm parameter</b>:<br>
@@ -485,7 +485,7 @@ rather than average them into one (unrealizable) expectation.
 		<b>FOR EACH</b> episode<br>
 			$\quad$ $\mathbf{s} \leftarrow \text{env.reset}()$<br>
 			$\quad$ <b>DO</b> <br>
-				$\quad\quad$ $\mathbf{a} \leftarrow $<span class="fragment highlight-current-red" data-fragment-index="1">$\epsilon\text{-greedy}(\mathbf{s}, \hat{Q}_{\mathbf{\omega_1}})$</span><br>
+				$\quad\quad$ $\mathbf{a} \leftarrow$ <span class="fragment highlight-current-red" data-fragment-index="1">$\epsilon\text{-greedy}(\mathbf{s}, \hat{Q}_{\mathbf{\omega_1}})$</span><br>
 				$\quad\quad$ $r, \mathbf{s'} \leftarrow \text{env.step}(\mathbf{a})$<br>
 				$\quad\quad$ Store transition $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ in $\mathcal{D}$<br>
 				$\quad\quad$ If $\mathcal{D}$ contains "enough" transitions<br>
@@ -515,7 +515,7 @@ rather than average them into one (unrealizable) expectation.
 	<h3>C51 Algorithm</h3>
 	<!-- <h4>C51, Categorical DQN</h4> -->
 
-	<div style="font-size: 0.3em; text-align: left; margin-left: 10em;">
+	<div style="font-size: 0.3em; text-align: left; width: fit-content; margin: 0 auto;">
 		<!-- <b>Input</b>:<br>
 			$\quad\quad$ none<br>
 		<b>Algorithm parameter</b>:<br>
@@ -533,7 +533,7 @@ rather than average them into one (unrealizable) expectation.
 		<b>FOR EACH</b> episode<br>
 			$\quad$ $\mathbf{s} \leftarrow \text{env.reset}()$<br>
 			$\quad$ <b>DO</b> <br>
-				$\quad\quad$ $\mathbf{a} \leftarrow $<span class="fragment highlight-current-red" data-fragment-index="1">$\epsilon\text{-greedy}(\mathbf{s}, \hat{Z}_{\mathbf{\omega_1}})$</span><br>
+				$\quad\quad$ $\mathbf{a} \leftarrow$ <span class="fragment highlight-current-red" data-fragment-index="1">$\epsilon\text{-greedy}(\mathbf{s}, \hat{Z}_{\mathbf{\omega_1}})$</span><br>
 				$\quad\quad$ $r, \mathbf{s'} \leftarrow \text{env.step}(\mathbf{a})$<br>
 				$\quad\quad$ Store transition $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ in $\mathcal{D}$<br>
 				$\quad\quad$ <b>IF</b> $\mathcal{D}$ contains "enough" transitions<br>
@@ -617,7 +617,7 @@ Empirical gains largely attributed to richer target signal and improved optimiza
 	<h3>C51</h3>
 	<h4>Atari Results (varying number of atoms)</h4>
 
-	<img src="assets/rl_distributional/c51_results_1.png" alt="C51 results" style="width: 100%; margin-top: 2em;">
+	<img src="assets/rl_distributional/c51_results_1.png" alt="C51 results" style="width: 100%;">
 	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
 		Varying number of atoms in the discrete distribution.<br>
 		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on
@@ -843,9 +843,8 @@ optimize for specific risk preferences or robust performance.
 <section>
 	<h3>Further Reading</h3>
 
-	<div class="row">
-		<div style="float: left; width: 50%;">
-			<br><br><br><br>
+	<div style="display: flex; align-items: center;">
+		<div style="width: 50%;">
 			<p style="font-size: 0.45em;">
 				<a href="http://direct.mit.edu/books/oa-monograph-pdf/2111075/book_9780262374026.pdf"
 					target="_blank">
@@ -855,9 +854,9 @@ optimize for specific risk preferences or robust performance.
 				Freely available as an open-access PDF from MIT Press.
 			</p>
 		</div>
-		<div style="float: left; width: 50%;">
+		<div style="width: 50%;">
 			<img src="assets/rl_distributional/mit_press_distributional_rl.png"
-				alt="MIT Press Distributional RL" style="width: 80%;">
+				alt="MIT Press Distributional RL" style="width: 65%;">
 		</div>
 	</div>
 

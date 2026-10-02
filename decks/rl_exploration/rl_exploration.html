@@ -93,11 +93,11 @@ us of not taking that action too often in the future."
 	<h4 style="text-transform: none;">$\varepsilon$-greedy</h4>
 
 	<div class="r-stack">
-		<div class="fragment current-visible" data-fragment-index="1">
+		<div class="fragment fade-out" data-fragment-index="1">
 			<div style="text-align: center; margin-bottom: 0.5em; font-size: 0.5em;">
 				Deep Q-Learning Algorithm<br>
 			</div>
-			<div style="font-size: 0.3em; text-align: left; margin-left: 4em;">
+			<div style="font-size: 0.3em; text-align: left; width: fit-content; margin: 0 auto;">
 				<!--
 				<b>Input</b>:<br>
 					$\quad\quad$ none<br>
@@ -138,23 +138,24 @@ us of not taking that action too often in the future."
 				<b>RETURN</b> $\mathbf{\omega_1}$
 			</div>
 		</div>
-		<div class="fragment current-visible" data-fragment-index="2">
-			<img src="assets/rl_exploration/lab1_epsilon.png" alt="ε-greedy Exploration" style="width: 60%; margin-bottom: 0;">
+		<div class="fragment" data-fragment-index="1">
+			<img src="assets/rl_exploration/lab1_epsilon.png" alt="ε-greedy Exploration" style="width: 52%; margin-bottom: 0;">
 		</div>
 	</div>
 	<div class="r-stack">
-		<div class="fragment current-visible" data-fragment-index="1">
-			<p style="font-size:0.4em; margin-top: 1em; text-align: left; margin-bottom: 0; margin-left: 3em;">At each step:</p>
-			<ul style="font-size: 0.4em; padding-left: 1em; display: block; margin-left: 3em;">
-				<li>with probability <b>ε</b>, select a random action;</li>
-				<li>with probability <b>1-ε</b>, select the action with the highest estimated value.
-				</li>
-			</ul>
-			<p style="font-size: 0.4em;">
+		<div class="fragment fade-out" data-fragment-index="1" style="font-size: 0.4em;">
+			<div style="text-align: left; width: fit-content; margin: 0 auto;">
+				<p style="margin-bottom: 0;">At each step:</p>
+				<ul style="padding-left: 1em; display: block; margin-left: 0;">
+					<li>with probability <b>ε</b>, select a random action;</li>
+					<li>with probability <b>1-ε</b>, select the action with the highest estimated value.</li>
+				</ul>
+			</div>
+			<p>
 				👉 Simple to implement, widely used in discrete action spaces.
 			</p>
 		</div>
-		<p class="fragment current-visible" data-fragment-index="2" style="font-size: 0.4em;">
+		<p class="fragment" data-fragment-index="1" style="font-size: 0.4em;">
 			Typically, ε is annealed (decreased) over time to shift from exploration to exploitation.<br>
 			The decay schedule is a hyperparameter and often determined empirically.
 		</p>
@@ -240,7 +241,7 @@ In summary, Gaussian noise is simple and effective for many continuous control p
 	<h3 style="font-size: 1.1em;">Limits of Unstructured Exploration</h3>
 	<h4 style="font-size: 0.8em;">Case Study: Montezuma's Revenge (Atari)</h4>
 
-	<p style="font-size:0.6em; text-align: left; margin-left: 3em;">
+	<p style="font-size:0.55em; text-align: left; margin-left: 3em;">
 		Unstructured methods (ε-greedy, Gaussian noise) struggle in environments with <b>sparse
 		rewards</b> and <b>complex exploration</b> requirements.
 	</p>
@@ -782,12 +783,12 @@ RND provides a more stable and robust novelty measure by using a fixed target ne
 		</li>
 		<li>
 			<b>Intrinsic reward</b>: prediction error (difference between predictor and target outputs).
+			<ul>
+				<li>States that are <b>novel</b> (rarely visited) yield high prediction error and thus high intrinsic reward.</li>
+				<li>As the agent visits a state more often, the predictor learns to match the target, reducing the intrinsic reward.</li>
+				<li>Encourages exploration of <b>unfamiliar</b> states.</li>
+			</ul>
 		</li>
-		<ul>
-			<li>States that are <b>novel</b> (rarely visited) yield high prediction error and thus high intrinsic reward.</li>
-			<li>As the agent visits a state more often, the predictor learns to match the target, reducing the intrinsic reward.</li>
-			<li>Encourages exploration of <b>unfamiliar</b> states.</li>
-		</ul>
 	</ul>
 
 	<!-- Placeholder: insert a diagram showing the RND architecture (state input, target network, predictor network, prediction error as intrinsic reward).
@@ -823,7 +824,7 @@ RND provides a more stable and robust novelty measure by using a fixed target ne
 
 <!-- Video -->
 <section>
-	<video src="assets/rl_exploration/demo_rnd.mp4" controls style="width: 100%; display: block; margin: 0 auto 1em auto;"></video>
+	<video src="assets/rl_exploration/demo_rnd.mp4" controls style="width: 100%; display: block; margin: 0 auto;"></video>
 	<aside class="notes">
 		<div class="fr-notes">
 		</div>
@@ -1103,12 +1104,10 @@ reading or methodological justification.
 	<h3>Further Reading</h3>
 
 	<p style="font-size: 0.7em; margin-top: 2em; text-align: left;">
-		<a href="https://lilianweng.github.io/posts/2020-06-07-exploration-drl/" target="_blank">
-			Exploration Strategies in Deep Reinforcement Learning
-		</a>, Lilian Weng, 2020.
+		<a href="https://lilianweng.github.io/posts/2020-06-07-exploration-drl/" target="_blank">Exploration Strategies in Deep Reinforcement Learning</a>, Lilian Weng, 2020.
 	</p>
 	<p style="font-size: 0.7em; text-align: left;">
-		👉 A comprehensive blog post covering a wide range of exploration techniques, theoretical motivations,	and practical considerations in deep RL.
+		👉 A comprehensive blog post covering a wide range of exploration techniques, theoretical motivations, and practical considerations in deep RL.
 	</p>
 	<aside class="notes">
 		<div class="fr-notes">
