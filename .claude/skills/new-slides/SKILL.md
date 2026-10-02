@@ -79,7 +79,9 @@ See `FORMATS-ECRAN.md` (repo root) for the tested rationale. Non-negotiable in e
   add it when creating a new chapter file.
   `inf581_optimization.html` and `optimization_cem.html` are split this way.
 - Speaker notes: `<aside class="notes">` containing `<div class="fr-notes">` and
-  `<div class="en-notes">` (both languages; `jdhp.js` shows one).
+  `<div class="en-notes">` (both languages; `jdhp.js` shows one). To write their content
+  (spoken script, red keywords, `[click]` cues, one-screen length), follow the
+  `speaker-notes` skill.
 - Work-in-progress slides: add class `draft` to the section — `jdhp.css` gives them a
   yellow background so they're easy to spot; remove the class when the slide is done.
 - **d3.js-generated figures** (the pattern of `optimization_cem_v2.html`, where static PNGs

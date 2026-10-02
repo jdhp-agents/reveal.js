@@ -5,9 +5,16 @@ window.onload = function() {
     var frNotes = document.querySelectorAll('.fr-notes');
     var enNotes = document.querySelectorAll('.en-notes');
 
+    // With pre-wrap, the newline after the opening tag and the indentation before the
+    // closing tag would show up as two blank lines in the speaker view: trim them
+    function showNotes(notes) {
+        notes.style.whiteSpace = 'pre-wrap';
+        notes.innerHTML = notes.innerHTML.replace(/^[ \t]*\n/, '').replace(/\s+$/, '');
+    }
+
     if (currentLanguage === "fr") {
         for(var i = 0; i < frNotes.length; i++) {
-            frNotes[i].style.whiteSpace = 'pre-wrap';
+            showNotes(frNotes[i]);
         }
 
         // Hide English speaker notes
@@ -16,7 +23,7 @@ window.onload = function() {
         }
     } else if (currentLanguage === "en") {
         for(var i = 0; i < enNotes.length; i++) {
-            enNotes[i].style.whiteSpace = 'pre-wrap';
+            showNotes(enNotes[i]);
         }
 
         // Hide French speaker notes

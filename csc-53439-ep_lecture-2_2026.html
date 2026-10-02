@@ -237,7 +237,11 @@ Questions :
 
 				<aside class="notes">
 					<div class="fr-notes"></div>
-					<div class="en-notes"></div>
+					<div class="en-notes">
+Hello everyone, and welcome to this second lecture.
+Today, we are going to look at some <b style="color:red">advanced topics</b> in reinforcement learning.
+Methods that go <b style="color:red">beyond the standard algorithms</b> you already know.
+					</div>
 				</aside>
 			</section>
 
@@ -261,12 +265,20 @@ Questions :
 					<div class="fr-notes">
 					</div>
 					<div class="en-notes">
-In this lecture, we will cover two main topics:
-exploration, and distributional reinforcement learning.
+So, here is the plan for today.
+Two parts.
 
-The goal is to give you an overview of advanced RL techniques that go beyond the standard algorithms you have already seen.
+First, <b style="color:red">exploration</b>.
+How can an agent find good actions, when rewards are very hard to find?
 
-We will not go into every technical detail, but instead focus on the motivations and core principles of each method.
+Second, <b style="color:red">distributional RL</b>.
+What if we learn the whole distribution of returns, instead of just its mean?
+
+My goal is to give you an <b style="color:red">overview</b>.
+I won't go into every technical detail.
+For each method, I'll focus on two things.
+The <b style="color:red">motivation</b>: what problem does it solve?
+And the <b style="color:red">core idea</b>: how does it solve it?
 					</div>
 				</aside>
 			</section>
@@ -286,7 +298,9 @@ We will not go into every technical detail, but instead focus on the motivations
 					<div class="fr-notes">
 					</div>
 					<div class="en-notes">
-So we start with exploration.
+So, let's start with <b style="color:red">exploration</b>.
+It's one of the oldest problems in RL.
+And it's still one of the <b style="color:red">hardest</b>.
 					</div>
 				</aside>
 			</section>
@@ -307,6 +321,12 @@ So we start with exploration.
 					<div class="fr-notes">
 					</div>
 					<div class="en-notes">
+OK, let's move on to the second part: <b style="color:red">distributional RL</b>.
+Here, the question is different.
+It's not about how we collect experience.
+It's about <b style="color:red">what we learn</b> from it.
+So far, our value functions predict one number: the <b style="color:red">expected return</b>.
+Now, we'll try to learn the <b style="color:red">whole distribution</b> of returns.
 					</div>
 				</aside>
 			</section>
@@ -332,10 +352,22 @@ So we start with exploration.
 					<div class="fr-notes">
 					</div>
 					<div class="en-notes">
-This session covered advanced methods to overcome the limitations of classic RL algorithms,
-especially regarding exploration and uncertainty modeling.
-These tools are essential for tackling complex environments and scaling RL to real-world
-problems.
+OK, let's wrap up.
+Today, we looked at two limits of the standard algorithms.
+
+First, <b style="color:red">exploration</b>.
+Random exploration, like ε-greedy or Gaussian noise, fails when rewards are <b style="color:red">sparse</b>.
+<b style="color:red">Intrinsic rewards</b> help a lot: we reward the agent for visiting new states.
+With counts, with prediction errors, or with RND.
+
+Second, <b style="color:red">value modeling</b>.
+Instead of learning only the mean return, distributional RL learns the <b style="color:red">whole distribution</b>.
+It gives a richer learning signal.
+And it opens the door to <b style="color:red">risk-sensitive</b> and <b style="color:red">robust</b> agents.
+
+These ideas are not just tricks for Atari games.
+They are important steps to bring RL to the <b style="color:red">real world</b>.
+Where rewards are rare, and where mistakes are expensive.
 					</div>
 				</aside>
 			</section>
@@ -359,8 +391,20 @@ problems.
 					<div class="fr-notes">
 					</div>
 					<div class="en-notes">
-Open questions include combining advances, generalization, safety, and interpretability. Modern
-RL evolves rapidly—understanding these concepts is key for research and real-world impact.
+To finish, a few <b style="color:red">open questions</b>.
+First, how do we <b style="color:red">combine</b> all of this?
+Some agents, like Rainbow, already combine several of these ideas, but there's no unified framework yet.
+Second, <b style="color:red">generalization</b>: how can an agent reuse what it learned on a new task?
+Third, <b style="color:red">safety</b>, robustness and interpretability.
+That's essential before we put RL agents in the real world.
+And there are many topics we didn't cover today: hierarchical RL, meta-learning, distributed RL, multi-agent RL...
+
+So, the key takeaway.
+RL is moving <b style="color:red">very fast</b>.
+And the concepts we saw today are the <b style="color:red">foundations</b> of many recent methods.
+
+Thank you for your attention.
+I'm happy to take your <b style="color:red">questions</b>.
 					</div>
 				</aside>
 			</section>

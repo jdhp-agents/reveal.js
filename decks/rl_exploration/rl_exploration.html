@@ -27,40 +27,30 @@
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-The exploration-exploitation dilemma is fundamental in RL:
-agents must balance trying new actions
-to gather information
-and
-leveraging what they know to maximize returns.
+Let's start with a picture.
+Here is our robot, and it's hungry.
+On the left, "The Usual Place": a restaurant it knows well, and it's pretty happy with it.
+On the right, a new restaurant just opened.
+So, what should it do?
 
-This illustration is a good example:
-- we are used to a few restaurants (exploitation), we are happy with them,
-- but a new one just opened
+If it goes to the usual place, it gets a good meal for sure.
+That's <b style="color:red">exploitation</b>: use what you already know to get the best reward.
+If it tries the new place, maybe it's disappointing... or maybe it's a new favorite.
+That's <b style="color:red">exploration</b>: take some risk to gather information.
 
-Do we try it (do we explore)?
-- with the risk of being disappointed, but maybe we will find a new favorite place?
-- or do we stick to what we know (exploitation)?
+Well, an RL agent has exactly the same problem.
+It must explore to discover <b style="color:red">rewarding actions and states</b>.
+And it must exploit what it knows to <b style="color:red">maximize its reward</b>.
 
-
----
-
-"without enough explORAtion, we cannot learn the environment well enough; without enough
-explOItation, we cannot complete our reward optimization task"
-"Different RL algorithms balance between exploration and exploitation in different ways. In MC
-methods, Q-learning or many on-policy algorithms, the exploration is commonly implemented by
-ε-greedy;"
-
-"With exploitation, we take advantage of the best option we know. With exploration, we take some
-risk to collect information about unknown options. The best long-term strategy may involve
-short-term sacrifices. For example, one exploration trial could be a total failure, but it warns
-us of not taking that action too often in the future."
-
-
----
-
-- https://lilianweng.github.io/posts/2018-02-19-rl-overview/#exploration-exploitation-dilemma
-- https://lilianweng.github.io/posts/2018-01-23-multi-armed-bandit/#exploitation-vs-exploration
+The hard part is to find the right <b style="color:red">balance</b>.
+Too much exploration, and learning is <b style="color:red">slow</b>: we keep trying bad options.
+Too much exploitation, and we get stuck with a <b style="color:red">suboptimal policy</b>: we never find the better restaurant.
+The best long-term strategy often means accepting some <b style="color:red">short-term sacrifices</b>.
 		</div>
+		<!-- Sources:
+		- https://lilianweng.github.io/posts/2018-02-19-rl-overview/#exploration-exploitation-dilemma
+		- https://lilianweng.github.io/posts/2018-01-23-multi-armed-bandit/#exploitation-vs-exploration
+		-->
 	</aside>
 </section>
 
@@ -164,21 +154,26 @@ us of not taking that action too often in the future."
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-There are several kinds of exploration strategies.
+So, how do we explore in practice?
+The simplest family of methods is called <b style="color:red">unstructured exploration</b>.
+"Unstructured" means we just inject some <b style="color:red">randomness</b> into the agent's choices.
 
-The most basic ones are unstructured exploration methods.
+The best-known example is <b style="color:red">ε-greedy</b>.
+You already know it: it's the line in red, in the DQN algorithm.
+At each step, with probability ε, we pick a <b style="color:red">random action</b>.
+Otherwise, we pick the <b style="color:red">greedy action</b>: the one with the highest estimated Q-value.
+It's very simple, and it's the default choice in <b style="color:red">discrete action spaces</b>.
 
-Among them, ε-greedy is the most common in discrete action spaces.
+<i style="color:gray">[click]</i>
+In practice, ε is not constant.
+We start with a large ε, so the agent explores a lot.
+Then we <b style="color:red">decrease ε over time</b>, down to a small minimum value.
+So the agent shifts smoothly from exploration to exploitation.
+How fast should ε decrease?
+Well, that's a <b style="color:red">hyperparameter</b>, and it's usually tuned by trial and error.
 
-[...]
-
-
-
-Unstructured exploration uses simple stochasticity (randomness) to encourage the agent to try
-new actions.
-Effective in simple tasks, but often insufficient for complex environments.
-ε-greedy ensures some exploration but may revisit the same states/actions repeatedly and
-struggles in high-dimensional or sparse-reward settings.
+The weakness of ε-greedy: this randomness is <b style="color:red">blind</b>.
+The agent doesn't try to go where it knows the least.
 		</div>
 	</aside>
 </section>
@@ -213,23 +208,26 @@ struggles in high-dimensional or sparse-reward settings.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-In continuous action spaces, a common exploration strategy is to add Gaussian noise directly to the actions output by the policy network.
+Now, what about <b style="color:red">continuous actions</b>?
+Here, ε-greedy is not the natural choice.
+Instead, we take the action of the policy, and we add some <b style="color:red">noise</b> to it.
 
-This means that, instead of always taking the deterministic action suggested by the policy, we perturb it with random noise sampled from a normal distribution.
+Look at the formula.
+μ is the actor network: it outputs a <b style="color:red">deterministic action</b>.
+And we add a noise term, N, on top of it.
+Typically, a zero-mean <b style="color:red">Gaussian noise</b>.
+That's what <b style="color:red">DDPG</b> and <b style="color:red">TD3</b> do.
+And like with ε, we can <b style="color:red">reduce the noise</b> over time.
 
-This approach is widely used in algorithms like DDPG and TD3, where the action space is continuous.
+A small detail.
+Independent Gaussian noise makes the actions jitter from one step to the next.
+So the original DDPG paper used an <b style="color:red">Ornstein-Uhlenbeck</b> process.
+It's a noise that is correlated in time, better for physical systems with inertia.
+Later, TD3 showed that simple Gaussian noise works just as well in practice.
 
-The variance of the noise can be annealed over time, so the agent explores more at the beginning of training and gradually exploits more as learning progresses.
-
-The main advantage is that it encourages local exploration around the current policy, which is often appropriate for physical control tasks.
-
-Note that independent Gaussian noise is not temporally correlated: it makes the actions jitter from one step to the next.
-This is why the original DDPG paper used an Ornstein-Uhlenbeck process, which produces temporally correlated noise, better suited to physical systems with inertia.
-TD3 later showed that simple uncorrelated Gaussian noise works just as well in practice.
-
-However, this method can be insufficient in environments where more global or structured exploration is needed, since the agent may only explore in a small neighborhood of its current behavior.
-
-In summary, Gaussian noise is simple and effective for many continuous control problems, but it may not be enough for tasks that require discovering distant or rare states.
+The limit?
+This exploration is <b style="color:red">local</b>: the agent only tries actions close to what it already does.
+So it won't discover <b style="color:red">far-away or rare states</b>.
 		</div>
 	</aside>
 </section>
@@ -269,11 +267,25 @@ In summary, Gaussian noise is simple and effective for many continuous control p
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Montezuma's Revenge is a good example where unstructured exploration fails:
+OK, so do these simple methods work?
+Well, on easy problems, yes.
+But here is a famous counter-example: <b style="color:red">Montezuma's Revenge</b>, an Atari game.
 
-rewards are sparse and require precise action sequences.
+<i style="color:gray">[play the video]</i>
+To get the first reward, the player must grab the <b style="color:red">key</b>.
+So: go down the ladders, jump over the rolling skull, and climb up to the key.
+And to get the next reward, go all the way back and open a door.
+That's a long and very <b style="color:red">precise sequence</b> of actions.
+One bad jump, and you lose a life.
 
-This motivates the development of more advanced exploration strategies.
+Now imagine an agent that just presses <b style="color:red">random buttons</b>.
+It will almost never reach the key.
+So it almost never sees a reward: the rewards are <b style="color:red">sparse</b>.
+And with no reward, there is nothing to learn.
+In fact, the original DQN scored <b style="color:red">zero points</b> on this game.
+
+So we need smarter ways to explore.
+That's the motivation for the rest of this part: <b style="color:red">intrinsic motivation</b>, and <b style="color:red">structured exploration</b>.
 		</div>
 	</aside>
 </section>
@@ -298,9 +310,24 @@ This motivates the development of more advanced exploration strategies.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Maximum-entropy RL augments the reward with an entropy term, encouraging stochastic policies and
-robust exploration. Soft Q-Learning and Soft Actor-Critic are leading algorithms in this area,
-especially effective for continuous control.
+Another family of methods: <b style="color:red">maximum entropy RL</b>.
+Jesse already presented it in the first part of the course, so I'll be quick.
+
+Here, the idea is to change the <b style="color:red">objective</b> itself.
+Look at the formula.
+At each step, the agent gets the usual reward, r.
+Plus a bonus: the <b style="color:red">entropy</b> of its policy in the current state, weighted by α.
+
+What does it mean?
+Entropy measures how <b style="color:red">random</b> the policy is.
+So the agent is rewarded for keeping its options open.
+For not committing too early to a single action.
+And α sets the <b style="color:red">balance</b>: a large α means more exploration, and with α equal to zero, we're back to standard RL.
+
+Two benefits.
+First, better <b style="color:red">exploration</b>, since the policy stays stochastic.
+Second, more <b style="color:red">robust</b> policies: the agent learns several ways to solve the task, not just one.
+That's why it's widely used in <b style="color:red">robotics</b> and continuous control.
 		</div>
 	</aside>
 </section>
@@ -330,11 +357,19 @@ especially effective for continuous control.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-As Jesse already mentioned in his lecture this morning,
+Two key algorithms here, both by Haarnoja and colleagues.
 
-Maximum-entropy RL augments the reward with an entropy term, encouraging stochastic policies and robust exploration.
+First, <b style="color:red">Soft Q-Learning</b>, in 2017.
+It puts the entropy term inside the <b style="color:red">Q-learning update</b>.
+That's why it's called "soft".
+The hard max over actions of Q-learning becomes a <b style="color:red">soft maximum</b>: a log-sum-exp.
 
-Soft Q-Learning and Soft Actor-Critic are leading algorithms in this area, especially effective for continuous control.
+Then, <b style="color:red">Soft Actor-Critic</b>, or SAC, in 2018.
+It's an <b style="color:red">off-policy actor-critic</b>, with this entropy bonus.
+Off-policy means it can reuse past experience from a replay buffer.
+So it's quite <b style="color:red">sample-efficient</b>.
+SAC quickly became a <b style="color:red">standard baseline</b> for continuous control.
+If you need a solid algorithm for a robot arm, SAC is often the first thing to try.
 		</div>
 	</aside>
 </section>
@@ -425,7 +460,24 @@ Soft Q-Learning and Soft Actor-Critic are leading algorithms in this area, espec
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-...
+Next idea: instead of adding noise to the actions, we add noise to the <b style="color:red">network's weights</b>.
+Two papers proposed this, at the same time.
+
+Why is it different?
+With action noise, every step is perturbed independently.
+So the agent keeps changing its mind, at every single step.
+With parameter noise, we perturb the <b style="color:red">policy itself</b>.
+As long as the perturbation is fixed, the behavior is <b style="color:red">consistent</b>: same state, same action.
+It's like trying a slightly different strategy, rather than pressing random buttons.
+
+In <b style="color:red">Noisy Nets</b>, the linear layers of the network get noisy weights.
+And the network <b style="color:red">learns the amount of noise</b>, by gradient descent.
+So there is no ε to tune anymore: the agent decides by itself how much to explore.
+By the way, Noisy Nets is one of the components of <b style="color:red">Rainbow</b>.
+
+<b style="color:red">Parameter space noise</b>, by Plappert and colleagues, applies the same idea to DQN, DDPG and TRPO.
+Here, the noise is sampled at the start of an episode, and kept fixed during the episode.
+And its scale is <b style="color:red">adapted</b> automatically, to keep a target level of change in the actions.
 		</div>
 	</aside>
 </section>
@@ -538,46 +590,27 @@ RND
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Intrinsic rewards are another approach to encourage exploration.
+Let's come back to our Montezuma problem: <b style="color:red">sparse rewards</b>.
+If the environment almost never gives a reward... well, let's <b style="color:red">create our own</b>!
 
-Here, we augment the environment reward with an additional intrinsic reward signal to encourage exploration.
+The idea: we add an <b style="color:red">intrinsic reward</b> to the reward of the environment.
+The environment reward is called <i>extrinsic</i>: it defines the task.
+The intrinsic reward is an <b style="color:red">exploration bonus</b>: it's high when the agent sees something new.
+And β is a weight, to balance exploitation and exploration.
 
-This intrinsic reward can mean two things: novelty (count-based) or uncertainty/surprise (prediction-based).
+This comes from psychology: <b style="color:red">intrinsic motivation</b>, or <b style="color:red">curiosity</b>.
+Think of a child: nobody pays them to explore, exploring is rewarding in itself.
 
-
-One common approach to better exploration, especially for solving the
-<strong>hard-exploration</strong> problem, is to augment the environment reward with an
-additional bonus signal to encourage extra exploration.
-The policy is thus trained with a reward composed of two terms,
-\(\; r_t = r_t^{e} + \beta\, r_t^{i} \;\),
-where \(\beta\) is a hyperparameter adjusting the balance between exploitation and
-exploration.
-
-<ul>
-	<li>\( r_t^{e} \) is an <em>extrinsic</em> reward from the environment at time \( t \),
-		defined according to the task at hand.</li>
-	<li>\( r_t^{i} \) is an <em>intrinsic</em> exploration bonus at time \( t \).</li>
-</ul>
-
-This intrinsic reward is somewhat inspired by <em>intrinsic motivation</em> in psychology
-(Oudeyer & Kaplan, 2008).
-Exploration driven by curiosity might be an important way for children to grow and learn.
-In other words, exploratory activities should be rewarding intrinsically in the human mind
-to encourage such behavior.
-The intrinsic rewards could be correlated with curiosity, surprise, familiarity of the
-state, and many other factors.
-
-Same ideas can be applied to RL algorithms.
-In the following sections, methods of bonus-based exploration rewards are roughly grouped
-into two categories:
-
-<ol>
-	<li>Discovery of novel states</li>
-	<li>Improvement of the agent’s knowledge about the environment.</li>
-</ol>
-
-(src: https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#intrinsic-rewards-as-exploration-bonuses )
+So now, the question is: how do we measure "new"?
+There are two main approaches.
+<b style="color:red">Count-based</b> exploration: a bonus for states we have rarely visited.
+<b style="color:red">Prediction-based</b> exploration: a bonus when the agent is <b style="color:red">surprised</b>, when it fails to predict what happens.
+Let's see both.
 		</div>
+		<!-- Sources:
+		- https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#intrinsic-rewards-as-exploration-bonuses
+		- Oudeyer & Kaplan (2008), intrinsic motivation in psychology
+		-->
 	</aside>
 </section>
 
@@ -613,26 +646,28 @@ into two categories:
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-If we consider intrinsic rewards as rewarding conditions that surprise us, we need a way to
-measure whether a state is novel or appears often.
+The first approach is the most intuitive one: we <b style="color:red">count</b>.
+N of s is the number of times we have visited state s.
+And the bonus is one over the square root of this count.
+So a new state gives a <b style="color:red">big bonus</b>, and the more we visit it, the smaller the bonus.
+This pushes the agent toward <b style="color:red">rarely visited states</b>.
+In a small, discrete world, like a grid world, this works very well.
 
-One intuitive way is to count how many times a state has been encountered and to assign a
-bonus accordingly.
+But what about Atari, where the state is an <b style="color:red">image</b>?
+Well, you almost <b style="color:red">never see the exact same image twice</b>.
+So almost all the counts are zero, or one.
+And the bonus doesn't tell us anything useful.
+Same problem with continuous states.
 
-The bonus guides the agent’s behavior to prefer rarely visited states to common states.
-This is known as the <strong>count-based exploration</strong> method.
-
-Let \(N_{n}(s)\) be the <em>empirical count</em> function that tracks the real number of
-visits of a state \(s\) in the sequence of \(s_{1:n}\).
-Unfortunately, using \(N_{n}(s)\) for exploration directly is not practical, because most of
-the states would have \(N_{n}(s) = 0\), especially considering that the state space is often
-continuous or high-dimensional.
-We need a non-zero count for most states, even when they haven’t been seen before.
-
-TODO: alternatives...
-
-https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#count-based-exploration
+So the solution is to <b style="color:red">approximate</b> the counts: we call them <b style="color:red">pseudo-counts</b>.
+Bellemare and colleagues use a <b style="color:red">density model</b> of the images, to estimate how familiar a state is.
+Ostrovski and colleagues improve it with a neural density model, PixelCNN.
+And Tang and colleagues use a simpler trick: they <b style="color:red">hash</b> each state into a short code, and count the codes.
+So similar states share the same count.
 		</div>
+		<!-- Sources:
+		- https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#count-based-exploration
+		-->
 	</aside>
 </section>
 
@@ -669,34 +704,27 @@ https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#count-based-explo
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-* The network tries to predict (s_{t+1}) (or a feature of (s_{t+1})) from (s_t, a_t).
-* The prediction difficulty is used as a novelty signal (error = curiosity).
+The second approach: we reward the agent when it is <b style="color:red">surprised</b>.
+For that, the agent learns a <b style="color:red">forward model</b>, f.
+It takes the current state and the action, and it tries to <b style="color:red">predict the next state</b>.
+The intrinsic reward is the <b style="color:red">prediction error</b>: the gap between the prediction and what really happened.
 
-Learning a <strong>forward dynamics prediction model</strong> is a great way to approximate
-how much knowledge
-our model has obtained about the environment and the task MDPs. It captures an agent’s
-capability
-of predicting the consequence of its own behavior,
-\[
-f : (s_t, a_t) \mapsto s_{t+1}.
-\]
-Such a model cannot be perfect (e.g., due to partial observation), the error
-\[
-e(s_t, a_t) \;=\; \| f(s_t, a_t) - s_{t+1} \|^2_2
-\]
-can be used for providing intrinsic exploration rewards.
+Why does it work?
+If the model predicts well, the agent already knows this part of the world: no bonus.
+If the error is large, it's an <b style="color:red">unknown region</b>: big bonus, so let's go there!
+And as the model learns, the bonus decreases: same effect as with counts, but without counting.
+That's why it scales to <b style="color:red">images</b> and continuous states.
+In practice, like in ICM, we usually predict <b style="color:red">features</b> of the next state, rather than raw pixels.
 
-The higher the prediction error, the less familiar we are with that state.
-
-The faster the error rate drops, the more learning progress signals we acquire.
-
-
-
-https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#forward-dynamics
-
-TODO: limites qui amènent aux random networks c.f.
-https://chatgpt.com/c/68ddabd1-09d8-8328-94a0-2e75d7fc3f0b
+But there is a catch.
+The model can be <b style="color:red">fooled by randomness</b>.
+If something in the environment is just unpredictable, the error stays high forever.
+So the agent may focus on things that are unpredictable, but completely <b style="color:red">irrelevant</b>.
+Let me show you the classic example.
 		</div>
+		<!-- Sources:
+		- https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#forward-dynamics
+		-->
 	</aside>
 </section>
 
@@ -716,9 +744,24 @@ https://chatgpt.com/c/68ddabd1-09d8-8328-94a0-2e75d7fc3f0b
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Prediction-based intrinsic rewards can fail in stochastic environments: the agent is drawn to noise, resulting in biased and inefficient exploration.
+This is called the <b style="color:red">noisy TV problem</b>.
+Imagine there is a TV in the maze, and it shows <b style="color:red">random images</b>.
+The agent tries to predict the next image on the screen.
+But it's pure noise: it can <b style="color:red">never</b> predict it.
+Even after watching it for hours.
+So the prediction error stays high, and the bonus stays high.
 
-This is known as the "noisy TV" problem: an agent rewarded for its prediction error can stay stuck in front of a TV showing random images, because the next frame can never be predicted, however often it has been seen (Burda et al., 2018).
+Result: the agent is hooked.
+It stays in front of the TV forever, like a <b style="color:red">couch potato</b>.
+And it stops exploring the rest of the world.
+
+So, the problem is this.
+The prediction error mixes up two very different things.
+Something <b style="color:red">new</b>, that we can learn about.
+And something just <b style="color:red">random</b>, that we will never be able to predict.
+In technical terms, the first one is <b style="color:red">epistemic</b> uncertainty: what we don't know yet.
+The second one is <b style="color:red">aleatoric</b> uncertainty: the pure randomness of the environment.
+For exploration, we want a bonus for the first one only.
 		</div>
 	</aside>
 </section>
@@ -758,7 +801,25 @@ This is known as the "noisy TV" problem: an agent rewarded for its prediction er
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-RND provides a more stable and robust novelty measure by using a fixed target network and a predictor that learns to imitate it.
+So here comes <b style="color:red">Random Network Distillation</b>, or RND.
+It keeps the idea of a prediction error.
+But it changes <b style="color:red">what we predict</b>.
+
+We take a first network, initialized at random, and we <b style="color:red">freeze</b> it.
+That's the <b style="color:red">target network</b>.
+It never learns anything: it's just a fixed, random function of the state.
+So each state gets a kind of random <b style="color:red">signature</b>, and this signature never changes.
+
+Then, a second network, the <b style="color:red">predictor</b>, is trained to reproduce this signature.
+At the beginning, the predictor is bad everywhere: the error is high for all states.
+On the states we visit often, it gets good: the error goes down.
+But on <b style="color:red">new states</b>, it has never been trained: the error stays high.
+So this error is a measure of <b style="color:red">novelty</b>.
+
+And here is the key point.
+The target only depends on the current state, not on what happens next.
+It's a <b style="color:red">deterministic</b> function of the state.
+So the randomness of the transitions can't fool it anymore.
 		</div>
 	</aside>
 </section>
@@ -802,20 +863,23 @@ RND provides a more stable and robust novelty measure by using a fixed target ne
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-### 📌 Advantages of this architecture
+So, let me summarize how RND works.
+Two networks, and both take the <b style="color:red">state</b> as input.
+The <b style="color:red">target</b>: random weights, frozen.
+The <b style="color:red">predictor</b>: trained to match the target's output, on the states we visit.
+The <b style="color:red">intrinsic reward</b> is the gap between the two outputs.
+New state: big gap, big reward.
+Familiar state: small gap, small reward.
 
-1. **Stability**: the target is frozen → no drift in the definition of novelty.
-2. **No bias toward noise**: random states do not permanently yield high error, as the predictor eventually learns their fixed projection.
-3. **Universality**: no knowledge of the environment’s dynamics is needed.
-4. **Simplicity**: just two MLPs/CNNs, no need for complex transition models.
+Why is it nice?
+First, it's <b style="color:red">simple</b>: two standard networks, and no model of the environment's dynamics.
+Second, it's <b style="color:red">stable</b>: the target never moves, so the definition of novelty doesn't drift.
+Third, it's much less <b style="color:red">fooled by randomness</b>, as we just saw.
 
----
-
-### 🎯 In summary
-
-* **We do not use next-state prediction** because it confuses novelty with unpredictability.
-* The **frozen target network** acts as a “pseudo-random representation generator” to give states a stable signature.
-* The **predictor network** measures how familiar a state is → and thus how much intrinsic reward it deserves.
+And it works!
+RND was the first method to beat the <b style="color:red">average human score</b> on Montezuma's Revenge.
+Without any human demonstration.
+Let's see it in action.
 		</div>
 	</aside>
 </section>
@@ -829,9 +893,17 @@ RND provides a more stable and robust novelty measure by using a fixed target ne
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-			<p>
-				...
-			</p>
+<i style="color:gray">[play the video]</i>
+So this is the <b style="color:red">RND agent</b>, playing Montezuma's Revenge.
+This video comes from OpenAI, where RND was developed.
+Look: it <b style="color:red">collects the keys</b>...
+it collects gems...
+it goes through the <b style="color:red">laser gates</b>...
+and at some point, it even <b style="color:red">finishes the first level</b>.
+
+Remember: the original DQN scored zero on this game.
+Here, the game rewards are still there, but they are very rare.
+What keeps the agent moving into <b style="color:red">new rooms</b> is the intrinsic reward: its <b style="color:red">curiosity</b>.
 		</div>
 	</aside>
 </section>
@@ -921,8 +993,18 @@ RND provides a more stable and robust novelty measure by using a fixed target ne
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Key references for intrinsic motivation and curiosity-driven exploration. Useful for further
-reading or methodological justification.
+Here are the <b style="color:red">key papers</b> on this topic, if you want to go further.
+I won't go through all of them, just a few words on each.
+
+<b style="color:red">VIME</b>: the bonus is the <b style="color:red">information gain</b> about the environment's dynamics, with a Bayesian neural network.
+Then the three <b style="color:red">pseudo-count</b> papers: these are the count-based methods we've just seen.
+<b style="color:red">EX2</b>: a classifier tries to tell a state apart from the states already visited.
+If that's easy, the state is new.
+<b style="color:red">ICM</b>, the Intrinsic Curiosity Module: prediction-based, in a learned feature space.
+Then a <b style="color:red">large-scale study</b> by Burda and colleagues.
+They trained agents with curiosity alone, no game reward at all, on 54 environments.
+And surprisingly, it works quite well on many games.
+And finally, <b style="color:red">RND</b>, that we've just discussed.
 		</div>
 	</aside>
 </section>
@@ -1113,8 +1195,11 @@ reading or methodological justification.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-For a deeper dive into exploration strategies, this blog post provides a clear and illustrated
-overview of both classic and advanced methods.
+And if you want <b style="color:red">one single resource</b> on exploration, read this blog post by <b style="color:red">Lilian Weng</b>.
+It's very clear, well illustrated, and it covers much more than what we saw today.
+For instance, memory-based methods like <b style="color:red">Go-Explore</b>, which reached superhuman scores on Montezuma's Revenge.
+
+OK, that's it for exploration.
 		</div>
 	</aside>
 </section>

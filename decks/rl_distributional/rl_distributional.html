@@ -53,43 +53,25 @@
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-In this section, I’ll introduce the motivation behind distributional reinforcement learning, and
-specifically the C51 algorithm.
+In this part, we focus on one algorithm: <b style="color:red">C51</b>, also called Categorical DQN.
 
-Let’s start by recalling that classic algorithms like DQN aim to approximate the value of an
-action in a given state, that is, the expected future return.
-However, this approach collapses all uncertainty, variance, and risk structure into a single
-number.
-We lose all information about the spread of possible returns, the probability of very good or
-very bad outcomes, and the overall shape of the distribution—such as whether it’s skewed or has
-heavy tails.
+Let's start from DQN.
+DQN learns Q of s, a: the <b style="color:red">expected</b> sum of discounted rewards.
+And the Bellman equation links this expectation to the expectation at the next step.
 
-This is where distributional RL comes in.
-Instead of modeling only the expectation, we aim to approximate the full distribution of
-possible returns, denoted Z(s,a).
-This allows us to capture not just the mean, but also the variance, the tails, and thus to have
-a much richer picture of what the agent might experience.
+But the return is a <b style="color:red">random variable</b>.
+The same state and action can lead to very different outcomes.
+When we keep only the mean, we lose a lot: the <b style="color:red">variance</b>, the skewness, the <b style="color:red">tails</b>... in other words, the risk.
 
-Mathematically, the Bellman operator becomes distributional: we no longer propagate a scalar
-value, but a probability law, which is shifted and contracted at each step.
-The C51 algorithm represents this distribution by discretizing it onto 51 fixed points, called
-“atoms,” and projects the updated distribution onto this support at every iteration.
+Distributional RL keeps all of it.
+We model the full random return: <b style="color:red">Z of s, a</b>.
+And the Bellman equation still holds, but now <b style="color:red">in distribution</b>: that's the D above the equal sign.
+The return here has the same distribution as the reward, plus gamma times the return at the next step.
 
-What are the benefits? First, the learning signal is much richer: instead of a single number, we
-supervise the agent with an entire distribution, which improves stability and convergence speed.
-Second, this opens the door to risk-sensitive policies: we can choose to optimize not just the
-mean, but also Value-at-Risk or other utility criteria.
-
-Finally, it’s important to note that even though action selection is still done via the
-expectation of the distribution, the entire learning phase benefits from this probabilistic
-structure,
-which is the usual explanation of the empirical gains observed.
-The exact reasons are still debated, though: in the tabular and linear settings,
-distributional RL can be shown to behave exactly like expected RL (Lyle et al., 2019),
-so the gains seem to come from its interaction with deep neural networks.
-
-In summary, moving from expectation to the full distribution allows us to capture the richness
-of uncertainty, improve learning, and lay the groundwork for more robust and adaptive agents.
+Why bother?
+A <b style="color:red">richer training signal</b>, more stable learning, and <b style="color:red">risk-sensitive</b> objectives become possible.
+And the key idea, at the bottom: we keep the whole distribution during learning.
+And we take its <b style="color:red">mean</b> only at the very end, to <b style="color:red">choose the action</b>.
 		</div>
 	</aside>
 </section>
@@ -114,8 +96,19 @@ of uncertainty, improve learning, and lay the groundwork for more robust and ada
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Classic DQN uses scalar regression toward bootstrapped expectation; no distributional structure
-preserved.
+A quick recap of <b style="color:red">DQN</b>, since C51 is built on top of it.
+The goal: approximate the <b style="color:red">optimal Q-function</b>, Q star.
+The network takes the <b style="color:red">state</b> as input: here, the Atari screen.
+A few convolutional layers, then fully connected layers.
+And the output is a vector: <b style="color:red">one Q-value per action</b>, one for each joystick move.
+
+To train it, we build a <b style="color:red">target</b> with the Bellman equation.
+The reward, plus gamma times the best Q-value at the next state.
+And we minimize the <b style="color:red">squared error</b> between this target and our prediction.
+So it's basically a <b style="color:red">regression</b> on a single number.
+
+And that's precisely the limitation.
+Whatever happens after this action, all the possible futures are <b style="color:red">squeezed into one number</b>: their mean.
 		</div>
 	</aside>
 </section>
@@ -147,12 +140,22 @@ preserved.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Emphasize distributional Bellman operator and theoretical contraction in Wasserstein metric.
+Here is the picture to keep in mind.
+On the left, DQN: for each action, the output is a <b style="color:red">single point</b>, the expected return.
+On the right, C51: for each action, the output is a <b style="color:red">whole histogram</b> over the possible returns.
+Same feature extractor: only the <b style="color:red">output layer</b> changes.
 
-Caveat: this contraction holds for policy evaluation (fixed policy π).
-For control, the distributional Bellman optimality operator is not a contraction in any metric between distributions (Bellemare et al., 2017);
-only the expectation is guaranteed to converge.
-Moreover, C51 minimizes a cross-entropy (KL) loss after projection, not the Wasserstein distance.
+So now, Z of s, a is a random variable, and we want to learn its <b style="color:red">law</b>.
+And we don't lose anything: the Q-value is simply the <b style="color:red">mean of Z</b>.
+
+On the theory side, Bellemare and colleagues proved a nice result.
+For a <b style="color:red">fixed policy</b>, the distributional Bellman operator is a <b style="color:red">contraction</b>, in the Wasserstein metric.
+So, like in classic RL, repeated updates converge to the true return distribution.
+But be careful: that's only for policy evaluation.
+For <b style="color:red">control</b>, with the max, it's not a contraction anymore.
+Only the mean is guaranteed to converge.
+And C51 doesn't even minimize the Wasserstein distance: it uses a <b style="color:red">cross-entropy</b> loss, as we'll see.
+So the theory doesn't fully cover C51... but it works very well in practice.
 		</div>
 	</aside>
 </section>
@@ -176,8 +179,21 @@ Moreover, C51 minimizes a cross-entropy (KL) loss after projection, not the Wass
 			Choix fixe du support simplifie projection mais introduit rigidité si queue hors bornes.
 		</div>
 		<div class="en-notes">
-			Fixed categorical support enables simple cross-entropy optimization; clipping handles
-			out-of-range targets.
+Now, how do we represent a distribution with a neural network?
+C51 uses the simplest possible option: a <b style="color:red">histogram</b>.
+
+We fix a grid of possible return values, between <b style="color:red">V min</b> and <b style="color:red">V max</b>.
+These values are called <b style="color:red">atoms</b>: z i.
+There are 51 of them, evenly spaced, so the gap between two atoms is delta z.
+That's where the name comes from: <b style="color:red">C51</b>, categorical with 51 atoms.
+On Atari, the paper uses V min equals minus 10, and V max equals plus 10.
+
+The atoms are <b style="color:red">fixed</b>: the network doesn't move them.
+What it learns is the <b style="color:red">probability</b> of each atom.
+For each action, it outputs 51 numbers, and a <b style="color:red">softmax</b> turns them into probabilities that sum to one.
+
+The nice thing with a fixed grid: the loss becomes a simple <b style="color:red">cross-entropy</b>, like in classification.
+The price: the bounds are a <b style="color:red">hyperparameter</b>, and any return outside them is just clipped.
 		</div>
 	</aside>
 </section>
@@ -198,23 +214,23 @@ Moreover, C51 minimizes a cross-entropy (KL) loss after projection, not the Wass
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Here is an example of the learned return distribution for different actions for a given
-state of the SPACE INVADERS Atari game.
+Let's look at what C51 actually learns.
+This is a state of <b style="color:red">Space Invaders</b>, with the distributions learned for each action.
+Each color is one action.
 
-Learned value distribution during an episode of SPACE INVADERS.
-Different actions are shaded different colours.
-Returns below 0 (which do not occur in SPACE INVADERS) are not shown here as the agent
-assigns virtually no probability to them.
+Look at the big bar at <b style="color:red">zero</b>.
+It comes from the three actions that <b style="color:red">fire the laser</b>: Laser, Left plus Laser, and Right plus Laser.
+In this state, firing is a mistake: the agent fires too early, and eventually loses the game.
+So these actions put a lot of probability on a return of zero.
+That's the <b style="color:red">terminal value</b>: game over.
 
-This example illustrates the typical value distributions that can be observed.
-In this example, three actions (those including the button press) lead to the agent releasing its laser too early and eventually losing the game.
-The corresponding distributions reflect this: they assign a significant probability to 0 (the terminal value).
-The safe actions have similar distributions (LEFT, which tracks the invaders’ movement, is slightly favoured).
-This example helps explain why the distributional RL approach is so successful:
-the distributional update keeps separated the low-value,
-“losing” event from the high-value,
-“survival” event,
-rather than average them into one (unrealizable) expectation.
+The safe actions, Left, Right and Noop, look very different.
+A nice bump between 4 and 10: the agent <b style="color:red">survives</b>, and keeps scoring.
+Left is slightly preferred, because it follows the movement of the invaders.
+
+So the distribution tells us much more than a single number.
+Here, it tells us <b style="color:red">why</b> an action is bad: there is a real <b style="color:red">risk of losing</b>.
+Keep this figure in mind: we'll come back to it.
 		</div>
 	</aside>
 </section>
@@ -234,6 +250,17 @@ rather than average them into one (unrealizable) expectation.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
+<i style="color:gray">[play the video]</i>
+Here is the C51 agent, <b style="color:red">playing Space Invaders</b>.
+The agent is the green cannon, at the bottom.
+On the right, you see the <b style="color:red">return distribution</b> it predicts, at each frame.
+
+Watch how it <b style="color:red">moves</b> during the game.
+Most of the time, it's a smooth bump.
+When a new wave of invaders arrives, the bump shifts to the right: there are more points to collect.
+From time to time, a small bar appears near zero: the agent sees a <b style="color:red">risk of losing</b>.
+And at the very end, look: a <b style="color:red">big peak near zero</b>.
+The agent "knows" the game is about to end.
 		</div>
 	</aside>
 </section>
@@ -253,6 +280,17 @@ rather than average them into one (unrealizable) expectation.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
+<i style="color:gray">[play the video]</i>
+And the same thing on <b style="color:red">Pong</b>.
+The agent is the green paddle, on the right.
+
+Here, the distribution looks very different.
+It's <b style="color:red">narrow</b>, and centered on a small positive value.
+The agent wins almost every point, so it's quite <b style="color:red">sure about the future</b>.
+
+But watch when the ball comes back to its paddle.
+Sometimes, the distributions of the different actions <b style="color:red">split apart</b>.
+At that moment, the choice of action really matters.
 		</div>
 	</aside>
 </section>
@@ -400,7 +438,25 @@ rather than average them into one (unrealizable) expectation.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Implementation detail: flatten logits, apply grouped softmax; expectation used for policy.
+Now, the <b style="color:red">architecture</b>.
+Here is DQN, in more detail.
+On the left, the network: a stack of the last 4 frames, 3 convolutional layers, and 2 fully connected layers.
+The output has N A values: <b style="color:red">one per action</b>.
+On the right, the two networks of DQN.
+The <b style="color:red">online network</b>, trained on samples from the <b style="color:red">replay buffer</b>.
+And the <b style="color:red">target network</b>, a copy that is updated only from time to time.
+
+<i style="color:gray">[click]</i>
+And here is C51.
+As you can see, it's <b style="color:red">exactly the same network</b>, except for the last layer.
+Instead of N A outputs, we have N A <b style="color:red">times m</b>: m numbers per action, with m equal to 51.
+We reshape them into a matrix, with one row per action.
+And we apply a <b style="color:red">softmax on each row</b>, to get one distribution per action.
+By the way, QR-DQN, that we'll see later, uses the same layout.
+
+To act, we compute the <b style="color:red">mean</b> of each distribution: the sum of z i times p i.
+And we take the action with the <b style="color:red">highest mean</b>.
+As in DQN, the targets are computed with a frozen target network.
 		</div>
 	</aside>
 </section>
@@ -422,41 +478,31 @@ Implementation detail: flatten logits, apply grouped softmax; expectation used f
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-<b>Key idea of the figure</b>
-In <i>Space Invaders</i>, the actions that fire the laser ("Laser", "Left+Laser", "Right+Laser") make the agent fire too early and eventually lose the game &rarr; significant probability of a return ≈ <b>0</b>. Others ("Left/Right/Noop") are "safe" &rarr; higher return (6–9).
-<b>The return distribution of the laser actions is thus bimodal</b>: a mass near 0 ("lose") + a higher mass ("survive").
+But wait... something is strange here.
+In the end, C51 chooses its actions with the <b style="color:red">mean</b>, exactly like DQN.
+So why bother learning the whole distribution?
 
-If we only learn a scalar (<code>Q(s,a)=\mathbb{E}[Z(s,a)]</code>), we <b>collapse these two events into a mean</b> (e.g., ≈ 5).
-This mean can be "unrealizable": it corresponds to neither outcome (we either lose, with a return ≈ 0, or survive, with a return ≈ 6–9). The usual hypothesis is that, as a result, successive transitions pull the network in opposite directions (one update toward 0, one toward 8), leading to <b>very "blurry" targets</b> and <b>contradictory gradients</b>.
+Let's go back to Space Invaders.
+For a laser action, there are two possible outcomes.
+Either we lose, with a return around 0.
+Or we survive, with a return around 6 to 9.
+DQN only learns the mean: something like 5.
+But a return of 5 <b style="color:red">never happens</b>: it's an "unrealizable" value.
+The usual intuition: one sample pulls the estimate toward 0, the next one toward 8.
+So the targets are <b style="color:red">blurry</b>, and the gradients <b style="color:red">contradict</b> each other.
+C51 keeps the two <b style="color:red">modes separated</b>: no averaging, no conflict.
 
-In contrast, C51 learns the <b>entire distribution</b> (<code>Z(s,a)</code>) (a histogram over "atoms" <code>z_i</code>). The update distributes mass where it should go (closer to 0 after a loss, higher after survival) <b>without mixing</b> these modes. This is what the paper calls "keeping separated the low-value, 'losing' event from the high-value, 'survival' event".
+So the usual answer is: a <b style="color:red">richer learning signal</b>, since each update touches all the atoms.
+And more <b style="color:red">stable</b> learning.
 
-<b>So, why model the distribution if the policy still uses argmax of the expectation?</b>
-
-Even if we select actions using <code>\mathbb{E}[Z]</code>, <b>learning the distribution seems to improve optimization</b> (these are the explanations usually proposed; the exact reasons are still debated, see Lyle et al., 2019):
-1. More informative targets and more stable learning.
-   We align a probability vector (cross-entropy / categorical projection) rather than a single number (TD-error). Each transition updates <b>all</b> atoms &rarr; richer learning signal, less oscillation due to mode mixing.
-2. Better generalization under multimodality and heteroscedasticity.
-   Two state/action pairs may have the same mean but <b>very different risk</b>. The distributional model does not merge these cases, so it may generalize better and propagate information more faithfully via bootstrapping.
-3. Theory, with caveats.
-   For policy evaluation, the <i>distributional</i> Bellman operator (<code>T^\pi</code>) is a contraction (in the maximal Wasserstein distance): the return distribution is a well-posed object to learn. But for control, the distributional optimality operator is not a contraction (Bellemare et al., 2017), and C51 minimizes a cross-entropy after a discrete projection rather than the Wasserstein distance: the theory does not fully cover C51, which nevertheless works very well in practice.
-4. Bonus: risk & exploration.
-   Even if C51 uses the expectation for acting, having <code>Z(s,a)</code> makes it possible to build <b>risk-sensitive</b> policies (by replacing the expectation in the greedy step with a risk measure, e.g., a quantile or CVaR, as done in IQN) or <b>exploratory</b> ones (optimism based on the spread of <code>Z</code>). Caution: this spread measures the intrinsic randomness of the returns (aleatoric uncertainty), not what the agent does not know yet (epistemic uncertainty).
-
-<b>In one sentence</b>
-The policy may remain based on the expectation, but <b>learning the distribution avoids the "blurriness" of the mean</b>, provides a <b>richer learning signal</b>, and <b>stabilizes</b> learning—which are the usual explanations of the empirical gains of C51.
-
-(original text from Bellemare et al., 2017)
-This previously seen example illustrates the typical value distributions that can be observed.
-In this example, three actions (those including the button press) lead to the agent releasing its laser too early and eventually losing the game.
-The corresponding distributions reflect this: they assign a significant probability to 0 (the terminal value).
-The safe actions have similar distributions (LEFT, which tracks the invaders’ movement, is slightly favoured).
-This example helps explain why the distributional RL approach is so successful:
-the distributional update keeps separated the low-value,
-“losing” event from the high-value,
-“survival” event,
-rather than average them into one (unrealizable) expectation.
+But to be honest, the exact reason is still <b style="color:red">debated</b>.
+Lyle and colleagues showed in 2019 that, in the tabular and linear cases, distributional RL behaves exactly like classic RL.
+So the gain seems to come from the interaction with <b style="color:red">deep networks</b>.
 		</div>
+		<!-- Sources:
+		- Bellemare et al. (2017), caption of the Space Invaders figure ("keeps separated the low-value, losing event from the high-value, survival event, rather than average them into one (unrealizable) expectation")
+		- Lyle et al. (2019), A Comparative Analysis of Expected and Distributional Reinforcement Learning, AAAI
+		-->
 	</aside>
 </section>
 
@@ -504,7 +550,18 @@ rather than average them into one (unrealizable) expectation.
 
 	<aside class="notes">
 		<div class="fr-notes"></div>
-		<div class="en-notes"></div>
+		<div class="en-notes">
+Before we look at the C51 algorithm, let's recall the <b style="color:red">DQN algorithm</b>, that you already know.
+I just want to point out the <b style="color:red">three places</b> that C51 will change.
+
+<i style="color:gray">[click]</i>
+First, the <b style="color:red">action selection</b>: ε-greedy, based on the Q-values.
+Second, the <b style="color:red">target</b>, y j: the reward, plus gamma times the max Q-value at the next state, given by the target network.
+Third, the <b style="color:red">loss</b>: a squared error between this target and the prediction.
+
+Everything else stays the same in C51.
+The <b style="color:red">replay memory</b>, the mini-batches, and the <b style="color:red">target network</b>, updated every tau steps.
+		</div>
 	</aside>
 </section>
 
@@ -579,7 +636,28 @@ rather than average them into one (unrealizable) expectation.
 	<aside class="notes">
 		<div class="fr-notes">
 		</div>
-		<div class="en-notes"></div>
+		<div class="en-notes">
+Now, the <b style="color:red">C51 algorithm</b>: the overall structure is exactly the same as DQN.
+
+<i style="color:gray">[click]</i>
+First change: the networks now output <b style="color:red">distributions</b>, Z hat, instead of Q-values.
+But we can always get a Q-value back: it's just the <b style="color:red">mean</b>, the sum of z i times p i.
+
+<i style="color:gray">[click]</i>
+So the <b style="color:red">behavior policy</b> doesn't change: it's still ε-greedy, based on this mean.
+
+<i style="color:gray">[click]</i>
+Then, we build the target with the <b style="color:red">distributional Bellman operator</b>, using the target network.
+We take the distribution of the next state, and we multiply it by gamma: it <b style="color:red">shrinks</b> toward zero.
+And we add the reward: the distribution is <b style="color:red">shifted</b>.
+
+<i style="color:gray">[click]</i>
+Now, the bars don't fall on our 51 atoms anymore.
+So we <b style="color:red">project</b> them back onto the fixed grid: each bar is split between its <b style="color:red">two nearest atoms</b>.
+
+<i style="color:gray">[click]</i>
+Finally, we minimize the <b style="color:red">cross-entropy</b> between this target and our prediction, instead of the squared error of DQN.
+		</div>
 	</aside>
 </section>
 
@@ -605,7 +683,20 @@ rather than average them into one (unrealizable) expectation.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Empirical gains largely attributed to richer target signal and improved optimization landscape.
+So, does it work?
+Yes, and quite impressively.
+This chart shows, for each Atari game, the <b style="color:red">improvement</b> of C51 over Double DQN.
+Note that it's a <b style="color:red">log scale</b>.
+On most games, the bar is positive, and on some games the gain is huge: thousands of percent.
+On a few games, C51 is worse, down to about minus 40 percent.
+
+Overall, the <b style="color:red">median human-normalized score</b> goes from 79% for DQN, to 178% for C51.
+It also learns <b style="color:red">faster</b>.
+After only 50 million frames, it beats a fully trained DQN on 45 of the 57 games.
+And the authors also report more <b style="color:red">stable</b> learning.
+
+Finally, C51 became one of the building blocks of <b style="color:red">Rainbow</b>.
+Rainbow combines several improvements of DQN in a single agent, including the Noisy Nets we saw earlier.
 		</div>
 	</aside>
 </section>
@@ -628,6 +719,20 @@ Empirical gains largely attributed to richer target signal and improved optimiza
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
+Another interesting result: what happens when we change the <b style="color:red">number of atoms</b>?
+Each plot is one game, with the score during training.
+The dashed line is <b style="color:red">DQN</b>.
+The colored lines are C51, with 5, 11, 21 and 51 atoms.
+
+In general, <b style="color:red">more atoms means better scores</b>.
+With only 5 atoms, it can even be worse than DQN: look at Breakout, or Q-bert.
+With 51 atoms, it's usually the best.
+Look at <b style="color:red">Seaquest</b>: with 51 atoms, the score goes far beyond all the others.
+It even beats the dueling architecture, the dotted line.
+On an easy game like Pong, they all reach the maximum score anyway.
+
+So the <b style="color:red">resolution</b> of the distribution really matters: a too coarse histogram loses the benefit.
+And that's why they chose <b style="color:red">51</b>.
 		</div>
 	</aside>
 </section>
@@ -655,7 +760,24 @@ Empirical gains largely attributed to richer target signal and improved optimiza
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Limitations of fixed categorical grid motivate quantile-based and adaptive approaches.
+Of course, C51 has some <b style="color:red">limitations</b>.
+First, the support is <b style="color:red">fixed</b>.
+You must choose V min and V max in advance.
+If the true returns fall outside this range, the distribution just <b style="color:red">saturates</b> at the bounds.
+
+Second, the resolution is <b style="color:red">uniform</b>: the 51 atoms are evenly spaced.
+So we waste atoms where there is no mass.
+And we lack precision where the distribution is sharp, or in the tails.
+Plus, the <b style="color:red">projection</b> step is a bit of a heuristic.
+
+This motivated several extensions.
+<b style="color:red">QR-DQN</b> flips the idea.
+Instead of learning probabilities on fixed locations, it learns the <b style="color:red">locations</b> of quantiles.
+So the support adapts by itself: no V min, no V max, no projection.
+<b style="color:red">IQN</b> goes one step further: it learns the <b style="color:red">whole quantile function</b>, as a continuous function.
+
+And more generally, once we have the distribution, we can optimize other things than the mean.
+That's <b style="color:red">risk-sensitive</b> RL.
 		</div>
 	</aside>
 </section>
@@ -679,8 +801,22 @@ Limitations of fixed categorical grid motivate quantile-based and adaptive appro
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Even if acting greedily on expectation, learning benefits from structured multi-target
-supervision; distribution reusable for risk measures.
+So, to sum up C51.
+The core idea: move from the <b style="color:red">expectation</b> to the full <b style="color:red">distribution</b> of returns.
+It's a simple change: just the output layer and the loss.
+And it gives a <b style="color:red">richer learning signal</b>.
+C51 is simple, it works well, and many later methods build on it.
+
+Remember the paradox: we still <b style="color:red">act on the mean</b>.
+The distribution helps during <b style="color:red">training</b>, and it's ready for risk-sensitive objectives.
+
+Some open questions.
+How do we choose the <b style="color:red">support</b>?
+Well, that's partly what quantile methods answer.
+And how do we combine it with <b style="color:red">epistemic uncertainty</b>?
+Remember the noisy TV.
+The spread of Z measures the <b style="color:red">randomness</b> of the environment, not what the agent <b style="color:red">doesn't know</b> yet.
+These are two different kinds of uncertainty, and good exploration needs the second one.
 		</div>
 	</aside>
 </section>
@@ -782,8 +918,22 @@ supervision; distribution reusable for risk measures.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-QR-DQN models the return distribution using quantiles, enabling more precise and robust value
-estimation than fixed categorical bins.
+Let's look at <b style="color:red">QR-DQN</b> a bit more closely.
+This figure compares the three outputs.
+<b style="color:red">DQN</b>: one point per action.
+<b style="color:red">C51</b>: fixed atoms on the return axis, and the network learns their <b style="color:red">heights</b>, the probabilities.
+<b style="color:red">QR-DQN</b>: it's the <b style="color:red">reverse</b>.
+The probabilities are fixed: each output carries the same mass, one over N.
+And the network learns <b style="color:red">where to put them</b> on the return axis.
+So each output is a <b style="color:red">quantile</b> of the return distribution.
+For example, with N equal to 4, the outputs are the 12.5, 37.5, 62.5 and 87.5 percent quantiles.
+
+To learn quantiles, we use the <b style="color:red">quantile regression loss</b>: an asymmetric absolute error.
+In practice, a smoothed version: the quantile Huber loss.
+
+Result: no bounds to choose, no projection, and better scores than C51 on Atari.
+And it brings theory and practice closer.
+Quantile regression is linked to the <b style="color:red">Wasserstein distance</b>: the one where the Bellman operator is a contraction.
 		</div>
 	</aside>
 </section>
@@ -831,8 +981,21 @@ estimation than fixed categorical bins.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Extensions of quantile-based RL incorporate utility or risk criteria, enabling agents to
-optimize for specific risk preferences or robust performance.
+And this opens a whole new world: <b style="color:red">risk-sensitive RL</b>.
+Once we have the quantiles, we're not forced to maximize the mean anymore.
+We can plug in a <b style="color:red">utility function</b>, or a risk measure.
+
+For instance, a <b style="color:red">risk-averse</b> agent can focus on the worst cases.
+Say, the average of the 10% worst returns.
+That's called the <b style="color:red">CVaR</b>: the conditional value at risk.
+A <b style="color:red">risk-seeking</b> agent does the opposite: it looks at the best cases.
+IQN makes this especially easy: it can output any quantile, so we just choose which ones to look at when we act.
+
+Where is it useful?
+Everywhere a bad outcome is very <b style="color:red">costly</b>.
+In <b style="color:red">finance</b>: we care about the risk of a big loss, not only about the average gain.
+In <b style="color:red">robotics</b> and <b style="color:red">safety-critical</b> systems.
+A robot that's great on average, but crashes once in a while... is not a great robot.
 		</div>
 	</aside>
 </section>
@@ -864,8 +1027,11 @@ optimize for specific risk preferences or robust performance.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-This open-access MIT Press monograph provides a comprehensive and up-to-date overview of distributional
-reinforcement learning, including theory, algorithms, and applications.
+If you want to go deeper, here is the <b style="color:red">reference book</b> on the topic.
+<i>Distributional Reinforcement Learning</i>, by Bellemare, Dabney and Rowland, at MIT Press.
+The authors are the people behind <b style="color:red">C51</b>, <b style="color:red">QR-DQN</b> and IQN.
+It covers the theory, the algorithms, and the applications.
+And good news: it's <b style="color:red">freely available</b> as a PDF.
 		</div>
 	</aside>
 </section>
