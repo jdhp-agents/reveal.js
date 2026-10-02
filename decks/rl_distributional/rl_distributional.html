@@ -34,14 +34,14 @@
 
 	<p style="font-size:0.6em; margin-top: 3em; text-align: left; margin-bottom: 0;"><b>Classic DQN</b>:</p>
 	<ul style="font-size:0.6em; margin-top: 0em; text-align: left; padding-left: 1em; display: block;">
-		<li>Learns only the expectation $Q(s,a)=\mathbb{E}[R \mid s,a]$</li>
-		<li>Bellman: \(Q(s,a) = R(s,a) + \gamma Q(s', a')\).</li>
+		<li>Learns only the expectation $Q(s,a)=\mathbb{E}\left[\sum_t \gamma^t r_t \mid s,a\right]$</li>
+		<li>Bellman: \(Q(s,a) = \mathbb{E}\left[R(s,a) + \gamma Q(S', A')\right]\).</li>
 		<li>Lost information: variance, skewness, tail (risk) structure.</li>
 	</ul>
 	<p style="font-size:0.6em; margin-top: 1em; text-align: left; margin-bottom: 0em;"><b>Distributional RL</b>:</p>
 	<ul style="font-size:0.6em; margin-top: 0em; text-align: left; padding-left: 1em; display: block;">
 		<li>Model full return random variable \(Z(s,a)\) (not just its mean).</li>
-		<li>Distributional Bellman: \(\mathcal{T} Z(s,a) \stackrel{D}{=} R(s,a) + \gamma Z(s', a')\).</li>
+		<li>Distributional Bellman: \(\mathcal{T}^\pi Z(s,a) \stackrel{D}{=} R(s,a) + \gamma Z(S', A')\).</li>
 		<li>Benefits: richer training signal, more stable gradients, enables risk-sensitive objectives.</li>
 	</ul>
 	<p style="font-size:0.6em; margin-top: 1.5em;">
@@ -83,7 +83,10 @@ mean, but also Value-at-Risk or other utility criteria.
 Finally, it’s important to note that even though action selection is still done via the
 expectation of the distribution, the entire learning phase benefits from this probabilistic
 structure,
-which explains the empirical gains observed.
+which is the usual explanation of the empirical gains observed.
+The exact reasons are still debated, though: in the tabular and linear settings,
+distributional RL can be shown to behave exactly like expected RL (Lyle et al., 2019),
+so the gains seem to come from its interaction with deep neural networks.
 
 In summary, moving from expectation to the full distribution allows us to capture the richness
 of uncertainty, improve learning, and lay the groundwork for more robust and adaptive agents.
@@ -101,11 +104,11 @@ of uncertainty, improve learning, and lay the groundwork for more robust and ada
 		Source: Mnih et al. Human-level control through deep reinforcement learning. Nature 518, 529–533 (2015).
 	</figcaption>
 	<ul style="font-size:0.6em;">
-		<li><b>Goal</b>: approximate \( Q(s,a) = \mathbb{E}\left[\sum_{t} \gamma^t r_t \mid s,a\right] \)</li>
+		<li><b>Goal</b>: approximate \( Q^*(s,a) = \max_\pi \mathbb{E}_\pi\left[\sum_{t} \gamma^t r_t \mid s,a\right] \)</li>
 		<li><b>Network</b>: input is state, output is vector \( Q(s,a) \) for all actions</li>
 		<li><b>Bellman backup (target)</b>: \( y = r + \gamma \max_{a'} Q(s',a') \)</li>
 		<li><b>Loss</b>: mean squared error \( (y - Q(s,a))^2 \)</li>
-		<li><b>Limitation</b>: collapses all uncertainty into a single scalar value</li><!-- TODO -->
+		<li><b>Limitation</b>: collapses the whole distribution of returns into a single scalar value (its mean)</li><!-- TODO -->
 	</ul>
 	<aside class="notes">
 		<div class="fr-notes">
@@ -130,7 +133,7 @@ preserved.
 	</figcaption>
 	<ul style="font-size:0.6em;">
 		<li><b>Random return</b>: \( Z(s,a) \) is a random variable over \( \mathbb{R} \)</li>
-		<li><b>Distributional Bellman</b>: \( \mathcal{T} Z(s,a) \stackrel{D}{=} r + \gamma Z(S', A') \), i.e., the law is transformed</li>
+		<li><b>Distributional Bellman</b>: \( \mathcal{T}^\pi Z(s,a) \stackrel{D}{=} R(s,a) + \gamma Z(S', A') \), i.e., the law is transformed</li>
 		<li><b>Goal</b>: approximate the law of \( Z(s,a) \) (not just \( \mathbb{E}[Z] \))</li>
 		<li><b>Expectation recoverable</b>: \( Q(s,a) = \mathbb{E}[Z(s,a)] \)</li>
 		<!-- <li>Stronger contraction in the \( p \)-Wasserstein metric (on bounded support)</li> -->
@@ -145,6 +148,11 @@ preserved.
 		</div>
 		<div class="en-notes">
 Emphasize distributional Bellman operator and theoretical contraction in Wasserstein metric.
+
+Caveat: this contraction holds for policy evaluation (fixed policy π).
+For control, the distributional Bellman optimality operator is not a contraction in any metric between distributions (Bellemare et al., 2017);
+only the expectation is guaranteed to converge.
+Moreover, C51 minimizes a cross-entropy (KL) loss after projection, not the Wasserstein distance.
 		</div>
 	</aside>
 </section>
@@ -202,7 +210,7 @@ This example illustrates the typical value distributions that can be observed.
 In this example, three actions (those including the button press) lead to the agent releasing its laser too early and eventually losing the game.
 The corresponding distributions reflect this: they assign a significant probability to 0 (the terminal value).
 The safe actions have similar distributions (LEFT, which tracks the invaders’ movement, is slightly favoured).
-This example helps explain why distributional RL approach is so successful:
+This example helps explain why the distributional RL approach is so successful:
 the distributional update keeps separated the low-value,
 “losing” event from the high-value,
 “survival” event,
@@ -415,35 +423,35 @@ Implementation detail: flatten logits, apply grouped softmax; expectation used f
 		</div>
 		<div class="en-notes">
 <b>Key idea of the figure</b>
-In <i>Space Invaders</i>, some actions ("Laser", etc.) often lead to immediate death &rarr; return ≈ <b>0</b>. Others ("Left/Right/Noop") are "safe" &rarr; higher return (6–9).
-<b>The return distribution is thus bimodal</b>: a mass near 0 ("lose") + a higher mass ("survive").
+In <i>Space Invaders</i>, the actions that fire the laser ("Laser", "Left+Laser", "Right+Laser") make the agent fire too early and eventually lose the game &rarr; significant probability of a return ≈ <b>0</b>. Others ("Left/Right/Noop") are "safe" &rarr; higher return (6–9).
+<b>The return distribution of the laser actions is thus bimodal</b>: a mass near 0 ("lose") + a higher mass ("survive").
 
-If we only learn a scalar (<code>Q(s,a)=\mathbb{E}[Z(s,a)]</code>), we <b>collapse these two events into a mean</b> (e.g., 5.3).
-This mean can be "unrealizable" (we never actually observe 5.3: we either die or survive). As a result, each transition pulls the network in opposite directions (one update toward 0, one toward 8), leading to <b>very "blurry" targets</b> and <b>contradictory gradients</b>.
+If we only learn a scalar (<code>Q(s,a)=\mathbb{E}[Z(s,a)]</code>), we <b>collapse these two events into a mean</b> (e.g., ≈ 5).
+This mean can be "unrealizable": it corresponds to neither outcome (we either lose, with a return ≈ 0, or survive, with a return ≈ 6–9). The usual hypothesis is that, as a result, successive transitions pull the network in opposite directions (one update toward 0, one toward 8), leading to <b>very "blurry" targets</b> and <b>contradictory gradients</b>.
 
-In contrast, C51 learns the <b>entire distribution</b> (<code>Z(s,a)</code>) (a histogram over "atoms" <code>z_i</code>). The update distributes mass where it should go (closer to 0 after a death, higher after survival) <b>without mixing</b> these modes. This is what the text calls "keeping the 'lose' event separate from the 'survive' event".
+In contrast, C51 learns the <b>entire distribution</b> (<code>Z(s,a)</code>) (a histogram over "atoms" <code>z_i</code>). The update distributes mass where it should go (closer to 0 after a loss, higher after survival) <b>without mixing</b> these modes. This is what the paper calls "keeping separated the low-value, 'losing' event from the high-value, 'survival' event".
 
 <b>So, why model the distribution if the policy still uses argmax of the expectation?</b>
 
-Even if we select actions using <code>\mathbb{E}[Z]</code> at evaluation, <b>learning the distribution improves optimization</b>:
-1. More informative targets and more stable gradients.
-   We align a probability vector (cross-entropy / categorical projection) rather than a single number (TD-error). Each transition updates <b>all</b> atoms &rarr; richer learning signal, lower variance, less oscillation due to mode mixing.
+Even if we select actions using <code>\mathbb{E}[Z]</code>, <b>learning the distribution seems to improve optimization</b> (these are the explanations usually proposed; the exact reasons are still debated, see Lyle et al., 2019):
+1. More informative targets and more stable learning.
+   We align a probability vector (cross-entropy / categorical projection) rather than a single number (TD-error). Each transition updates <b>all</b> atoms &rarr; richer learning signal, less oscillation due to mode mixing.
 2. Better generalization under multimodality and heteroscedasticity.
-   Two state/action pairs may have the same mean but <b>very different risk</b>. The distributional model does not merge these cases, so it generalizes better and propagates information more faithfully via bootstrapping.
-3. Favorable theory.
-   The <i>distributional</i> Bellman operator (<code>T^\pi</code>) is a contraction (in Wasserstein distance): we learn a mathematically well-posed object. (C51 adds a discrete projection that works very well in practice.)
-4. "Free" bonus: risk & exploration.
-   Even if C51 uses the expectation for acting, having <code>Z(s,a)</code> allows, if desired, <b>risk-sensitive</b> (quantiles, expectiles) or <b>exploratory</b> (optimism via variance) policies without retraining another network.
+   Two state/action pairs may have the same mean but <b>very different risk</b>. The distributional model does not merge these cases, so it may generalize better and propagate information more faithfully via bootstrapping.
+3. Theory, with caveats.
+   For policy evaluation, the <i>distributional</i> Bellman operator (<code>T^\pi</code>) is a contraction (in the maximal Wasserstein distance): the return distribution is a well-posed object to learn. But for control, the distributional optimality operator is not a contraction (Bellemare et al., 2017), and C51 minimizes a cross-entropy after a discrete projection rather than the Wasserstein distance: the theory does not fully cover C51, which nevertheless works very well in practice.
+4. Bonus: risk & exploration.
+   Even if C51 uses the expectation for acting, having <code>Z(s,a)</code> makes it possible to build <b>risk-sensitive</b> policies (by replacing the expectation in the greedy step with a risk measure, e.g., a quantile or CVaR, as done in IQN) or <b>exploratory</b> ones (optimism based on the spread of <code>Z</code>). Caution: this spread measures the intrinsic randomness of the returns (aleatoric uncertainty), not what the agent does not know yet (epistemic uncertainty).
 
 <b>In one sentence</b>
-The policy may remain based on the expectation, but <b>learning the distribution avoids the "blurriness" of the mean</b>, provides <b>better-conditioned gradients</b>, and <b>accelerates/stabilizes</b> learning—which explains the empirical gains of C51.
+The policy may remain based on the expectation, but <b>learning the distribution avoids the "blurriness" of the mean</b>, provides a <b>richer learning signal</b>, and <b>stabilizes</b> learning—which are the usual explanations of the empirical gains of C51.
 
-(texte original du papier Bellemare et al. 2017)
+(original text from Bellemare et al., 2017)
 This previously seen example illustrates the typical value distributions that can be observed.
 In this example, three actions (those including the button press) lead to the agent releasing its laser too early and eventually losing the game.
 The corresponding distributions reflect this: they assign a significant probability to 0 (the terminal value).
 The safe actions have similar distributions (LEFT, which tracks the invaders’ movement, is slightly favoured).
-This example helps explain why distributional RL approach is so successful:
+This example helps explain why the distributional RL approach is so successful:
 the distributional update keeps separated the low-value,
 “losing” event from the high-value,
 “survival” event,
@@ -530,7 +538,7 @@ rather than average them into one (unrealizable) expectation.
 				$\quad\quad$ Store transition $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ in $\mathcal{D}$<br>
 				$\quad\quad$ <b>IF</b> $\mathcal{D}$ contains "enough" transitions<br>
 					$\quad\quad\quad$ Sample random batch of transitions $(\mathbf{s}_j, \mathbf{a}_j, r_j, \mathbf{s'}_j)$ from $\mathcal{D}$ with $j=1$ to $m$<br>
-					$\quad\quad\quad$ <b>FOR EACH</b> transitions $(\mathbf{s}, \mathbf{a}, r, \mathbf{s'})$ of this batch<br>
+					$\quad\quad\quad$ <b>FOR EACH</b> transition $(\mathbf{s}_j, \mathbf{a}_j, r_j, \mathbf{s'}_j)$ of this batch<br>
 					    <!-- $\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="2">$\mathbf{a}^\star \leftarrow \arg\max_{\mathbf{a'}} \sum_i z_i p_i (\mathbf{s}',\mathbf{a'})$</span><br> -->
 						<!-- $\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="3">Obtain the value distribution for the next state \( s' \) and action \( a^\star \)</span><br> -->
 						$\quad\quad\quad\quad$ <span class="fragment highlight-current-red" data-fragment-index="4">Apply the Bellman operator</span><br>
@@ -543,7 +551,7 @@ rather than average them into one (unrealizable) expectation.
 	</div>
 	<div class="r-stack">
 		<p class="fragment current-visible" data-fragment-index="0" style="font-size: 0.45em;">
-			$$Q(s,a) = \mathbb{E}[Z(s,a)] = \sum_i z_i , p_\omega(z_i \mid s,a).$$
+			$$Q(s,a) = \mathbb{E}[Z(s,a)] = \sum_i z_i \, p_i(s,a).$$
 			The value $Q$ can be obtained as the expectation of $Z$.
 		</p>
 		<p class="fragment current-visible" data-fragment-index="1" style="font-size: 0.5em;">
@@ -587,9 +595,9 @@ rather than average them into one (unrealizable) expectation.
 		Source: <a href="https://arxiv.org/abs/1707.06887" target="_blank">A Distributional Perspective on Reinforcement Learning</a>, Bellemare et al., 2017.
 	</figcaption>
 	<ul style="font-size:0.6em;">
-		<li>Improved median score compared to vanilla DQN</li>
-		<li>Faster convergence in the first millions of frames</li>
-		<li>Reduced training variance</li>
+		<li>Improved median human-normalized score: 178% vs 79% for DQN</li>
+		<li>Faster learning: within 50M frames, outperforms a fully trained DQN on 45 of 57 games</li>
+		<li>More stable learning (according to the authors)</li>
 		<li>Foundation for Rainbow (integration of further improvements)</li>
 	</ul>
 	<!-- Placeholder: line chart comparing median human-normalized score vs frames (DQN vs C51). Source: Bellemare et al. 2017. -->
@@ -636,7 +644,7 @@ Empirical gains largely attributed to richer target signal and improved optimiza
 		<li><b>Uniform resolution:</b> inefficient for modeling sharp tails or skewed distributions</li>
 		<li><b>Extensions:</b>
 			<ul>
-				<li><b>QR-DQN:</b> learns quantiles, reducing projection bias</li>
+				<li><b>QR-DQN:</b> learns the locations of quantiles (adaptive support: no $[V_{\min}, V_{\max}]$ to choose, no heuristic projection)</li>
 				<li><b>IQN:</b> continuous implicit quantile function for flexible modeling</li>
 				<!-- <li><b>FQF:</b> learnable fraction proposal for adaptive quantile allocation</li> -->
 			</ul>
@@ -763,7 +771,7 @@ supervision; distribution reusable for risk measures.
 		Source: <a href="https://arxiv.org/abs/1806.06923" target="_blank">Implicit Quantile Networks for Distributional Reinforcement Learning</a>, Dabney et al., 2018.
 	</figcaption>
 	<ul style="font-size: 0.6em; margin-bottom: 0;">
-		<li>Represents the value distribution by estimating a fixed set of quantiles.</li>
+		<li>Represents the value distribution by estimating the values of $N$ quantiles at fixed probability levels (the reverse of C51: fixed probabilities, learned locations).</li>
 		<li>Uses quantile regression loss to train the network.</li>
 		<li>Improves stability and expressiveness over categorical methods.</li>
 	</ul>
@@ -857,7 +865,7 @@ optimize for specific risk preferences or robust performance.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-This open-access MIT Press monograph provides a comprehensive and up-to-date overview of deep
+This open-access MIT Press monograph provides a comprehensive and up-to-date overview of distributional
 reinforcement learning, including theory, algorithms, and applications.
 		</div>
 	</aside>

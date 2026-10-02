@@ -144,7 +144,7 @@ us of not taking that action too often in the future."
 	</div>
 	<div class="r-stack">
 		<div class="fragment current-visible" data-fragment-index="1">
-			<p style="font-size:0.4em; margin-top: 1em; text-align: left; margin-bottom: 0; margin-left: 3em;">At each step,:</p>
+			<p style="font-size:0.4em; margin-top: 1em; text-align: left; margin-bottom: 0; margin-left: 3em;">At each step:</p>
 			<ul style="font-size: 0.4em; padding-left: 1em; display: block; margin-left: 3em;">
 				<li>with probability <b>ε</b>, select a random action;</li>
 				<li>with probability <b>1-ε</b>, select the action with the highest estimated value.
@@ -193,7 +193,7 @@ struggles in high-dimensional or sparse-reward settings.
 		<li>Add zero-mean Gaussian noise to the action output by the policy.</li>
 		<li>Common in algorithms for continuous control (e.g., DDPG, TD3).</li>
 		<li>Noise variance can be annealed to reduce exploration over time.</li>
-		<li>Encourages smooth, local exploration around the current policy.</li>
+		<li>Encourages local exploration around the current policy's actions.</li>
 	</ul>
 	<!-- <ul style="font-size: 0.7em;">
 		<li>
@@ -220,7 +220,11 @@ This approach is widely used in algorithms like DDPG and TD3, where the action s
 
 The variance of the noise can be annealed over time, so the agent explores more at the beginning of training and gradually exploits more as learning progresses.
 
-The main advantage is that it encourages smooth, local exploration around the current policy, which is often appropriate for physical control tasks.
+The main advantage is that it encourages local exploration around the current policy, which is often appropriate for physical control tasks.
+
+Note that independent Gaussian noise is not temporally correlated: it makes the actions jitter from one step to the next.
+This is why the original DDPG paper used an Ornstein-Uhlenbeck process, which produces temporally correlated noise, better suited to physical systems with inertia.
+TD3 later showed that simple uncorrelated Gaussian noise works just as well in practice.
 
 However, this method can be insufficient in environments where more global or structured exploration is needed, since the agent may only explore in a small neighborhood of its current behavior.
 
@@ -282,7 +286,7 @@ This motivates the development of more advanced exploration strategies.
 
 	<p style="font-size: 0.6em; text-align: left; margin-bottom: 0; margin-left: 3em;">
 		Augments the reward with an entropy term to encourage diverse actions:
-		$$ J(\pi) = \mathbb{E}_{\pi} \left[ \sum_t r_t + \alpha \mathcal{H}(\pi(\cdot|s_t)) \right] $$
+		$$ J(\pi) = \mathbb{E}_{\pi} \left[ \sum_t \Big( r_t + \alpha \mathcal{H}(\pi(\cdot|s_t)) \Big) \right] $$
 		where $\mathcal{H}$ is the entropy and $\alpha$ controls the exploration-exploitation tradeoff.
 	</p>
 	<ul style="font-size: 0.6em; padding-left: 1em; display: block; margin-left: 3em; margin-top: 1em;">
@@ -313,11 +317,11 @@ especially effective for continuous control.
 	<ul style="font-size: 0.7em; padding-left: 0; display: block;">
 		<li style="margin-bottom: 0.5em;">
 			<b>Soft Q-Learning (SQL)</b>: incorporates entropy into Q-learning updates.<br>
-			<span style="font-size: 0.9em;"><a href="https://arxiv.org/abs/1704.06440" target="_blank">Equivalence Between Policy Gradients and Soft Q-Learning</a>, Schulman et al., 2017.</span>
+			<span style="font-size: 0.9em;"><a href="https://arxiv.org/abs/1702.08165" target="_blank">Reinforcement Learning with Deep Energy-Based Policies</a>, Haarnoja et al., 2017.</span>
 		</li>
 		<li>
 			<b>Soft Actor-Critic (SAC)</b>: off-policy actor-critic with entropy maximization,<br>
-			state-of-the-art for continuous control.<br>
+			a standard baseline for continuous control.<br>
 			<span style="font-size: 0.9em;"><a href="https://arxiv.org/abs/1801.01290" target="_blank">Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor</a>, Haarnoja et al., 2018.</span>
 		</li>
 	</ul>
@@ -412,7 +416,7 @@ Soft Q-Learning and Soft Actor-Critic are leading algorithms in this area, espec
 		<li>
 			<!-- <b>Parameter Space Noise</b>: -->
 			<a href="https://arxiv.org/pdf/1706.01905" target="_blank">
-				Plappert et al. (2017). Parameter space noise for exploration
+				Plappert et al. (2018). Parameter space noise for exploration
 			</a>
 		</li>
 	</ul>
@@ -533,14 +537,14 @@ RND
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Intrinsic rewards is another approach to encourage exploration.
+Intrinsic rewards are another approach to encourage exploration.
 
 Here, we augment the environment reward with an additional intrinsic reward signal to encourage exploration.
 
 This intrinsic reward can mean two things: novelty (count-based) or uncertainty/surprise (prediction-based).
 
 
-One common approach to better exploration,
+One common approach to better exploration, especially for solving the
 <strong>hard-exploration</strong> problem, is to augment the environment reward with an
 additional bonus signal to encourage extra exploration.
 The policy is thus trained with a reward composed of two terms,
@@ -584,7 +588,7 @@ into two categories:
 	<h4>Count-based Exploration</h4>
 
 	<p style="font-size: 0.7em; text-align: left;">
-		Assigns exploration bonus inversely proportional to state visit count:
+		Assigns an exploration bonus that decreases with the state visit count $N(s_t)$:
 		$$r^i_t = \frac{1}{\sqrt{N(s_t)}}$$
 	</p>
 
@@ -597,7 +601,7 @@ into two categories:
 	</p>
 
 	<p style="font-size:0.7em; text-align: left; margin-bottom: 0;">
-		<b>Alternatives:</b> Density models approximate state visitation counts:
+		<b>Alternatives:</b> approximate state visitation counts:
 	</p>
 	<ul style="font-size: 0.7em; padding-left: 1em; display: block;">
 		<li>Bellemare et al., 2016 – CTS-based pseudocounts</li>
@@ -622,7 +626,7 @@ visits of a state \(s\) in the sequence of \(s_{1:n}\).
 Unfortunately, using \(N_{n}(s)\) for exploration directly is not practical, because most of
 the states would have \(N_{n}(s) = 0\), especially considering that the state space is often
 continuous or high-dimensional.
-We need an non-zero count for most states, even when they haven’t been seen before.
+We need a non-zero count for most states, even when they haven’t been seen before.
 
 TODO: alternatives...
 
@@ -653,7 +657,7 @@ https://lilianweng.github.io/posts/2020-06-07-exploration-drl/#count-based-explo
 	</ul>
 
 	<p style="font-size:0.65em; text-align: left; margin-bottom: 0;">
-		<b>Alternatives:</b> Density models approximate state visitation counts
+		<b>Limitations:</b>
 	</p>
 	<ul style="font-size: 0.65em; display: block;">
 		<li>Model can be "fooled" by stochasticity or noise.</li>
@@ -703,7 +707,7 @@ https://chatgpt.com/c/68ddabd1-09d8-8328-94a0-2e75d7fc3f0b
 	<h4 style="font-size: 0.9em;">Limits of Prediction-based Intrinsic Motivation</h4>
 
 	<ul style="font-size: 0.9em; margin-top: 2em;">
-		<li>In stochastic environments, dynamics are unpredictable (e.g., random noise, moving objects).</li>
+		<li>In stochastic environments, dynamics are unpredictable (e.g., random noise, a "noisy TV" showing random images).</li>
 		<li>Prediction error remains high even for familiar states.</li>
 		<li>Agent is attracted to noisy or unpredictable regions, leading to biased and inefficient exploration.</li>
 	</ul>
@@ -712,6 +716,8 @@ https://chatgpt.com/c/68ddabd1-09d8-8328-94a0-2e75d7fc3f0b
 		</div>
 		<div class="en-notes">
 Prediction-based intrinsic rewards can fail in stochastic environments: the agent is drawn to noise, resulting in biased and inefficient exploration.
+
+This is known as the "noisy TV" problem: an agent rewarded for its prediction error can stay stuck in front of a TV showing random images, because the next frame can never be predicted, however often it has been seen (Burda et al., 2018).
 		</div>
 	</aside>
 </section>
@@ -732,7 +738,7 @@ Prediction-based intrinsic rewards can fail in stochastic environments: the agen
 			<b>Target network</b> = a fixed random function \( f_{\text{target}}(s) \).
 			<ul>
 				<li>Since it is frozen, it defines a <b>stable representation</b> of states.</li>
-				<li>Each state has a unique but time-invariant signature.</li>
+				<li>Each state has a deterministic, time-invariant signature.</li>
 			</ul>
 		</li>
 		<li>
@@ -834,7 +840,7 @@ RND provides a more stable and robust novelty measure by using a fixed target ne
 <!-- Slide: Key Publications on Intrinsic Motivation -->
 <section>
 	<h3 style="font-size: 1.1em;">Intrinsic Reward-based Exploration</h3>
-	<h4>Others Key Publications</h4>
+	<h4>Other Key Publications</h4>
 
 	<table style="font-size: 0.45em; width: 100%;">
 		<thead>
@@ -872,7 +878,7 @@ RND provides a more stable and robust novelty measure by using a fixed target ne
 				<td>Hash-based Counts</td>
 				<td>
 					<a href="https://arxiv.org/abs/1611.04717" target="_blank">
-						Tang et al., 2016. #Exploration: A Study of Count-Based Exploration for Deep Reinforcement Learning.
+						Tang et al., 2017. #Exploration: A Study of Count-Based Exploration for Deep Reinforcement Learning.
 					</a>
 				</td>
 			</tr>
