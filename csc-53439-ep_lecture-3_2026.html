@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8">
+
+		<title>CSC 53439 EP 2026 - Advanced RL Topics</title>
+
+		<meta name="description" content="Advanced RL Topics">
+		<meta name="author" content="Jérémie Decock">
+
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/white.css" id="theme">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="dist/plugin/highlight/monokai.css" id="highlight-theme">
+	</head>
+
+	<!--
+	# Hiearchical RL (~20 slides)
+
+	- [ ] Motivation and applications (~5 slides)
+	- Qu'est-ce que la HRL ? Pourquoi faire de la HRL ?
+	- Intuitive example
+	- Applications
+	- Advantages
+	- Drawbacks
+	- [ ] The Option Framework (~5 slides)
+	- [ ] Finding Subgoals and learning subpolicies
+	- [ ] Algorithmes
+	- [ ] Feudal Networks (~1 slide)
+	- [ ] Option-Critic (~1 slide)
+	- [ ] Hierarchical Actor-Critic (HAC) (~7 slides)
+
+	# RL and LLMs (~30 slides)
+
+	## Overview (1 slide)
+
+	- ***Pre-training***: self-supervised pretraining
+	- ***Instruction** Fine-Tuning* or Supervised fine-tuning (SFT): supervised fine-tuning
+	- Preference-based fine-tuning:
+	- RLHF (PPO) and DPO
+	- Reasoning-based fine-tuning:
+	- RLVR (GRPO and variants)
+
+	## RLHF (~15 slides)
+
+	- Motivation: Reasoning-based fine-tuning
+	- Context: InstructGPT and ChatGPT
+	- InstructGPT : https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf
+	- What is RLHF? (~10 slides)
+	- papers :
+		- https://openai.com/index/learning-from-human-preferences/
+		- https://openai.com/fr-FR/index/instruction-following/
+		- https://arxiv.org/abs/1706.03741
+		- https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf
+	- Learn from feedback: a generalization of the RL framework (1 slide)
+	- A quick intro to Reward model (RM) and IRL (see next week) (1 slide)
+	- Preference-based RL (~3 slides)
+	- RLHF (~5 slides)
+	- Application to GPT: RLHF + IRL + PbRL (~2 slides)
+	- Advatages and drawbacks
+	- Main alternatives: DPO (not RL-based by the way), RBRs
+
+	## RLVR (~15 slides)
+
+	- Motivation: Reasoning-based fine-tuning
+	- Context: the DeepSeek-R1, DeepSeekMath, OpenR1, Tülu3, ... models
+	- What is RLVR?
+	- GRPO algorithm (~10 slides)
+	- Similarities and differences with PPO
+		- GRPO paper (DeepSeekMath): https://arxiv.org/pdf/2402.03300
+		- DeepSeek-R1 paper: https://arxiv.org/pdf/2501.12948
+		- Tülu3 paper: https://arxiv.org/pdf/2411.15124
+	- GRPO variants
+	- Alternatives
+	- https://arxiv.org/pdf/2509.25454 (?)
+	- ...
+	- Conclusion (*)
+
+	## Practical opensource implementations (~2-3 slides)
+
+	- HuggingFace TRL
+	- https://huggingface.co/docs/trl/en/index
+	- Examples
+	- Experimentation on HuggingFace' "SmolLMs"
+
+	## Other subjects (?)
+
+	- https://icml.cc/virtual/2024/oral/35490
+	- ttps://neurips.cc/virtual/2024/oral/97985
+	- https://neurips.cc/virtual/2024/tutorial/99525
+	- https://neurips.cc/virtual/2024/poster/94945
+	- https://iclr.cc/virtual/2025/oral/31781
+	- https://icml.cc/virtual/2024/oral/35451
+	- ...
+
+
+	Not related but interesting :
+	- https://iclr.cc/virtual/2025/oral/31895
+	-->
+
+	<body>
+
+		<div class="reveal">
+
+			<!-- Any section element inside of this container is displayed as a slide -->
+			<div class="slides">
+
+				<!-- ------------------------------------------------------ -->
+				<!-- TITLE AND OUTLINE ------------------------------------ -->
+				<!-- ------------------------------------------------------ -->
+
+				<!-- Slide: Titre -->
+				<section>
+					<h1 style="font-size: 1.4em;">CSC 53439 EP</h1>
+					<h2 style="font-size: 0.8em;">Lecture 3 - Advanced RL Topics</h2>
+					<br>
+					<br>
+					<p style="font-size: 1em;"><small><a href="https://www.jdhp.org/">Jérémie Decock</a></small></p>
+					<p style="font-size: 1em;"><small>October 9, 2026</small></p>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes"></div>
+					</aside>
+				</section>
+
+				<!-- Slide: Outline / links to the two dedicated decks -->
+				<section>
+					<h3>Outline</h3>
+
+					<ul>
+						<li><a href="#/part1-hierarchical">Hierarchical Reinforcement Learning</a></li>
+						<li><a href="#/part2-llm">Reinforcement Learning and LLMs</a></li>
+					</ul>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes"></div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+				<!-- ------------------------------------------------------ -->
+				<!-- HIERARCHICAL REINFORCEMENT LEARNING ------------------ -->
+				<!-- ------------------------------------------------------ -->
+				<!-- #region -->
+
+				<section id="part1-hierarchical">
+					<h3>Part 1</h3>
+					<h4>Hierarchical Reinforcement Learning</h4>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes"></div>
+					</aside>
+				</section>
+
+				<!-- @include decks/rl_hierarchical/rl_hierarchical.html -->
+
+				<!-- endregion -->
+				<!-- ------------------------------------------------------ -->
+				<!-- REINFORCEMENT LEARNING AND LLMS ---------------------- -->
+				<!-- ------------------------------------------------------ -->
+				<!-- #region -->
+
+				<section id="part2-llm">
+					<h3>Part 2</h3>
+					<h4>Reinforcement Learning and LLMs</h4>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes"></div>
+					</aside>
+				</section>
+
+				<!-- @include decks/rl_llm/rl_llm.html -->
+
+				<!-- endregion -->
+				<!-- ------------------------------------------------------ -->
+				<!-- CONCLUSION ------------------------------------------- -->
+				<!-- ------------------------------------------------------ -->
+				<!-- #region -->
+
+				<!-- Slide: Conclusion -->
+				<section>
+					<h3>Conclusion</h3>
+
+					<aside class="notes">
+						<div class="fr-notes"></div>
+						<div class="en-notes"></div>
+					</aside>
+				</section>
+
+				<!-- endregion -->
+
+			</div>
+
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="dist/plugin/zoom.js"></script>
+		<script src="dist/plugin/notes.js"></script>
+		<script src="dist/plugin/search.js"></script>
+		<script src="dist/plugin/markdown.js"></script>
+		<script src="dist/plugin/highlight.js"></script>
+		<script src="dist/plugin/math.js"></script>
+
+		<script>
+
+			// Also available as an ES module, see:
+			// https://revealjs.com/initialization/
+			Reveal.initialize({
+				// Display presentation control arrows
+				controls: true,
+
+				// Help the user learn the controls by providing hints, for example by
+				// bouncing the down arrow when they first encounter a vertical slide
+				controlsTutorial: true,
+
+				// Determines where controls appear, "edges" or "bottom-right"
+				controlsLayout: 'bottom-right',
+
+				// Visibility rule for backwards navigation arrows; "faded", "hidden"
+				// or "visible"
+				controlsBackArrows: 'faded',
+
+				// Display a presentation progress bar
+				progress: true,
+
+				// Vertical centering of slides
+				center: true,
+
+				hash: true,
+				slideNumber: 'h.v',
+
+				// Allow scaling up to 4x so slides fill large (e.g. 4K) displays
+				maxScale: 4.0,
+				mathjax2: {
+					//mathjax: 'https://cdn.jsdelivr.net/gh/mathjax/mathjax@2.7.8/MathJax.js',
+					//mathjax: 'mathjax/MathJax.js',
+					config: 'TeX-AMS_HTML-full',
+					// pass other options into `MathJax.Hub.Config()`
+					TeX: {
+						Macros: {
+							R: '\\mathbb{R}',
+							set: ['\\left\\{#1 \\; ; \\; #2\\right\\}', 2]
+						}
+					}
+				},
+
+				// There are three typesetters available
+				// RevealMath.MathJax2 (default)
+				// RevealMath.MathJax3
+				// RevealMath.KaTeX
+				//
+				// More info at https://revealjs.com/math/
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [RevealZoom, RevealNotes, RevealSearch, RevealMarkdown, RevealHighlight, RevealMath.MathJax2]
+
+				// // Reveal.js plugins
+				// dependencies: [
+				// 	{ src: 'revealjs/plugin/reveald3.js' },
+				// ]
+			});
+
+		</script>
+
+		<!-- Assurez-vous que jdhp.js est référencé après tous les autres scripts -->
+		<script src="jdhp.js"></script>
+
+	</body>
+
+</html>
