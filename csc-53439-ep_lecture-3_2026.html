@@ -132,7 +132,12 @@
 
 					<aside class="notes">
 						<div class="fr-notes"></div>
-						<div class="en-notes"></div>
+						<div class="en-notes">
+Hello everyone, and welcome to this third lecture.
+Today, we are going to look at two <b style="color:red">advanced topics</b> in reinforcement learning.
+Both are very active research areas.
+And both are already used in <b style="color:red">real systems</b> today.
+						</div>
 					</aside>
 				</section>
 
@@ -147,7 +152,19 @@
 
 					<aside class="notes">
 						<div class="fr-notes"></div>
-						<div class="en-notes"></div>
+						<div class="en-notes">
+So, here is the plan for today.
+Two parts.
+
+First, <b style="color:red">hierarchical reinforcement learning</b>.
+How can an agent solve long and complex tasks, by breaking them into smaller subtasks?
+
+Second, <b style="color:red">reinforcement learning and LLMs</b>.
+How is RL used to train large language models, like ChatGPT or DeepSeek-R1?
+
+As usual, my goal is to give you an <b style="color:red">overview</b>.
+For each method, I'll focus on the <b style="color:red">main idea</b>, and on what it brings in practice.
+						</div>
 					</aside>
 				</section>
 
@@ -163,7 +180,12 @@
 
 					<aside class="notes">
 						<div class="fr-notes"></div>
-						<div class="en-notes"></div>
+						<div class="en-notes">
+So, let's start with the first part: <b style="color:red">hierarchical RL</b>.
+The question is simple.
+So far, our agents choose one small action at each time step.
+How can they plan over <b style="color:red">long horizons</b>, like we humans do?
+						</div>
 					</aside>
 				</section>
 
@@ -181,7 +203,12 @@
 
 					<aside class="notes">
 						<div class="fr-notes"></div>
-						<div class="en-notes"></div>
+						<div class="en-notes">
+OK, let's move on to the second part: <b style="color:red">RL and LLMs</b>.
+You all use chatbots like ChatGPT.
+What you may not know is that <b style="color:red">reinforcement learning</b> is a key step in their training.
+Let's see where, and how.
+						</div>
 					</aside>
 				</section>
 
@@ -199,7 +226,23 @@
 
 					<aside class="notes">
 						<div class="fr-notes"></div>
-						<div class="en-notes"></div>
+						<div class="en-notes">
+OK, let's wrap up.
+Today, we looked at two advanced topics.
+
+First, <b style="color:red">hierarchical RL</b>.
+The idea is to <b style="color:red">decompose</b> a long task into subtasks, at several levels of abstraction.
+The <b style="color:red">options framework</b> gives the formal model: subpolicies with start and stop conditions.
+And deep methods like Feudal Networks, Option-Critic, HIRO and <b style="color:red">HAC</b> learn the subgoals and the subpolicies themselves.
+
+Second, <b style="color:red">RL and LLMs</b>.
+After pre-training and supervised fine-tuning, RL is used in two more stages.
+<b style="color:red">RLHF</b>, with a reward model learned from human preferences, to align the model with what people want.
+And <b style="color:red">RLVR</b>, with GRPO and automatically checked answers, to improve <b style="color:red">reasoning</b>.
+
+So, RL is not only for games and robots.
+It is now a key part of how the most advanced AI models are built.
+						</div>
 					</aside>
 				</section>
 

@@ -18,7 +18,16 @@
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-So, to begin with, here is an overview of the training process for modern large language models
+So, to begin with, here is the big picture: how a modern <b style="color:red">large language model</b> is trained.
+There are several stages, from left to right.
+
+First, <b style="color:red">pre-training</b>, then <b style="color:red">instruction fine-tuning</b>.
+These two stages use self-supervised and supervised learning.
+Then come <b style="color:red">preference fine-tuning</b>, and <b style="color:red">reasoning fine-tuning</b>.
+Look at the black area on the right: these two stages use <b style="color:red">reinforcement learning</b>.
+
+Above each model, you can see an example of what it answers.
+Let's go through these stages, one by one.
 		</div>
 	</aside>
 </section>
@@ -42,7 +51,13 @@ So, to begin with, here is an overview of the training process for modern large 
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-The model is first trained using self-supervised learning on a massive amount of text data.
+It all starts with a <b style="color:red">randomly initialized model</b>.
+Say "Hello!" to it, and it answers random garbage: "the the bip bop boop".
+
+So the model is first trained with <b style="color:red">self-supervised learning</b>, on a <b style="color:red">massive amount of text</b>.
+The task is simple: <b style="color:red">predict the next token</b>.
+No labels are needed: the text itself is the supervision.
+This is <b style="color:red">pre-training</b>, and it's by far the most expensive stage in compute.
 		</div>
 	</aside>
 </section>
@@ -66,13 +81,14 @@ The model is first trained using self-supervised learning on a massive amount of
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-This produces a base model capable of completing text prompts.
+This produces a <b style="color:red">base model</b>.
+It's very good at <b style="color:red">completing text</b>.
+Look at the example: "It's raining cats and", and the model continues: "dogs. I should get an umbrella."
 
-However, this base model is essentially a sophisticated auto-completer.
-It cannot easily interact with humans because:
-
-- It cannot reliably answer user questions or follow instructions.
-- It cannot engage in natural, conversational dialogue.
+But it's essentially a sophisticated <b style="color:red">auto-completer</b>.
+It cannot reliably answer questions, or <b style="color:red">follow instructions</b>.
+And it cannot hold a natural <b style="color:red">conversation</b>.
+Ask it a question, and it may just continue with more questions.
 		</div>
 	</aside>
 </section>
@@ -96,14 +112,13 @@ It cannot easily interact with humans because:
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-To make the model more useful and interactive,
-it is fine-tuned using supervised learning.
+To make the model more useful, we fine-tune it with <b style="color:red">supervised learning</b>.
+This stage is called <b style="color:red">instruction fine-tuning</b>, or <b style="color:red">supervised fine-tuning</b>, SFT.
 
-This step is often called <b>instruction fine-tuning</b>
-or <b>Supervised Fine-Tuning (SFT)</b>.
-
-There, a dataset of instructions paired with high-quality human-written responses is used to adjust the model’s weights,
-teaching it to imitate and generalize these desirable outputs.
+We use a dataset of <b style="color:red">instructions</b>, paired with high-quality answers written by humans.
+And we train the model to <b style="color:red">imitate</b> these answers.
+It's the same next-token prediction as before, but on carefully chosen data.
+The model learns the format of a dialogue: a question, then a helpful answer.
 		</div>
 	</aside>
 </section>
@@ -128,11 +143,14 @@ teaching it to imitate and generalize these desirable outputs.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-The result is a model that can follow instructions,
-answer questions,
-and chat more naturally.
+The result is an <b style="color:red">instruction-tuned model</b>.
+Now it can <b style="color:red">follow instructions</b>, answer questions, and chat more naturally.
+Ask it "What ice cream should I get?", and it gives a real answer: "Vanilla is the best flavor in the world."
 
-But even after "instruction fine-tuning", the model may still generate outputs that are misaligned with human preferences.
+But it may still generate outputs that are <b style="color:red">misaligned with human preferences</b>.
+Answers that are correct, but not the ones people prefer.
+Or answers that are unhelpful, wrong, or even <b style="color:red">harmful</b>.
+And SFT alone can't easily fix this, as we'll see.
 		</div>
 	</aside>
 </section>
@@ -157,12 +175,16 @@ But even after "instruction fine-tuning", the model may still generate outputs t
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-To address this,
-a second stage of fine-tuning is applied: the <b>preference-based fine-tuning</b>.
+To fix this, a second stage of fine-tuning is applied: <b style="color:red">preference fine-tuning</b>.
+And this is the first stage where <b style="color:red">reinforcement learning</b> comes in.
 
-Historically, OpenAI used <b>Proximal Policy Optimization (PPO)</b>
-within the <b>Reinforcement Learning from Human Feedback (or RLHF)</b> framework
-to achieve this alignment.
+Look at the example: same question, but now the answer is "Chocolate is the best flavor".
+Why chocolate?
+Because, in our little example, that's what people <b style="color:red">prefer</b>.
+The model now gives the answers that humans like best.
+
+Historically, OpenAI did this with <b style="color:red">PPO</b>, Proximal Policy Optimization.
+Inside a framework called <b style="color:red">Reinforcement Learning from Human Feedback</b>, or RLHF.
 		</div>
 	</aside>
 </section>
@@ -206,17 +228,21 @@ to achieve this alignment.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-So, why do we need a second stage of fine-tuning?
+So, why do we need this second stage?
+Mainly for two reasons.
 
-Mainly for two reasons:
-- As I already mentioned, the first reason is that supervised fine-tuning alone cannot guarantee outputs that are fully aligned with human preferences
-- And the second reason is the lack of high-quality labeled datasets to further improve alignment.
+First, as I said, supervised fine-tuning alone can't guarantee outputs that are fully <b style="color:red">aligned</b> with human preferences.
+Second, the <b style="color:red">cost of data</b>.
+To go further with SFT, we would need larger datasets of high-quality answers, written by humans.
+That's <b style="color:red">too expensive</b>, or just impractical.
 
-Preference-based fine-tuning uses another kind of human <b>feedback</b>:
-instead of writing the ideal answer, the annotator only compares several answers generated by the model and says which one is better.
+Preference fine-tuning uses another kind of human <b style="color:red">feedback</b>.
+The annotator doesn't write the ideal answer.
+They just <b style="color:red">compare</b> a few answers generated by the model, and say which one is better.
 
-This is much cheaper and faster,
-and it also works when people can recognize a good answer more easily than they can write one.
+This is <b style="color:red">much cheaper</b>, and faster.
+And it also works when people can <b style="color:red">recognize</b> a good answer more easily than they can write one.
+Think of a poem, or a good summary: easy to judge, hard to write.
 		</div>
 	</aside>
 </section>
@@ -232,6 +258,9 @@ and it also works when people can recognize a good answer more easily than they 
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
+So, let's see how preference fine-tuning works with <b style="color:red">RLHF</b> and <b style="color:red">PPO</b>.
+But first, we need to take a step back, and <b style="color:red">generalize</b> the RL framework a little bit.
+Because, for a chatbot, there is <b style="color:red">no reward function</b> given by the environment.
 		</div>
 	</aside>
 </section>
@@ -260,15 +289,21 @@ and it also works when people can recognize a good answer more easily than they 
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Training an RL agent requires some information to indicate what behaviors are preferred.
+To learn, an RL agent needs <b style="color:red">feedback</b>: some signal that tells it which behaviors are preferred.
+Usually, this feedback is a <b style="color:red">reward function</b>.
+It maps states and actions to a scalar value.
 
-This is typically provided by a reward function that maps states and actions to scalar values.
+But in many real-world tasks, an explicit reward function is very <b style="color:red">hard to design</b>.
+What is the reward for a "good" answer of a chatbot?
 
-However, in some real-world scenarios, designing an explicit reward function is challenging or infeasible.
+So we can use <b style="color:red">other kinds of feedback</b> to guide learning.
+For example, human preferences, or demonstrations.
 
-In such cases, we can use other kinds of feedback to guide the learning process.
-
-This leads to a generalization of the RL framework called "learning from feedback".
+Look at the diagram.
+The usual loop: the agent acts on the environment, and receives observations.
+And in the middle, a new box: the <b style="color:red">feedback provider</b>.
+It watches the observations and the actions, and it sends feedback to the agent.
+This generalizes RL into "<b style="color:red">learning from feedback</b>".
 		</div>
 	</aside>
 </section>
@@ -291,18 +326,17 @@ This leads to a generalization of the RL framework called "learning from feedbac
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-For the tasks that the reward function is not available,
-we may consider learning a <b>reward model</b>
-and then apply the output of this reward model
-as reward signals on the RL algorithms.
+So, what can we do when no reward function is available?
+We can <b style="color:red">learn</b> one.
+We train a <b style="color:red">reward model</b> from data.
+Then, we use its output as the <b style="color:red">reward signal</b> for a standard RL algorithm.
 
-In other words, we <b>learn</b> the reward function from data.
+What kind of data?
+When the data are <b style="color:red">expert demonstrations</b>, it's called <b style="color:red">Inverse Reinforcement Learning</b>, or IRL.
+We infer the reward that the expert seems to optimize.
+We'll come back to IRL in more detail later in the course.
 
-When this data consists of examples of desired behavior (expert demonstrations),
-this is called <b>Inverse Reinforcement Learning (IRL)</b>
-(more on that next week).
-
-In the next slides, the reward model will be learned from another kind of data: human preferences.
+In the next slides, the reward model is learned from another kind of data: <b style="color:red">human preferences</b>.
 		</div>
 	</aside>
 </section>
@@ -330,10 +364,18 @@ In the next slides, the reward model will be learned from another kind of data: 
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-One example of feedback different from scalar rewards is <b>preferences</b>.
+Here is one example of feedback that is not a scalar reward: <b style="color:red">preferences</b>.
 
-Preferences can be collected by asking humans to compare pairs of trajectory segments
-and indicate which one they prefer.
+We show two <b style="color:red">trajectory segments</b> to someone, and we ask: which one do you prefer?
+Then we train a <b style="color:red">reward model</b> to predict these preferences.
+The idea: the preferred segment should get a <b style="color:red">higher total reward</b>.
+Technically, the probability of preferring A over B is a sigmoid of the difference of their rewards.
+And the learned reward model provides the reward signal for the RL algorithm.
+
+So we learn from <b style="color:red">comparative feedback</b>, not from absolute rewards.
+It's often easier for a person to say "A is better than B" than to give a score, like 7 out of 10.
+
+So, when the environment gives <b style="color:red">preference feedback</b> instead of a reward, we call it <b style="color:red">Preference-based RL</b>, or PbRL.
 		</div>
 	</aside>
 </section>
@@ -358,7 +400,18 @@ and indicate which one they prefer.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-When this <b>preference feedback</b> is provided by a human during training, we do <b>Reinforcement Learning from Human Feedback</b> (RLHF)
+Now, what if this preference feedback comes from a <b style="color:red">human</b>, during training?
+Then we call it <b style="color:red">Reinforcement Learning from Human Feedback</b>, or RLHF.
+
+Look at the diagram.
+At the bottom, the usual RL loop: the <b style="color:red">RL algorithm</b> sends actions to the environment, and gets observations.
+But the reward does not come from the environment.
+It comes from a <b style="color:red">reward predictor</b>, in purple.
+The reward predictor is trained with <b style="color:red">human feedback</b>, on the right.
+And it gives a <b style="color:red">predicted reward</b> to the RL algorithm.
+
+These three processes run <b style="color:red">in parallel</b>, asynchronously.
+The agent acts, the human compares clips, and the reward predictor is updated.
 		</div>
 	</aside>
 </section>
@@ -392,26 +445,22 @@ When this <b>preference feedback</b> is provided by a human during training, we 
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Originally, RLHF was developed in 2017 by OpenAI, in collaboration with DeepMind,
-for training simple robots
-in simulated environments and Atari games.
+RLHF was introduced in 2017, by <b style="color:red">OpenAI and DeepMind</b>.
+At first, it was not for language at all: it was for <b style="color:red">simulated robots</b> and Atari games.
 
-Here, the RL agent starts by acting randomly in the environment.
-Periodically, two video clips of its behavior are given to a human,
-and the human decides which of the two clips is closest to the objective:
-in this case, the objective is to do a backflip.
+Here is how it works.
+In the beginning, the agent acts randomly.
+Periodically, a human watches <b style="color:red">two short video clips</b> of its behavior, like the two on the slide.
+And they click: "left is better", or "right is better".
+The question is: which clip is closer to the objective?
+Here, the objective is to do a <b style="color:red">backflip</b>.
 
-The algorithm gradually builds a model of the goal of the task
-by finding the reward function that best explains the human’s judgments.
+The algorithm builds a model of the goal: the <b style="color:red">reward function</b> that best explains the human's choices.
+Then it uses RL to reach that goal.
+As it improves, it asks for feedback on the pairs where it is <b style="color:red">most uncertain</b>.
 
-It then uses RL to learn how to achieve that goal.
-As its behavior improves, it continues to ask for human feedback on trajectory pairs
-where it’s most uncertain about which is better,
-and further refines its understanding of the goal.
-
-This approach is very efficient in terms of human feedback:
-the backflip video required about 900 bits of human feedback.
-(In terms of interactions with the environment, it is not cheap: the agent accumulated about 70 hours of simulated experience.)
+It is very <b style="color:red">efficient</b> in human feedback: the backflip needed about 900 bits of feedback.
+One bit is roughly one comparison: left or right.
 		</div>
 	</aside>
 </section>
@@ -436,8 +485,16 @@ the backflip video required about 900 bits of human feedback.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-It took less than an hour of a human evaluator’s time,
-to achieve this objective, without any explicit reward function.
+And here is the result: a <b style="color:red">backflip</b>.
+It took <b style="color:red">less than an hour</b> of a human evaluator's time.
+And there was <b style="color:red">no explicit reward function</b> at all.
+
+Try to write a reward function for a nice backflip by hand.
+It's really hard!
+Here, the human just had to <b style="color:red">recognize</b> good attempts.
+
+To be fair, it's not cheap in <b style="color:red">interactions with the environment</b>.
+In the background, the agent collected about 70 hours of simulated experience.
 		</div>
 	</aside>
 </section>
@@ -465,12 +522,17 @@ to achieve this objective, without any explicit reward function.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Ok, so originally RLHF was developed for training simple robots in simulated environments and Atari games.
-But it was quickly adapted to train large language models.
+OK, so RLHF was first developed for robots and Atari agents.
+But it was quickly adapted to <b style="color:red">large language models</b>.
 
-You have certainly seen this request for feedback in ChatGPT.
+You have probably seen this in <b style="color:red">ChatGPT</b>: "Which response do you prefer?"
+That's exactly a <b style="color:red">preference comparison</b>.
+And this free work from users can then be used to further <b style="color:red">align</b> the model.
 
-This free labor is used to further align the model to its users using RLHF.
+Now, look closely at the two responses.
+They are exactly the <b style="color:red">same</b>!
+Hence the little emoji on the slide.
+Not every comparison is very informative.
 		</div>
 	</aside>
 </section>
@@ -491,7 +553,22 @@ This free labor is used to further align the model to its users using RLHF.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Also, it has been used in 2020 to train models to summarize text with human feedback.
+In 2020, OpenAI used RLHF to train models to <b style="color:red">summarize text</b>.
+The figure shows the three steps of RLHF.
+
+Step one, <b style="color:red">collect human feedback</b>.
+We take a Reddit post, and several policies generate summaries.
+A human compares two of them, and says which one is better: "j is better than k".
+
+Step two, <b style="color:red">train a reward model</b>.
+It gives a score r to each summary.
+The loss pushes the score of the <b style="color:red">preferred summary</b> above the other one.
+We maximize the log of a sigmoid of r j minus r k.
+
+Step three, <b style="color:red">train the policy with PPO</b>.
+For a new post, the policy writes a summary, and the reward model scores it.
+PPO uses this score as the reward to update the policy.
+And a <b style="color:red">KL penalty</b> keeps the policy close to the initial model, to avoid reward hacking.
 		</div>
 	</aside>
 </section>
@@ -512,9 +589,18 @@ Also, it has been used in 2020 to train models to summarize text with human feed
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-And finally, it has been used in 2022 to train InstructGPT,
-a GPT-3 model fine-tuned to follow instructions using human feedback,
-and the direct predecessor of ChatGPT.
+And in 2022, OpenAI used it to train <b style="color:red">InstructGPT</b>.
+A GPT-3 model, fine-tuned to <b style="color:red">follow instructions</b> with human feedback.
+It's the direct predecessor of <b style="color:red">ChatGPT</b>.
+
+Again, three steps.
+Step one: for a prompt, like "explain the moon landing to a 6 year old", a labeler <b style="color:red">writes</b> the desired answer.
+GPT-3 is fine-tuned on these answers: that's <b style="color:red">SFT</b>.
+Step two: the model generates several answers, and a labeler <b style="color:red">ranks</b> them, from best to worst.
+These rankings train the <b style="color:red">reward model</b>.
+Step three: <b style="color:red">PPO</b> optimizes the policy against the reward model.
+
+So, this is the full pipeline of the overview: SFT first, then preference fine-tuning with RL.
 		</div>
 	</aside>
 </section>
@@ -535,17 +621,22 @@ and the direct predecessor of ChatGPT.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Human evaluations confirmed that InstructGPT models (PPO-ptx) were preferred to GPT-3 models.
+Did it work?
+Yes: human evaluators clearly <b style="color:red">preferred InstructGPT</b> to GPT-3.
 
-This plot shows how often outputs from each model were preferred to those from the 175B SFT model.
+On this plot, the y-axis is the <b style="color:red">win rate</b> against the 175-billion-parameter SFT model.
+That is, how often each model's answers were preferred to that model's answers.
+The x-axis is the model size.
 
-Here InstructGPT is named <b>PPO-ptx</b>
-and <b>PPO</b> corresponds to a variant trained without the pretraining mix,
-that is to say without mixing pretraining gradients into the PPO updates
-(this mix is used to limit performance regressions on standard NLP benchmarks).
-Both start from the SFT model.
+At the bottom, the two GPT-3 curves, in blue: even with a good prompt, their win rate stays low.
+In green, the SFT models.
+At the top, the two RLHF models: <b style="color:red">PPO</b>, and <b style="color:red">PPO-ptx</b>, the actual InstructGPT.
+PPO-ptx also mixes some <b style="color:red">pretraining gradients</b> into the PPO updates.
+It limits regressions on standard NLP benchmarks.
 
-Note that outputs from the 1.3B InstructGPT model are preferred to those of the 175B GPT-3 model, which is about 100 times larger.
+And here is the key result.
+The <b style="color:red">1.3 billion</b> InstructGPT is preferred to the <b style="color:red">175 billion</b> GPT-3.
+A model more than <b style="color:red">100 times smaller</b>!
 		</div>
 	</aside>
 </section>
@@ -572,18 +663,27 @@ Note that outputs from the 1.3B InstructGPT model are preferred to those of the 
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-RLHF has one big advantage for the LLMs usecase:
-compared to offline <b>preference fine-tuning</b> methods such as <b>Direct Preference Optimization</b> (DPO),
-which only learn from a fixed dataset of compared answers,
-the learned Reward Model can score new answers generated by the policy during training.
-So the same human feedback is exploited further,
-and well-tuned RLHF with PPO often performs better than DPO (Xu et al., 2024; Ivison et al., 2024).
+So, why use RL here, and not something simpler?
 
-But it also has drawbacks:
-training can be unstable, and
-- the Reward Model may be inaccurate, or
-- the Reward Model may be "exploited" by the policy (reward hacking).
+RLHF has one big advantage.
+Compare it with offline methods, like <b style="color:red">Direct Preference Optimization</b>, or DPO.
+DPO learns only from a <b style="color:red">fixed dataset</b> of compared answers.
+In RLHF, the learned reward model can score <b style="color:red">new answers</b>, generated by the policy during training.
+So the same human feedback is exploited further.
+And well-tuned RLHF with PPO often <b style="color:red">performs better</b> than DPO.
+
+But it also has <b style="color:red">drawbacks</b>.
+Training can be <b style="color:red">unstable</b>, and the reward model may be inaccurate.
+Then the model learns misaligned or unintended behaviors.
+Worse, the policy may <b style="color:red">exploit the weaknesses</b> of the reward model.
+That's called <b style="color:red">reward hacking</b>.
+For example, reward models often prefer longer answers, so the model may learn to be verbose.
 		</div>
+		<!-- Sources:
+		- Xu et al. (2024), Is DPO Superior to PPO for LLM Alignment? A Comprehensive Study, ICML 2024
+		- Ivison et al. (2024), Unpacking DPO and PPO: Disentangling Best Practices for Learning from Preference Feedback, NeurIPS 2024
+		- Singhal et al. (2023), A Long Way to Go: Investigating Length Correlations in RLHF
+		-->
 	</aside>
 </section>
 
@@ -619,6 +719,11 @@ training can be unstable, and
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
+Here are the three main references for RLHF.
+Christiano and colleagues, 2017: the <b style="color:red">original paper</b>, with the robots and the Atari games.
+Stiennon and colleagues, 2020: <b style="color:red">summarization</b>.
+And Ouyang and colleagues, 2022: <b style="color:red">InstructGPT</b>.
+Each one also has a blog post from OpenAI, a good place to start.
 		</div>
 	</aside>
 </section>
@@ -643,9 +748,13 @@ training can be unstable, and
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Ok so RLHF (or DPO) can be used to produce a model more aligned with human preferences.
+OK, so RLHF, or DPO, gives us a <b style="color:red">preference-tuned model</b>.
+A model more <b style="color:red">aligned with human preferences</b>.
 
-But a third stage of fine-tuning can be applied to <b>improve reasoning skills</b>.
+But we can go one step further.
+A third stage of fine-tuning can be applied, to <b style="color:red">improve reasoning skills</b>.
+Look at the example on the right: a small math problem about the energy of an ice cream.
+The model must <b style="color:red">reason step by step</b>, and compute the answer: 300 kilocalories.
 		</div>
 	</aside>
 </section>
@@ -670,14 +779,12 @@ But a third stage of fine-tuning can be applied to <b>improve reasoning skills</
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-This third stage was popularized by the open-source model
-DeepSeek-R1
-in January 2025.
+This third stage was popularized in <b style="color:red">January 2025</b>, by the open-source model <b style="color:red">DeepSeek-R1</b>.
+OpenAI's o1 came a few months earlier, but its training recipe was not public.
 
-DeepSeek-R1 applies the <b>Group Relative Policy Optimization</b> algorithm (or GRPO)
-within the <b>Reinforcement Learning with Verifiable Rewards (RLVR)</b> framework
-to especially enhance reasoning capabilities
-in LLMs.
+DeepSeek-R1 uses an algorithm called <b style="color:red">Group Relative Policy Optimization</b>, or GRPO.
+Inside a framework called <b style="color:red">Reinforcement Learning with Verifiable Rewards</b>, or RLVR.
+The goal is to improve the <b style="color:red">reasoning</b> capabilities of the LLM.
 		</div>
 	</aside>
 </section>
@@ -713,6 +820,8 @@ in LLMs.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
+So, let's see how reasoning fine-tuning works, with <b style="color:red">RLVR</b> and <b style="color:red">GRPO</b>.
+And here, good news: we don't even need <b style="color:red">humans</b> to give the reward.
 		</div>
 	</aside>
 </section>
@@ -735,25 +844,22 @@ in LLMs.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-There's a special class of NLP problems called <b>reasoning tasks</b>,
-which includes math, computer science, logic, and so on.
+There is a special class of problems called <b style="color:red">reasoning tasks</b>.
+Math, programming, logic, and so on.
 
-Unlike open-ended or creative tasks,
-many reasoning tasks have an answer that can be checked automatically:
-for example, comparing the final answer of a math problem with the reference answer,
-or running unit tests on generated code.
+Unlike open-ended or creative tasks, many reasoning tasks have an answer that can be <b style="color:red">checked automatically</b>.
+For a math problem, we compare the final answer with the <b style="color:red">reference answer</b>.
+For code, we run <b style="color:red">unit tests</b>.
 
-This property enables automatic evaluation of LLMs on reasoning tasks,
-without requiring human feedback for each example.
+So we can evaluate the LLM's answers automatically, <b style="color:red">without human feedback</b>.
+And this is <b style="color:red">scalable</b>: millions of problems, and no annotators.
 
-DeepSeek-R1 leverages this by adding a stage of fine-tuning specifically for reasoning,
-using a Reinforcement Learning framework that exploits verifiable rewards.
+DeepSeek-R1 exploits this, with a fine-tuning stage dedicated to reasoning, using RL with <b style="color:red">verifiable rewards</b>.
 
-Note that the overview diagram is a simplification:
-in practice, the order of the stages varies.
-DeepSeek-R1 alternates several SFT and RL stages:
-its first RL stage is dedicated to reasoning,
-and only its last RL stage also aligns the model with human preferences (helpfulness, harmlessness).
+A small warning: the overview diagram is a <b style="color:red">simplification</b>.
+In practice, the order of the stages varies.
+DeepSeek-R1 alternates several SFT and RL stages.
+Its first RL stage is for reasoning, and its last one also aligns the model with human preferences.
 		</div>
 	</aside>
 </section>
@@ -774,17 +880,21 @@ and only its last RL stage also aligns the model with human preferences (helpful
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-So here a reinforcement learning algorithm is used to fine-tune the LLM,
-using a reward signal that is automatically computed based on whether the final answer is correct or not.
+So here, RL is used to fine-tune the LLM, with a reward that is <b style="color:red">computed automatically</b>.
+The reward simply says whether the <b style="color:red">final answer is correct</b>.
 
-The reasoning task fits well within the RL framework:
-- the policy is the LLM; it generates a sequence of tokens (actions);
-here we use a stochastic policy,
-so it outputs a probability distribution over the full vocabulary of tokens
-at each step;
-- the state is the current context (prompt + generated tokens)
-- and the reward is 1 if the final answer is correct, 0 otherwise;
-it is only given at the end of the generation (all intermediate rewards are 0).
+Look at the example at the bottom.
+Natalia sold 48 clips in April, and half as many in May: how many in total?
+The model reasons step by step, and ends with 72.
+The environment checks it: 72 is correct, so the reward <b style="color:red">R equals one</b>.
+
+The reasoning task fits well in the <b style="color:red">RL framework</b>.
+The <b style="color:red">agent</b> is the LLM: its policy outputs a probability for every token of the vocabulary.
+Each <b style="color:red">action</b> is one token.
+The episode ends when the model outputs the end token.
+The <b style="color:red">state</b> is the current context: the prompt, plus the tokens generated so far.
+And the <b style="color:red">reward</b> comes only at the end: one if the answer is correct, zero otherwise.
+Look at the box on the right: all the intermediate rewards are zero.
 		</div>
 	</aside>
 </section>
@@ -824,21 +934,24 @@ it is only given at the end of the generation (all intermediate rewards are 0).
 			<div class="fr-notes">
 			</div>
 			<div class="en-notes">
-The reinforcement Learning algorithm used in DeepSeek-R1 is called <b>Group Relative Policy Optimization</b> algorithm (or GRPO).
+The RL algorithm used in DeepSeek-R1 is called <b style="color:red">Group Relative Policy Optimization</b>, or GRPO.
+It was introduced about one year earlier, in the DeepSeekMath paper.
+And it's very close to <b style="color:red">PPO</b>, with <b style="color:red">two differences</b>.
 
-It is very similar to PPO, with two differences.
+On the left, the usual loop: the LLM outputs a distribution over tokens, samples one, and gets a reward.
+On the right, how the advantage A t is computed.
 
-First, it uses a different advantage estimation method.
-The critic network is removed and the advantage is computed by normalizing the returns
-across a group of episodes.
+At the top, PPO.
+It uses a <b style="color:red">critic</b>, the value network V phi, in red, to estimate the advantage.
+In LLMs, this critic is usually as large as the policy itself: it costs a lot of memory and compute.
 
-That is to say, for each prompt to assess, multiple rollouts are performed,
-and the advantage is computed by normalizing the returns of these rollouts.
+At the bottom, GRPO.
+First difference: <b style="color:red">no critic</b>.
+Instead, for each prompt, we generate a <b style="color:red">group of answers</b>, here four of them.
+And the advantage is computed by comparing each answer to the others in the group.
 
-Removing the critic network, which is usually as large as the policy, simplifies the training, speeds it up and saves memory.
-
-Second, the KL penalty that keeps the policy close to the reference model
-is added directly to the loss, instead of being subtracted from the reward as in RLHF with PPO.
+Second difference: the <b style="color:red">KL penalty</b>, which keeps the policy close to the reference model.
+It's added directly to the loss, instead of being subtracted from the reward, like in RLHF with PPO.
 			</div>
 		</aside>
 	</section>
@@ -858,6 +971,17 @@ is added directly to the loss, instead of being subtracted from the reward as in
 			<div class="fr-notes">
 			</div>
 			<div class="en-notes">
+Let's see where the GRPO advantage comes from.
+Start with an update rule you already know: <b style="color:red">REINFORCE with a baseline</b>.
+
+We increase the log-probability of each action a t, in state s t.
+And we weight it by G t minus b of s t.
+G t is the <b style="color:red">return</b> from time t, and b is a <b style="color:red">baseline</b>.
+If the return is better than the baseline, the action becomes <b style="color:red">more likely</b>.
+If it's worse, it becomes <b style="color:red">less likely</b>.
+
+The baseline doesn't change the expected gradient, but it <b style="color:red">reduces the variance</b>.
+In actor-critic methods, and in PPO, this baseline is the <b style="color:red">value function</b>, learned by the critic.
 			</div>
 		</aside>
 	</section>
@@ -878,6 +1002,18 @@ is added directly to the loss, instead of being subtracted from the reward as in
 			<div class="fr-notes">
 			</div>
 			<div class="en-notes">
+Now, how does GRPO get its baseline, <b style="color:red">without a critic</b>?
+
+Look at the top row.
+The prompt is the Natalia problem.
+The LLM generates one answer, token by token: "To", "find", "out", and so on.
+Each token is an action, and each circle is a state.
+The reward comes only at the very end.
+
+Now, the trick: for the <b style="color:red">same prompt</b>, we sample <b style="color:red">several answers</b>.
+Here, a <b style="color:red">group</b> of four.
+Since the policy is stochastic, the four answers are different.
+And the environment gives each of them a reward: r g one, to r g four.
 			</div>
 		</aside>
 	</section>
@@ -898,6 +1034,15 @@ is added directly to the loss, instead of being subtracted from the reward as in
 			<div class="fr-notes">
 			</div>
 			<div class="en-notes">
+And here is the GRPO <b style="color:red">baseline</b>.
+B is simply the <b style="color:red">mean reward of the group</b>.
+
+The intuition: B tells us how hard this prompt is for the current model.
+If an answer does <b style="color:red">better than the group average</b>, we push it up.
+If it does worse, we push it down.
+
+No critic network to train: we just <b style="color:red">sample more answers</b>, and we compare them.
+In other words, the other answers of the group play the role of the critic.
 			</div>
 		</aside>
 	</section>
@@ -932,6 +1077,22 @@ is added directly to the loss, instead of being subtracted from the reward as in
 			<div class="fr-notes">
 			</div>
 			<div class="en-notes">
+So, let's update our formula.
+
+First, the reward is given only at the end, and we don't discount.
+So the return G t is the <b style="color:red">same for every token</b>: it's the final reward, capital R.
+And the baseline b becomes the group mean, capital B.
+So we get <b style="color:red">R minus B</b>.
+
+Then GRPO also divides by the <b style="color:red">standard deviation</b> of the group rewards.
+This gives the advantage A t: the reward minus the group mean, over the group standard deviation.
+This <b style="color:red">normalization</b> keeps the gradient scale stable, from one prompt to another.
+
+A quick example.
+Four answers, with rewards one, zero, zero, one.
+The mean is one half.
+So the <b style="color:red">correct answers</b> get a positive advantage, and the wrong ones a negative advantage, of the same size.
+And if all four answers are correct, all advantages are <b style="color:red">zero</b>: this prompt teaches nothing.
 			</div>
 		</aside>
 	</section>
@@ -957,6 +1118,19 @@ is added directly to the loss, instead of being subtracted from the reward as in
 			<div class="fr-notes">
 			</div>
 			<div class="en-notes">
+Finally, GRPO plugs this advantage into the <b style="color:red">PPO</b> objective.
+
+You know this one: L PPO.
+Rho t is the <b style="color:red">probability ratio</b> between the new policy and the old one, for action a t.
+We multiply it by the advantage, and we <b style="color:red">clip</b> the ratio between one minus epsilon and one plus epsilon.
+And we take the minimum of the two terms.
+So one update cannot move the policy <b style="color:red">too far</b> from the old one.
+
+Then, GRPO subtracts a <b style="color:red">KL divergence</b> term, weighted by beta.
+It measures how far the policy pi theta is from the <b style="color:red">reference model</b> pi ref, usually the SFT model.
+It prevents the model from drifting too far, and from forgetting what it learned before.
+
+So, to sum up: GRPO is <b style="color:red">PPO without a critic</b>, with a group-based advantage, and a KL penalty in the loss.
 			</div>
 		</aside>
 	</section>
@@ -978,15 +1152,25 @@ is added directly to the loss, instead of being subtracted from the reward as in
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-The DeepSeek-R1-Zero model generated significant attention upon release as the first open LLM
-fine-tuned exclusively with RL (without supervised fine-tuning) to reach a performance comparable to OpenAI's o1-0912 reasoning model.
+So, does it work?
+Here are the results of <b style="color:red">DeepSeek-R1-Zero</b>.
+It made a lot of noise, because it was trained with <b style="color:red">pure RL</b>.
+Directly from the base model, without any supervised fine-tuning.
+And yet, it reached a performance <b style="color:red">comparable to OpenAI's o1</b> reasoning model.
 
-On AIME 2024, its pass@1 accuracy went from 15.6% to 71.0% during training (86.7% with majority voting),
-versus 74.4% (83.3%) for o1-0912.
-It does better on some benchmarks (e.g., MATH-500) and worse on others (e.g., coding).
+Look at the plot: the accuracy on <b style="color:red">AIME 2024</b>, a hard math competition, during training.
+The blue curve is pass at one: it goes from about 16 percent to <b style="color:red">71 percent</b>.
+The red curve uses <b style="color:red">majority voting</b> over several samples: it reaches about 87 percent.
+The dashed lines are o1-0912: 74 percent, and 83 percent with majority voting.
 
-This result highlights the potential of RL-based methods for enhancing reasoning capabilities in large language models.
+In the table, R1-Zero is better on some benchmarks, like MATH-500, and worse on others, like coding.
+
+And a fascinating detail: during training, its answers got <b style="color:red">longer and longer</b>.
+The model learned by itself to think longer, and to re-check its work.
 		</div>
+		<!-- Sources:
+		- Guo et al. (2025), DeepSeek-R1, arXiv:2501.12948: Table 2, Figure 2 (AIME accuracy), Figure 3 (response length)
+		-->
 	</aside>
 </section>
 
@@ -1014,6 +1198,10 @@ This result highlights the potential of RL-based methods for enhancing reasoning
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
+Two references for this part.
+The <b style="color:red">DeepSeekMath</b> paper, 2024, which introduced GRPO.
+And the <b style="color:red">DeepSeek-R1</b> paper, 2025.
+Both are on arXiv, and the links are on the slide.
 		</div>
 	</aside>
 </section>
@@ -1031,6 +1219,9 @@ This result highlights the potential of RL-based methods for enhancing reasoning
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
+Now, how can you try all this yourself?
+A very popular open-source library is <b style="color:red">TRL</b>, from <b style="color:red">Hugging Face</b>.
+TRL stands for <b style="color:red">Transformer Reinforcement Learning</b>.
 		</div>
 	</aside>
 </section>
@@ -1055,6 +1246,15 @@ This result highlights the potential of RL-based methods for enhancing reasoning
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
+TRL is a <b style="color:red">full-stack library</b> to fine-tune language models.
+It implements most of the methods we saw today.
+<b style="color:red">SFT</b>, for supervised fine-tuning.
+<b style="color:red">DPO</b>, for preference fine-tuning without RL.
+<b style="color:red">GRPO</b>, for RL with verifiable rewards.
+And reward modeling, and more.
+
+It's built on top of the Hugging Face <b style="color:red">transformers</b> library.
+So you can fine-tune most open models with a few lines of Python.
 		</div>
 	</aside>
 </section>
@@ -1075,6 +1275,13 @@ This result highlights the potential of RL-based methods for enhancing reasoning
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
+And here is a great example of what you can do with it: <b style="color:red">Open-R1</b>.
+When DeepSeek-R1 came out, the model weights were open, but the <b style="color:red">training data and code</b> were not.
+So Hugging Face started a project to build a <b style="color:red">fully open reproduction</b> of DeepSeek-R1.
+They used TRL, and its <b style="color:red">GRPO</b> trainer.
+
+It's a good place to start, if you want to see how this works in practice.
+The blog post on the slide explains the plan, step by step.
 		</div>
 	</aside>
 </section>
