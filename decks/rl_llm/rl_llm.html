@@ -5,10 +5,14 @@
 <section data-transition="none">
 	<h3>Overview</h3>
 
-	<img width="90%" src="assets/rl_llm/llm_finetuning.png" />
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+	<img width="80%" src="assets/rl_llm/llm_finetuning.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
 		Source: Julia Turc
 	</figcaption>
+
+	<!-- Empty two-line text area, as on the next "Overview" slides (data-transition="none"):
+	     keeps the figure at exactly the same position from one slide to the next -->
+	<p style="font-size: 0.5em; height: 2.6em;"></p>
 
 	<aside class="notes">
 		<div class="fr-notes">
@@ -25,12 +29,12 @@ So, to begin with, here is an overview of the training process for modern large 
 <section data-transition="none">
 	<h3>Overview</h3>
 
-	<img width="90%" src="assets/rl_llm/llm_finetuning_1.png" />
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+	<img width="80%" src="assets/rl_llm/llm_finetuning_1.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
 		Source: Julia Turc
 	</figcaption>
 
-	<p style="font-size: 0.5em;">
+	<p style="font-size: 0.5em; height: 2.6em;">
 		The model is first trained using self-supervised learning on a massive amount of text data.
 	</p>
 
@@ -49,12 +53,12 @@ The model is first trained using self-supervised learning on a massive amount of
 <section data-transition="none">
 	<h3>Overview</h3>
 
-	<img width="90%" src="assets/rl_llm/llm_finetuning_2.png" />
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+	<img width="80%" src="assets/rl_llm/llm_finetuning_2.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
 		Source: Julia Turc
 	</figcaption>
 
-	<p style="font-size: 0.5em;">
+	<p style="font-size: 0.5em; height: 2.6em;">
 		This produces a sophisticated auto-completer that cannot easily interact with humans.
 	</p>
 
@@ -79,12 +83,12 @@ It cannot easily interact with humans because:
 <section data-transition="none">
 	<h3>Overview</h3>
 
-	<img width="90%" src="assets/rl_llm/llm_finetuning_3.png" />
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+	<img width="80%" src="assets/rl_llm/llm_finetuning_3.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
 		Source: Julia Turc
 	</figcaption>
 
-	<p style="font-size: 0.5em;">
+	<p style="font-size: 0.5em; height: 2.6em;">
 		To make the model more useful we apply <b>instruction fine-tuning</b> or <b>Supervised Fine-Tuning (SFT)</b>
 	</p>
 
@@ -110,12 +114,12 @@ teaching it to imitate and generalize these desirable outputs.
 <section data-transition="none">
 	<h3>Overview</h3>
 
-	<img width="90%" src="assets/rl_llm/llm_finetuning_4.png" />
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 2em;">
+	<img width="80%" src="assets/rl_llm/llm_finetuning_4.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
 		Source: Julia Turc
 	</figcaption>
 
-	<p style="font-size: 0.5em;">
+	<p style="font-size: 0.5em; height: 2.6em;">
 		Now the model can follow instructions, answer questions, and chat more naturally.<br>
 		But it may still generate outputs that are misaligned with human preferences.
 	</p>
@@ -139,12 +143,12 @@ But even after "instruction fine-tuning", the model may still generate outputs t
 <section data-transition="none">
 	<h3>Overview</h3>
 
-	<img width="90%" src="assets/rl_llm/llm_finetuning_5.png" />
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+	<img width="80%" src="assets/rl_llm/llm_finetuning_5.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
 		Source: Julia Turc
 	</figcaption>
 
-	<p style="font-size: 0.5em;">
+	<p style="font-size: 0.5em; height: 2.6em;">
 		A second stage of fine-tuning is applied.
 		Historically, OpenAI used <b>PPO</b> within the <b>Reinforcement Learning from Human Feedback (or RLHF)</b> framework to achieve this.
 	</p>
@@ -249,7 +253,7 @@ and it also works when people can recognize a good answer more easily than they 
 
 	<img width="40%" src="assets/rl_llm/learn_from_feedback.png" />
 	<figcaption style="font-size: 0.3em; text-align: center;">
-		Source: Z. Xiao, Reinforcement Learning, <a href="https://doi.org/10.1007/978-981-19-4933-3_16">https://doi.org/10.1007/978-981-19-4933-3_16</a>
+		Source: Z. Xiao, Reinforcement Learning, <a href="https://doi.org/10.1007/978-981-19-4933-3_16" target="_blank">https://doi.org/10.1007/978-981-19-4933-3_16</a>
 	</figcaption>
 
 	<aside class="notes">
@@ -338,12 +342,12 @@ and indicate which one they prefer.
 
 <!-- Slide: RLHF -->
 <section>
-	<h3>Reinforcement Learning from Human Feedback (RLHF)</h3>
-	<!-- <h4>subtitle</h4> -->
+	<h3>RLHF</h3>
+	<h4 style="font-size: 0.9em;">Reinforcement Learning from Human Feedback</h4>
 
 	<img width="80%" src="assets/rl_llm/rlhf.png" />
 	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
-		Source: <a href="https://openai.com/index/learning-from-human-preferences/">https://openai.com/index/learning-from-human-preferences/</a>
+		Source: <a href="https://openai.com/index/learning-from-human-preferences/" target="_blank">https://openai.com/index/learning-from-human-preferences/</a>
 	</figcaption>
 
 	<p style="font-size: 0.65em; margin-top: 1em;">
@@ -363,12 +367,12 @@ When this <b>preference feedback</b> is provided by a human during training, we 
 
 <!-- Slide: RLHF -->
 <section>
-	<h3>Reinforcement Learning from Human Feedback (RLHF)</h3>
-	<!-- <h4>subtitle</h4> -->
+	<h3>RLHF</h3>
+	<h4 style="font-size: 0.9em;">Reinforcement Learning from Human Feedback</h4>
 
-	<img width="40%" src="assets/rl_llm/LearningFromHumanPreferencesPoster.webp" />
+	<img width="35%" src="assets/rl_llm/LearningFromHumanPreferencesPoster.webp" />
 	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
-		Source: <a href="https://openai.com/index/learning-from-human-preferences/">https://openai.com/index/learning-from-human-preferences/</a>
+		Source: <a href="https://openai.com/index/learning-from-human-preferences/" target="_blank">https://openai.com/index/learning-from-human-preferences/</a>
 	</figcaption>
 
 	<ul style="font-size: 0.5em; margin-top: 1em; margin-left: 1em;">
@@ -416,12 +420,12 @@ the backflip video required about 900 bits of human feedback.
 
 <!-- Slide: RLHF -->
 <section>
-	<h3>Reinforcement Learning from Human Feedback (RLHF)</h3>
-	<!-- <h4>subtitle</h4> -->
+	<h3>RLHF</h3>
+	<h4 style="font-size: 0.9em;">Reinforcement Learning from Human Feedback</h4>
 
 	<img width="40%" src="assets/rl_llm/humanfeedbackjump.webp" />
 	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
-		Source: <a href="https://openai.com/index/learning-from-human-preferences/">https://openai.com/index/learning-from-human-preferences/</a>
+		Source: <a href="https://openai.com/index/learning-from-human-preferences/" target="_blank">https://openai.com/index/learning-from-human-preferences/</a>
 	</figcaption>
 
 	<!-- <p style="font-size: 0.65em; margin-top: 1em;">
@@ -446,8 +450,8 @@ to achieve this objective, without any explicit reward function.
 	<h4>Application to LLMs</h4>
 
 	<img width="60%" src="assets/rl_llm/chatgpt_feedback.jpeg" />🤨
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
-		Source: https://x.com/nathanlents/status/1735034140930572791
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
+		Source: <a href="https://x.com/nathanlents/status/1735034140930572791" target="_blank">https://x.com/nathanlents/status/1735034140930572791</a>
 	</figcaption>
 
 	<ul style="font-size: 0.65em; margin-top: 1em; margin-left: 1em;">
@@ -475,11 +479,12 @@ This free labor is used to further align the model to its users using RLHF.
 
 <!-- Slide: RLHF (Application to LLMs) -->
 <section>
-	<h3>RLHF - Application to LLMs</h3>
+	<h3>RLHF</h3>
+	<h4>Application to LLMs</h4>
 
-	<img width="85%" src="assets/rl_llm/rlhf_1.png" />
+	<img width="76%" src="assets/rl_llm/rlhf_1.png" />
 	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
-		Source: <a href="https://proceedings.neurips.cc/paper_files/paper/2020/file/1f89885d556929e98d3ef9b86448f951-Paper.pdf">Stiennon, N., Ouyang, L., Wu, J., Ziegler, D., Lowe, R., Voss, C., ... & Christiano, P. F. (2020). Learning to summarize with human feedback. Advances in neural information processing systems, 33, 3008-3021.</a>
+		Source: <a href="https://proceedings.neurips.cc/paper_files/paper/2020/file/1f89885d556929e98d3ef9b86448f951-Paper.pdf" target="_blank">Stiennon, N., Ouyang, L., Wu, J., Ziegler, D., Lowe, R., Voss, C., ... & Christiano, P. F. (2020). Learning to summarize with human feedback. Advances in neural information processing systems, 33, 3008-3021.</a>
 	</figcaption>
 
 	<aside class="notes">
@@ -495,11 +500,12 @@ Also, it has been used in 2020 to train models to summarize text with human feed
 
 <!-- Slide: RLHF (Application to LLMs) -->
 <section>
-	<h3>RLHF - Application to LLMs</h3>
+	<h3>RLHF</h3>
+	<h4>Application to LLMs</h4>
 
-	<img width="85%" src="assets/rl_llm/rlhf_instruct_gpt.png" />
+	<img width="76%" src="assets/rl_llm/rlhf_instruct_gpt.png" />
 	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
-		Source: <a href="https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf">Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., ... & Lowe, R. (2022). Training language models to follow instructions with human feedback. Advances in neural information processing systems, 35, 27730-27744.</a>
+		Source: <a href="https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf" target="_blank">Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., ... & Lowe, R. (2022). Training language models to follow instructions with human feedback. Advances in neural information processing systems, 35, 27730-27744.</a>
 	</figcaption>
 
 	<aside class="notes">
@@ -522,7 +528,7 @@ and the direct predecessor of ChatGPT.
 
 	<img width="60%" src="assets/rl_llm/rlhf_instruct_gpt_results.png" />
 	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
-		Source: <a href="https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf">Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., ... & Lowe, R. (2022). Training language models to follow instructions with human feedback. Advances in neural information processing systems, 35, 27730-27744.</a>
+		Source: <a href="https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf" target="_blank">Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., ... & Lowe, R. (2022). Training language models to follow instructions with human feedback. Advances in neural information processing systems, 35, 27730-27744.</a>
 	</figcaption>
 
 	<aside class="notes">
@@ -588,25 +594,24 @@ training can be unstable, and
 	<h3>RLHF</h3>
 	<h4>References</h4>
 
-	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>References:</b></p>
 	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
 		<li>
 			<a href="https://proceedings.neurips.cc/paper_files/paper/2017/file/d5e2c0adad503c91f91df240d0cd4e49-Paper.pdf" target="_blank">
 				Christiano, P. F., Leike, J., Brown, T., Martic, M., Legg, S., & Amodei, D. (2017). Deep reinforcement learning from human preferences. Advances in neural information processing systems, 30.
 			</a>
-			(<a href="https://openai.com/index/learning-from-human-preferences/">OpenAI blog</a>)
+			(<a href="https://openai.com/index/learning-from-human-preferences/" target="_blank">OpenAI blog</a>)
 		</li>
 		<li>
 			<a href="https://proceedings.neurips.cc/paper_files/paper/2020/file/1f89885d556929e98d3ef9b86448f951-Paper.pdf" target="_blank">
 				Stiennon, N., Ouyang, L., Wu, J., Ziegler, D., Lowe, R., Voss, C., ... & Christiano, P. F. (2020). Learning to summarize with human feedback. Advances in neural information processing systems, 33, 3008-3021.
 			</a>
-			(<a href="https://openai.com/index/learning-to-summarize-with-human-feedback/">OpenAI blog</a>)
+			(<a href="https://openai.com/index/learning-to-summarize-with-human-feedback/" target="_blank">OpenAI blog</a>)
 		</li>
 		<li>
 			<a href="https://proceedings.neurips.cc/paper_files/paper/2022/file/b1efde53be364a73914f58805a001731-Paper-Conference.pdf" target="_blank">
 				Ouyang, L., Wu, J., Jiang, X., Almeida, D., Wainwright, C., Mishkin, P., ... & Lowe, R. (2022). Training language models to follow instructions with human feedback. Advances in neural information processing systems, 35, 27730-27744.
 			</a>
-			(<a href="https://openai.com/fr-FR/index/instruction-following/">OpenAI blog</a>)
+			(<a href="https://openai.com/fr-FR/index/instruction-following/" target="_blank">OpenAI blog</a>)
 		</li>
 	</ul>
 
@@ -624,12 +629,12 @@ training can be unstable, and
 <section data-transition="none">
 	<h3>Overview</h3>
 
-	<img width="90%" src="assets/rl_llm/llm_finetuning_6.png" />
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+	<img width="80%" src="assets/rl_llm/llm_finetuning_6.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
 		Source: Julia Turc
 	</figcaption>
 
-	<p style="font-size: 0.5em;">
+	<p style="font-size: 0.5em; height: 2.6em;">
 		RLHF/DPO produced a model more aligned with human preferences.<br>
 		But a third stage of fine-tuning can be applied to <b>improve reasoning skills</b>.
 	</p>
@@ -651,14 +656,14 @@ But a third stage of fine-tuning can be applied to <b>improve reasoning skills</
 <section data-transition="none">
 	<h3>Overview</h3>
 
-	<img width="90%" src="assets/rl_llm/llm_finetuning_7.png" />
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+	<img width="80%" src="assets/rl_llm/llm_finetuning_7.png" />
+	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
 		Source: Julia Turc
 	</figcaption>
 
-	<p style="font-size: 0.5em;">
+	<p style="font-size: 0.5em; height: 2.6em;">
 		This was popularized by the open-source model DeepSeek-R1 in January 2025 with the <b>GRPO</b> algorithm
-		within the <b>Reinforcement Learning from Verifiable Rewards (RLVR)</b> framework.
+		within the <b>Reinforcement Learning with Verifiable Rewards (RLVR)</b> framework.
 	</p>
 
 	<aside class="notes">
@@ -670,7 +675,7 @@ DeepSeek-R1
 in January 2025.
 
 DeepSeek-R1 applies the <b>Group Relative Policy Optimization</b> algorithm (or GRPO)
-within the <b>Reinforcement Learning from Verifiable Rewards (RLVR)</b> framework
+within the <b>Reinforcement Learning with Verifiable Rewards (RLVR)</b> framework
 to especially enhance reasoning capabilities
 in LLMs.
 		</div>
@@ -757,11 +762,11 @@ and only its last RL stage also aligns the model with human preferences (helpful
 
 <!-- Slide: Reasoning-based fine-tuning (context - DeepSeek) -->
 <section>
-	<h3>Reinforcement Learning with Verifiable Rewards</h3>
-	<!-- <h4>What is RLVR?</h4> -->
+	<h3>RLVR</h3>
+	<h4 style="font-size: 0.9em;">Reinforcement Learning with Verifiable Rewards</h4>
 
-	<img width="60%" src="assets/rl_llm/rlvr.png" />
-	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+	<img width="55%" src="assets/rl_llm/rlvr.png" />
+	<figcaption style="font-size: 0.3em; text-align: center;">
 		Source: Julia Turc
 	</figcaption>
 
@@ -810,8 +815,8 @@ it is only given at the end of the generation (all intermediate rewards are 0).
 		<h3>Reasoning-based fine-tuning</h3>
 		<h4>Group Relative Policy Optimization (GRPO)</h4>
 
-		<img width="100%" src="assets/rl_llm/grpo_7.png" />
-		<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		<img width="90%" src="assets/rl_llm/grpo_7.png" />
+		<figcaption style="font-size: 0.3em; text-align: center;">
 			Source: Julia Turc
 		</figcaption>
 	
@@ -864,8 +869,8 @@ is added directly to the loss, instead of being subtracted from the reward as in
 		<h3>Reasoning-based fine-tuning</h3>
 		<h4>GRPO</h4>
 
-		<img width="100%" src="assets/rl_llm/grpo_1.png" />
-		<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		<img width="90%" src="assets/rl_llm/grpo_1.png" />
+		<figcaption style="font-size: 0.3em; text-align: center;">
 			Source: Julia Turc
 		</figcaption>
 	
@@ -884,8 +889,8 @@ is added directly to the loss, instead of being subtracted from the reward as in
 		<h3>Reasoning-based fine-tuning</h3>
 		<h4>GRPO</h4>
 
-		<img width="100%" src="assets/rl_llm/grpo_2.png" />
-		<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 3em;">
+		<img width="90%" src="assets/rl_llm/grpo_2.png" style="aspect-ratio: 1358 / 670; object-fit: cover; object-position: bottom;" />
+		<figcaption style="font-size: 0.3em; text-align: center;">
 			Source: Julia Turc
 		</figcaption>
 	
@@ -904,7 +909,7 @@ is added directly to the loss, instead of being subtracted from the reward as in
 		<h3>Reasoning-based fine-tuning</h3>
 		<h4>GRPO</h4>
 
-		<p style="font-size: 0.5em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;">
+		<p style="font-size: 0.5em; margin-top: 1em; margin-bottom: 0em;">
 		$$
 		\theta \leftarrow \theta + \alpha \sum_{t=0}^{T-1} \nabla_{\theta} \log \pi_{\theta}(a_t \mid s_t) \cdot \bigl(G_t - b(s_t)\bigr)
 		$$
@@ -964,9 +969,9 @@ is added directly to the loss, instead of being subtracted from the reward as in
 	<h3>DeepSeek-R1-Zero</h3>
 	<h4>Results</h4>
 
-	<img width="60%" src="assets/rl_llm/deepseek_r1_zero_results.png" />
+	<img width="50%" src="assets/rl_llm/deepseek_r1_zero_results.png" />
 	<figcaption style="font-size: 0.3em; text-align: center; margin-bottom: 1em;">
-		Source: <a href="https://arxiv.org/pdf/2501.12948">Guo, D., Yang, D., Zhang, H., Song, J., Zhang, R., Xu, R., ... & He, Y. (2025). Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948.</a>
+		Source: <a href="https://arxiv.org/pdf/2501.12948" target="_blank">Guo, D., Yang, D., Zhang, H., Song, J., Zhang, R., Xu, R., ... & He, Y. (2025). Deepseek-r1: Incentivizing reasoning capability in llms via reinforcement learning. arXiv preprint arXiv:2501.12948.</a>
 	</figcaption>
 
 	<aside class="notes">
@@ -992,7 +997,6 @@ This result highlights the potential of RL-based methods for enhancing reasoning
 	<h3>GRPO / DeepSeek-R1</h3>
 	<h4>References</h4>
 
-	<p style="font-size: 0.65em; margin-top: 1em; text-align: left; margin-bottom: 0em; margin-left: 1em;"><b>References:</b></p>
 	<ul style="font-size: 0.65em; padding-left: 1em; display: block; margin-left: 1em;">
 		<li>
 			<a href="https://arxiv.org/pdf/2402.03300" target="_blank">
@@ -1018,7 +1022,7 @@ This result highlights the potential of RL-based methods for enhancing reasoning
 
 <!-- Slide: Hugging Face TRL -->
 <section>
-	<h3>Practical opensource implementations</h3>
+	<h3 style="font-size: 1.1em;">Practical open-source implementations</h3>
 	<h4>🤗 Hugging Face TRL</h4>
 				
 	<img width="100%" src="assets/rl_llm/trl_banner_dark.png" />
@@ -1035,7 +1039,7 @@ This result highlights the potential of RL-based methods for enhancing reasoning
 
 <!-- Slide: HuggingFace Open-R1 -->
 <section>
-	<h3>Practical opensource implementations</h3>
+	<h3 style="font-size: 1.1em;">Practical open-source implementations</h3>
 	<h4>🤗 Hugging Face TRL</h4>
 
 	<p style="font-size: 0.7em;">
@@ -1044,7 +1048,7 @@ This result highlights the potential of RL-based methods for enhancing reasoning
 		<b>Direct Preference Optimization (DPO)</b>,
 		Reward Modeling, and more.
 		The library is integrated with 🤗 transformers."<br>
-		<a href="https://huggingface.co/docs/trl/en/index">https://huggingface.co/docs/trl/</a>
+		<a href="https://huggingface.co/docs/trl/en/index" target="_blank">https://huggingface.co/docs/trl/</a>
 	</p>
 
 	<aside class="notes">
@@ -1059,12 +1063,12 @@ This result highlights the potential of RL-based methods for enhancing reasoning
 
 <!-- Slide: Practical opensource implementations -->
 <section>
-	<h3>Practical opensource implementations</h3>
+	<h3 style="font-size: 1.1em;">Practical open-source implementations</h3>
 				
 	<img width="70%" src="assets/rl_llm/open_r1.png" />
 
 	<p style="font-size: 0.7em;">
-		<a href="https://huggingface.co/blog/open-r1">https://huggingface.co/blog/open-r1</a>
+		<a href="https://huggingface.co/blog/open-r1" target="_blank">https://huggingface.co/blog/open-r1</a>
 	</p>
 
 	<aside class="notes">
