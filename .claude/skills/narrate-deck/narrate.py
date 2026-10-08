@@ -37,6 +37,7 @@ WORDS_PER_MINUTE = 150  # af_heart at speed 1.0, for the --dry-run estimate
 # syntax "[word](/phonemes/)". By default all-caps words are spelled out letter by letter.
 RESPELL: dict[str, str] = {
     # r'\bHIRO\b': '[HIRO](/hˈɪɹO/)',
+    r'\bHIerarchical\b': 'Hierarchical',  # acronym-style capitals, otherwise read "H ierarchical"
 }
 
 # Things a TTS reads badly or not at all: the notes should be fixed, not the script.
