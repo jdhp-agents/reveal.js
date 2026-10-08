@@ -104,6 +104,22 @@ Attention aux `<svg>` dans les conteneurs flex `r-hstack`/`r-vstack` : la règle
 `<svg>` ne rétrécit pas comme une image — donner directement la taille voulue via les
 attributs `width`/`height`.
 
+## Slides « pas à pas » à nombre de clics calculé : `frame_steps.js` (deck MCTS)
+
+Quand une figure enchaîne beaucoup d'étapes (le deck `rl_mcts.html` déroule MCTS ligne de
+pseudo-code par ligne de pseudo-code, ~30 clics par slide), dupliquer le HTML des fragments
+comme dans la slide CEM « At each iteration » devient impraticable. Le pattern retenu
+(détails dans [`assets/rl_mcts/README.md`](assets/rl_mcts/README.md)) :
+
+- la liste des frames reste dans l'attribut `data-frames` de la figure (un jeton par clic) ;
+- un **script classique** `assets/rl_mcts/frame_steps.js`, placé dans la `<section>`, crée
+  un fragment vide par jeton. S'exécutant pendant l'analyse de la page, donc avant
+  `Reveal.initialize()`, ces fragments sont vus par reveal.js comme s'ils étaient écrits à
+  la main (navigation arrière, URL `#/<id>/<fragment>`, vue présentateur) — un module
+  `type="module"` arriverait trop tard ;
+- le module de la figure surligne lui-même les lignes du pseudo-code (`data-ln`), d'après la
+  frame courante (= plus grand `data-fragment-index` visible, sans état interne).
+
 ## En développement : aucun build
 
 `npm start` sert le repo tel quel et **le dev server Vite transpile les `.ts` à la volée**
