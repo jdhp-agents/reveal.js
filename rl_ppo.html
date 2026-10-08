@@ -4,9 +4,9 @@
 	<head>
 		<meta charset="utf-8">
 
-		<title>Monte Carlo Tree Search</title>
+		<title>Proximal Policy Optimization</title>
 
-		<meta name="description" content="Monte Carlo Tree Search">
+		<meta name="description" content="Proximal Policy Optimization (PPO): from TD actor-critic to PPO, one ingredient at a time">
 		<meta name="author" content="Jérémie Decock">
 
 		<meta name="apple-mobile-web-app-capable" content="yes">
@@ -39,37 +39,32 @@
 
 				<!-- Slide: Titre -->
 				<section>
-					<h1 style="font-size: 1.4em;">Monte Carlo Tree Search</h1>
-					<br>
+					<h1 style="font-size: 1.4em;">Proximal Policy Optimization</h1>
+					<p style="font-size: 0.9em; color: #666;">From TD Actor-Critic to PPO, one ingredient at a time</p>
 					<br>
 					<p style="font-size: 1em;"><small><a href="https://www.jdhp.org/">Jérémie Decock</a></small></p>
 					<p style="font-size: 1em;"><small>October 8, 2026</small></p>
 
-					<!-- Macros definition -->
-					$$
-					\newcommand{\vs}[1]{\boldsymbol{#1}} % vector symbol (\boldsymbol, \textbf or \vec)
-					\newcommand{\ms}[1]{\boldsymbol{#1}} % matrix symbol (\boldsymbol, \textbf)
-					$$
-
 					<aside class="notes">
-						<div class="fr-notes"></div>
+						<div class="fr-notes">
+Aujourd'hui : PPO, l'algorithme de gradient de politique le plus utilisé (robotique, jeux, RLHF des LLM). On le construit pas à pas à partir de TD actor-critic, en ajoutant un ingrédient à la fois.
+						</div>
 						<div class="en-notes">
 Hello everyone.
-Today, we are going to talk about <b style="color:red">Monte Carlo Tree Search</b>, or MCTS.
-It is the planning algorithm behind <b style="color:red">AlphaGo</b> and AlphaZero.
-The idea is simple.
-To choose an action, we <b style="color:red">simulate</b> many possible futures.
-And we spend more time on the <b style="color:red">most promising</b> ones.
-We will run it step by step on two small examples, to see exactly what each line of the algorithm does.
+Today, we are going to study <b style="color:red">Proximal Policy Optimization</b>, or PPO.
+It is probably the most widely used <b style="color:red">policy gradient</b> algorithm today.
+It trains robots, it plays video games, and it was used to fine-tune ChatGPT.
+You already know <b style="color:red">TD actor-critic</b>.
+So we will start from there, and add <b style="color:red">one ingredient at a time</b>, until we get PPO.
 						</div>
 					</aside>
 				</section>
 
 				<!-- ------------------------------------------------------ -->
-				<!-- MONTE CARLO TREE SEARCH ------------------------------ -->
+				<!-- PROXIMAL POLICY OPTIMIZATION ------------------------- -->
 				<!-- ------------------------------------------------------ -->
 
-				<!-- @include decks/rl_mcts/rl_mcts.html -->
+				<!-- @include decks/rl_ppo/rl_ppo.html -->
 
 			</div>
 
@@ -121,7 +116,20 @@ We will run it step by step on two small examples, to see exactly what each line
 					TeX: {
 						Macros: {
 							R: '\\mathbb{R}',
-							set: ['\\left\\{#1 \\; ; \\; #2\\right\\}', 2]
+							set: ['\\left\\{#1 \\; ; \\; #2\\right\\}', 2],
+							E: '\\mathbb{E}',
+							Ehat: '\\hat{\\mathbb{E}}',
+							bth: '\\boldsymbol{\\theta}',
+							thold: '\\boldsymbol{\\theta}_{\\text{old}}',
+							bw: '\\mathbf{w}',
+							vhat: '\\hat{v}',
+							Adv: '\\mathrm{Adv}',
+							hAdv: '\\widehat{\\mathrm{Adv}}',
+							clip: '\\operatorname{clip}',
+							KL: '\\mathrm{KL}',
+							Lcpi: 'L^{\\text{CPI}}',
+							Lclip: 'L^{\\text{CLIP}}',
+							Vtarg: 'V^{\\text{targ}}'
 						}
 					}
 				},

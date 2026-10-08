@@ -61,7 +61,7 @@ for (const el of document.querySelectorAll<SVGSVGElement>('svg.ucb-bandit')) {
 				label: `arm ${a + 1}`, mean: st.mean[a], bonus: 0, N: st.N[a], chosen: a === t, truth: m,
 			}));
 			drawUcbPanel(g as unknown as G, W, H - 10, bars, {
-				yMax: 3, fontSize: 14, title: t === 0 ? 'Before any pull: true means unknown (dashed red)' : `t = ${t}: pull each arm once first`,
+				yMax: 3, fontSize: 17, title: t === 0 ? 'Before any pull: true means unknown (dashed red)' : `t = ${t}: pull each arm once first`,
 			});
 			return;
 		}
@@ -73,7 +73,7 @@ for (const el of document.querySelectorAll<SVGSVGElement>('svg.ucb-bandit')) {
 		// Échelle adaptée au tour t : les bonus fondent quand les N_a grandissent.
 		const yMax = Math.max(1, ...bars.map(b => b.mean + b.bonus)) * 1.12;
 		drawUcbPanel(g as unknown as G, W, H - 10, bars, {
-			yMax, fontSize: 14, title: `t = ${t}: next pull → arm ${chosen + 1}`,
+			yMax, fontSize: 17, title: `t = ${t}: next pull → arm ${chosen + 1}`,
 		});
 	});
 }

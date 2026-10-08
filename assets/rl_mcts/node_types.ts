@@ -32,8 +32,8 @@ function note(g: G, x: number, y: number, lines: string[], color: string = COLOR
 /** Arbre stochastique : s₀ → actions → issues (avec probabilités). */
 function drawStochastic(g: G, notes: G): void {
 	const T = 40;
-	const root: [number, number] = [150, 40];
-	const acts: { a: Action; x: number }[] = [{ a: 0, x: 62 }, { a: 1, x: 250 }];
+	const root: [number, number] = [166, 40];
+	const acts: { a: Action; x: number }[] = [{ a: 0, x: 76 }, { a: 1, x: 262 }];
 	const ay = 125, sy = 215;
 	for (const { a, x } of acts) {
 		edge(g, root[0], root[1], x, ay);
@@ -41,7 +41,8 @@ function drawStochastic(g: G, notes: G): void {
 		outs.forEach(([next, p], i) => {
 			const sx = x + (i - (outs.length - 1) / 2) * 54;
 			edge(g, x, ay, sx, sy);
-			g.append('text').attr('x', (x + sx) / 2 + (sx < x ? -4 : sx > x ? 4 : -4)).attr('y', (ay + sy) / 2 + 2)
+			// (étiquette aux 3/5 de l'arête, là où les arêtes sœurs sont assez écartées)
+			g.append('text').attr('x', x + (sx - x) * 0.6 + (sx > x ? 4 : -4)).attr('y', ay + (sy - ay) * 0.6 + 2)
 				.attr('text-anchor', sx <= x ? 'end' : 'start')
 				.attr('font-size', 12).attr('fill', COLORS.muted).text(fraction(p));
 			drawLakeThumb(g.append('g').attr('transform', `translate(${sx},${sy})`) as unknown as G, env, next, T);
@@ -55,9 +56,9 @@ function drawStochastic(g: G, notes: G): void {
 		g.append('text').attr('x', x).attr('y', ay).attr('dy', '0.36em').attr('text-anchor', 'middle')
 			.attr('font-size', 19).attr('font-weight', 'bold').text(ACTION_ARROWS[a]);
 	}
-	note(notes, 200, 30, ['state node v (decision)', 'the agent chooses a — stores N(v)'], COLORS.ink);
-	note(notes, 278, 120, ['action node (v, a) (chance)', 'the simulator draws s′ ~ P(·|s, a)', 'stores N(v, a), Q(v, a)'], COLORS.blue);
-	note(notes, 156, 282, ['2 of the 4 actions shown; each action node has', 'up to 3 children, one per sampled outcome s′'], COLORS.muted, 'middle');
+	note(notes, 216, 30, ['state node v (decision)', 'the agent chooses a — stores N(v)'], COLORS.ink);
+	note(notes, 288, 120, ['action node (v, a) (chance)', 'the simulator draws s′ ~ P(·|s, a)', 'stores N(v, a), Q(v, a)'], COLORS.blue);
+	note(notes, 168, 282, ['2 of the 4 actions shown; each action node has', 'up to 3 children, one per sampled outcome s′'], COLORS.muted, 'middle');
 }
 
 /** Arbre déterministe : position → positions suivantes (un coup par arête), deux niveaux. */
@@ -75,12 +76,12 @@ function drawDeterministic(g: G, notes: G): void {
 	g.append('text').attr('x', 386).attr('y', cy - 20).attr('font-size', 16).attr('fill', COLORS.muted).text('…');
 	// Deux réponses de X sous le premier fils : les joueurs alternent.
 	const first = ttt.play(rootBoard, children[0].m);
-	const replies = [2, 6].map((m, i) => ({ m, x: 10 + i * 100 }));
+	const replies = [2, 6].map((m, i) => ({ m, x: 30 + i * 100 }));
 	// (arêtes partant sous l'étiquette du coup, pour ne pas la barrer)
 	const fromY = cy + B / 2 + 20;
 	for (const { x } of replies) edge(g, children[0].x, fromY, x, gy - B / 2);
-	edge(g, children[0].x, fromY, 150, gy - 20, true);
-	g.append('text').attr('x', 154).attr('y', gy - 16).attr('font-size', 16).attr('fill', COLORS.muted).text('…');
+	edge(g, children[0].x, fromY, 170, gy - 20, true);
+	g.append('text').attr('x', 174).attr('y', gy - 16).attr('font-size', 16).attr('fill', COLORS.muted).text('…');
 
 	drawBoard(g.append('g').attr('transform', `translate(${root[0]},${root[1]})`) as unknown as G, rootBoard, B + 4);
 	for (const { m, x } of children) {

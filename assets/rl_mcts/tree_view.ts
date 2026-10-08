@@ -98,7 +98,7 @@ export class TreeView<T> {
 		linkEnter.append('line').attr('class', 'halo').attr('stroke', COLORS.highlight)
 			.attr('stroke-width', 7).attr('stroke-linecap', 'round').attr('opacity', 0);
 		linkEnter.append('line').attr('class', 'base').attr('stroke', COLORS.edge).attr('stroke-width', 1.3);
-		linkEnter.append('text').attr('class', 'link-label').attr('font-size', 9.5)
+		linkEnter.append('text').attr('class', 'link-label').attr('font-size', 10.5)
 			.attr('fill', COLORS.muted).attr('text-anchor', 'end').attr('dy', '0.35em');
 		linkEnter.each(function (d) {
 			const [px, py] = parentPos(d);

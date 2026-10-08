@@ -134,9 +134,10 @@
 						<div class="fr-notes"></div>
 						<div class="en-notes">
 Hello everyone, and welcome to this third lecture.
+
 Today, we are going to look at two <b style="color:red">advanced topics</b> in reinforcement learning.
-Both are very active research areas.
-And both are already used in <b style="color:red">real systems</b> today.
+
+Both are active research domains.
 						</div>
 					</aside>
 				</section>
@@ -154,16 +155,18 @@ And both are already used in <b style="color:red">real systems</b> today.
 						<div class="fr-notes"></div>
 						<div class="en-notes">
 So, here is the plan for today.
-Two parts.
 
-First, <b style="color:red">hierarchical reinforcement learning</b>.
-How can an agent solve long and complex tasks, by breaking them into smaller subtasks?
+We will cover two parts.
 
-Second, <b style="color:red">reinforcement learning and LLMs</b>.
-How is RL used to train large language models, like ChatGPT or DeepSeek-R1?
+<span style="color:blue">The first one, is about <b>hierarchical reinforcement learning</b>.</span>
+We will see how an agent can solve long and complex tasks, by breaking them into smaller subtasks.
+
+<span style="color:blue">The second part, is about <b>reinforcement learning and LLMs</b>.</span>
+Here we will see how RL is used to train large language models, like ChatGPT or DeepSeek-R1.
 
 As usual, my goal is to give you an <b style="color:red">overview</b>.
-For each method, I'll focus on the <b style="color:red">main idea</b>, and on what it brings in practice.
+For each method, I'll focus on the <b style="color:red">main idea</b>,
+and on what it brings in practice.
 						</div>
 					</aside>
 				</section>
@@ -182,9 +185,10 @@ For each method, I'll focus on the <b style="color:red">main idea</b>, and on wh
 						<div class="fr-notes"></div>
 						<div class="en-notes">
 So, let's start with the first part: <b style="color:red">hierarchical RL</b>.
-The question is simple.
-So far, our agents choose one small action at each time step.
-How can they plan over <b style="color:red">long horizons</b>, like we humans do?
+
+Until now, our agents have picked one low-level action per time step.
+Humans, by contrast, plan over <b style="color:red">long horizons</b>.
+How can agents do the same?
 						</div>
 					</aside>
 				</section>

@@ -147,7 +147,7 @@ The result is an <b style="color:red">instruction-tuned model</b>.
 Now it can <b style="color:red">follow instructions</b>, answer questions, and chat more naturally.
 Ask it "What ice cream should I get?", and it gives a real answer: "Vanilla is the best flavor in the world."
 
-But it may still generate outputs that are <b style="color:red">misaligned with human preferences</b>.
+<span style="color:blue">But it may still generate outputs that are <b style="color:red">misaligned with human preferences</b>.</span>
 Answers that are correct, but not the ones people prefer.
 Or answers that are unhelpful, wrong, or even <b style="color:red">harmful</b>.
 And SFT alone can't easily fix this, as we'll see.
@@ -749,10 +749,10 @@ Each one also has a blog post from OpenAI, a good place to start.
 		</div>
 		<div class="en-notes">
 OK, so RLHF, or DPO, gives us a <b style="color:red">preference-tuned model</b>.
-A model more <b style="color:red">aligned with human preferences</b>.
+<span style="color:blue">A model more <b style="color:red">aligned with human preferences</b>.</span>
 
 But we can go one step further.
-A third stage of fine-tuning can be applied, to <b style="color:red">improve reasoning skills</b>.
+<span style="color:blue">A third stage of fine-tuning can be applied, to <b style="color:red">improve reasoning skills</b>.</span>
 Look at the example on the right: a small math problem about the energy of an ice cream.
 The model must <b style="color:red">reason step by step</b>, and compute the answer: 300 kilocalories.
 		</div>
@@ -1251,7 +1251,7 @@ It implements most of the methods we saw today.
 <b style="color:red">SFT</b>, for supervised fine-tuning.
 <b style="color:red">DPO</b>, for preference fine-tuning without RL.
 <b style="color:red">GRPO</b>, for RL with verifiable rewards.
-And reward modeling, and more.
+<span style="color:blue">And reward modeling, and more.</span>
 
 It's built on top of the Hugging Face <b style="color:red">transformers</b> library.
 So you can fine-tune most open models with a few lines of Python.

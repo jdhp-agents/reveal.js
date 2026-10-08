@@ -109,7 +109,7 @@ for (const el of document.querySelectorAll<SVGSVGElement>('svg.fl-overview')) {
 		});
 		const qTop = 22 + 4 * rowH + 36;
 		const qX = d3.scaleLinear().domain([0, 0.5]).range([40, SW]);
-		statsG.append('text').attr('x', 0).attr('y', qTop - 12).attr('font-size', 15).attr('font-weight', 'bold')
+		statsG.append('text').attr('x', 0).attr('y', qTop - 17).attr('font-size', 15).attr('font-weight', 'bold')
 			.attr('fill', COLORS.ink).text('Q(s₀, a) estimate vs exact Q*');
 		rootActions.forEach((a, i) => {
 			const st = a.hist.at(n), y = qTop + i * rowH;

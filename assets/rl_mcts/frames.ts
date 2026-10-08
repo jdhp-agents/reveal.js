@@ -94,6 +94,11 @@ const CSS = `
 .mcts-code .i3 { padding-left: 3.6em; }
 svg.mcts-fig { font-family: "Source Sans Pro", Helvetica, sans-serif; overflow: visible; }
 svg.mcts-fig text { user-select: none; }
+/* étiquettes des arbres (N, Q, W/N, probabilités) : liseré blanc pour que les
+   arêtes qui passent dessous ne les barrent pas */
+svg.mcts-fig .tree-nodes text, svg.mcts-fig text.link-label {
+	paint-order: stroke; stroke: #fff; stroke-width: 3px; stroke-linejoin: round;
+}
 .mcts-slider { width: 100%; accent-color: #4aa3df; }
 `;
 

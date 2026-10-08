@@ -38,6 +38,9 @@ WORDS_PER_MINUTE = 150  # af_heart at speed 1.0, for the --dry-run estimate
 RESPELL: dict[str, str] = {
     # r'\bHIRO\b': '[HIRO](/hˈɪɹO/)',
     r'\bHIerarchical\b': 'Hierarchical',  # acronym-style capitals, otherwise read "H ierarchical"
+    r'\bUP\b': 'Up',  # action names in capitals, otherwise spelled "U P", "D O W N"
+    r'\bDOWN\b': 'Down',
+    r'\bv, a\b': 'v, [a](/ˈA/)',  # the variable a (state-action pair), otherwise read as the article
 }
 
 # Things a TTS reads badly or not at all: the notes should be fixed, not the script.

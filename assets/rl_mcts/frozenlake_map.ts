@@ -38,9 +38,15 @@ for (const el of document.querySelectorAll<SVGSVGElement>('svg.frozenlake-map'))
 			// Direction voulue : large bande grise sous les issues.
 			ov.append('line').attr('x1', ax).attr('y1', ay).attr('x2', ax + (ix - ax) * 0.8).attr('y2', ay + (iy - ay) * 0.8)
 				.attr('stroke', '#888').attr('stroke-width', 22).attr('stroke-linecap', 'round').attr('opacity', 0.22);
-			ov.append('text').attr('x', ax + (ix - ax) * 0.5 + (iy !== ay ? 16 : 0)).attr('y', ay + (iy - ay) * 0.5 + (ix !== ax ? -16 : 0))
-				.attr('text-anchor', iy !== ay ? 'start' : 'middle').attr('font-size', 13).attr('font-style', 'italic')
-				.attr('fill', '#666').text('intended');
+			// Les étiquettes sont placées DANS la case d'arrivée, à l'écart de son
+			// numéro (coin haut-gauche), de sa lettre H/G (centre) et de la flèche.
+			const vertical = ix === ax;
+			const intendedHole = env.cell(intended) === 'H';
+			ov.append('text')
+				.attr('x', vertical ? ix + 6 : ix - 14).attr('y', vertical ? iy + Math.sign(iy - ay) * 20 : iy - 22)
+				.attr('dy', '0.35em').attr('text-anchor', vertical ? 'middle' : 'start')
+				.attr('font-size', 13).attr('font-style', 'italic')
+				.attr('fill', intendedHole ? '#ddd' : '#666').text('intended');
 			const agg = env.transition(s0, a as Action);
 			for (const [next, p] of agg) {
 				const [x, y] = center(next);
@@ -49,9 +55,9 @@ for (const el of document.querySelectorAll<SVGSVGElement>('svg.frozenlake-map'))
 					.attr('x2', x - dx / len * 16).attr('y2', y - dy / len * 16)
 					.attr('stroke', COLORS.red).attr('stroke-width', 3).attr('stroke-dasharray', '6 3').attr('marker-end', red);
 				const hole = env.cell(next) === 'H';
-				// Étiquette à côté de la pointe, décalée perpendiculairement à la flèche.
-				const px = -dy / len * 22, py = dx / len * 22;
-				ov.append('text').attr('x', x - dx / len * 26 + px).attr('y', y - dy / len * 26 + py).attr('dy', '0.35em')
+				// Probabilité : à droite de la pointe (flèche verticale) ou sous le
+				// centre de la case (flèche horizontale).
+				ov.append('text').attr('x', dx === 0 ? x + 25 : x).attr('y', dx === 0 ? y : y + 25).attr('dy', '0.35em')
 					.attr('text-anchor', 'middle')
 					.attr('font-size', 17).attr('font-weight', 'bold').attr('fill', hole ? '#fff' : COLORS.red)
 					.text(fraction(p));
@@ -59,7 +65,7 @@ for (const el of document.querySelectorAll<SVGSVGElement>('svg.frozenlake-map'))
 			const holes = outs.filter(o => env.cell(o.next) === 'H').length;
 			caption.text(`${ACTION_NAMES[a]} from s = ${s0}: ${holes ? `${fraction(holes / 3)} chance to fall into a hole` : 'can never fall into a hole'}`);
 		} else {
-			caption.text(`Agent at s₀ = ${s0}: reach G (+1) without falling into a hole H`);
+			caption.text(`Agent at s₀ = ${s0}: reach G, avoid the holes H`);
 		}
 		ov.append('circle').attr('cx', ax).attr('cy', ay).attr('r', 13).attr('fill', COLORS.red)
 			.attr('stroke', '#fff').attr('stroke-width', 2);

@@ -1,6 +1,6 @@
 ---
 name: speaker-notes
-description: Use when asked to write, complete, improve or review the speaker notes of a personal deck (notes présentateur, `<div class="en-notes">` / `.fr-notes`, "ce que je dois dire à l'oral") — e.g. "complète les notes présentateur de csc-53439-ep_lecture-2_2026.html". Turns every slide's notes into a spoken script that can be read aloud as is, with red keywords as the narrative thread, fragment cues, and a length that fits one HD screen in the speaker view.
+description: Use when asked to write, complete, improve or review the speaker notes of a personal deck (notes présentateur, `<div class="en-notes">` / `.fr-notes`, "ce que je dois dire à l'oral") — e.g. "complète les notes présentateur de csc-53439-ep_lecture-2_2026.html". Turns every slide's notes into a spoken script that can be read aloud as is, with red keywords as the narrative thread, blue for the sentences also written on the slide, fragment cues, and a length that fits one HD screen in the speaker view.
 ---
 
 # Writing the speaker notes of a personal deck
@@ -43,11 +43,32 @@ Notes must describe what is *on screen*, so look at everything first:
 ## 2. Style: spoken, simple, rhythmic
 
 - **One sentence per line.** Short sentences (≈ 8–15 words), simple everyday words, the
-  rhythm of speech. Prefer two sentences to a long one with commas. Don't split a sentence
-  over several lines.
+  rhythm of speech. Prefer two sentences to a long one with commas. A slightly longer
+  sentence may be split at a natural pause (before "and", "but", "because", "so", "which",
+  or after a comma): one breath group per line, never a break inside a group of words.
+- **Flow: link the sentences, no staccato.** The script must sound like someone explaining,
+  not like bullet points read one after the other. Each sentence follows from the previous
+  one, with a simple connector — "so", "but", "and then", "because", "that's why", "this
+  means that", "in other words", "for example", "by contrast", "until now", "here", "this
+  time", "as a result" — or with words that point back ("this problem", "the same", "it").
+  Each paragraph opens with a transition from the previous one. Write complete sentences
+  with a verb: no telegraphic fragments like "Two parts.", "The question is simple.",
+  "First, sample efficiency." or "One cell at a time.". Vary the connectors (not "So," on
+  every line), and keep the sentences short: the connector removes the abrupt break, it
+  must not make the sentence long. Rhetorical questions to the audience are welcome when
+  they are introduced and answered ("So, how can agents do the same?").
+  Example — instead of "So, here is the plan for today. / Two parts. / First, hierarchical
+  reinforcement learning. / How can an agent solve long and complex tasks, by breaking them
+  into smaller subtasks?", write "So, here is the plan for today. / We will cover two
+  parts. / The first one is about hierarchical reinforcement learning. / We will see how an
+  agent can solve long and complex tasks, by breaking them into smaller subtasks."
+  And instead of "The question is simple. / So far, our agents choose one small action at
+  each time step. / How can they plan over long horizons, like we humans do?", write
+  "Until now, our agents have picked one low-level action per time step. / Humans, by
+  contrast, plan over long horizons. / How can agents do the same?"
 - Sound improvised, not read: natural openers where they fit — "So,", "Well,", "OK,",
-  "Now,", "Look at...", "Why does it work?", "And here is the key point." Questions to the
-  audience, then the answer. Don't overdo it (one or two per slide).
+  "Now,", "Look at...", "Why does it work?", "And here is the key point." — and questions to
+  the audience, followed by the answer.
 - Simple English a French speaker reads comfortably: avoid rare idioms and tongue-twisters.
 - **No LaTeX, no markdown, no lists** (the speaker view doesn't render them): say formulas the
   way they are spoken — "Z of s, a", "gamma", "Q star", "one over the square root of N",
@@ -67,11 +88,31 @@ and before `</div>` as in the rest of the file — `jdhp.js` trims them in the s
   rephrased stays black. About 4–10 red spans per slide, mostly a few words each — never a
   whole sentence. Test: reading only the red words of the whole deck tells the story
   (`skeleton.py` below prints exactly that).
+- **Blue = also written on the slide**: a note line (a sentence, or one breath group of a
+  split sentence) that appears *as is* in the slide's own text is wrapped whole in
+  `<span style="color:blue">...</span>`. At a glance, the speaker knows they can read this
+  line on the screen, facing the audience, instead of staying glued to the notes. "As is"
+  means: same words, same order, contiguous, inside one text block of the slide (title,
+  paragraph, bullet, table cell, caption) — the whole slide sentence or a contiguous part
+  of it — ignoring only case, punctuation, quotes, emoji and the simple connectors that
+  open the line ("So,", "And", "But", "Now,", "OK,", "Well,", "Then", "Also", "First,",
+  "Second,", "Finally,", "Because", "Here,", "That's why", "In other words", "For example",
+  "By contrast"... — full list in `OPENERS` in `on_slide.py`), with at least 2 words left. A paraphrase, a sentence only partly on the slide, text inside a figure or
+  a video, and formulas don't count: they stay black. Red spans inside a blue sentence
+  stay red; stage directions are never blue. Don't color by hand: once the notes are
+  written, run `on_slide.py --fix` (section 5), which applies exactly this rule and also
+  removes blue from sentences that no longer match.
+  Example — slide bullet "Where an option is available, the agent can choose it instead of
+  a **primitive action**" → note line
+  `<span style="color:blue">Where an option is available, the agent can choose it, instead of a primitive action.</span>`.
+  Counter-example — slide "First fully differentiable framework for learning options", note
+  "It was the first fully differentiable framework to learn options." → stays black.
 - **Stage directions** in gray italics, on their own line, preceded by a blank line:
   `<i style="color:gray">[click]</i>` once per fragment step, exactly where the click
   happens; `<i style="color:gray">[play the video]</i>` on video slides. Count the clicks
   against the fragment indices.
-- Titles of works in plain `<i>...</i>` if needed. No other HTML.
+- Titles of works in plain `<i>...</i>` if needed. No other HTML (besides the red, blue and
+  gray markup above).
 - References that are useful to the speaker but not spoken (URLs, papers the notes rely on)
   go in an HTML comment **after** the `en-notes` div, inside the `<aside>`:
 
@@ -111,12 +152,17 @@ paragraph breaks or stage directions.
 2. `python3 .claude/skills/speaker-notes/skeleton.py <master>.html` prints the red words of
    each slide: read it top to bottom as the outline of the talk; a slide with
    "(no red keyword)" or a meaningless chain needs work.
-3. Check the files still parse: same number of `<section>`, `<aside>`, `<div>` opening and
+3. `python3 .claude/skills/speaker-notes/on_slide.py <master>.html --fix` colors in blue
+   the sentences also written on their slide (rule in section 3) and uncolors stale ones,
+   in the master and its chapter files; it prints every blue line with its `file:line`.
+   Read that list: each blue line must be readable as is on the slide. Without `--fix`,
+   it only checks (exit status 1 if a line must be colored or uncolored).
+4. Check the files still parse: same number of `<section>`, `<aside>`, `<div>` opening and
    closing tags in each edited file (comments excluded), and no console error when loading
    the deck. An `Edit` whose `old_string` stops at `</div>` but whose `new_string` adds a
    trailing comment + newline easily leaves a duplicated `</aside>` or a stray blank line —
    look at the result around each Sources comment.
-4. Optional visual check: inject one slide's `Reveal.getSlideNotes()` into a page built from
+5. Optional visual check: inject one slide's `Reveal.getSlideNotes()` into a page built from
    `/plugin/notes/speaker-view.html` (scripts stripped, `data-speaker-layout="notes-only"`,
    `.speaker-controls-notes` un-hidden) at 1920×1080 and screenshot it. Don't open the real
    speaker view popup (see the `run` skill). Close the browser at the end.

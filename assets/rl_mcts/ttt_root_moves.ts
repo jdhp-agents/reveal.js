@@ -101,6 +101,8 @@ for (const el of document.querySelectorAll<SVGSVGElement>('svg.ttt-moves')) {
 			if (step === 'moves') {
 				dyn.append('text').attr('x', W / 2).attr('y', 200).attr('text-anchor', 'middle').attr('font-size', 22)
 					.attr('fill', COLORS.ink).text('O to play: which move?');
+				// La position de départ elle-même, sous la question.
+				drawBoard(dyn.append('g').attr('transform', `translate(${W / 2},${300})`) as unknown as G, root, 100);
 				return;
 			}
 			dyn.append('text').attr('x', 6).attr('y', barTop - 12).attr('font-size', 14).attr('fill', COLORS.muted)

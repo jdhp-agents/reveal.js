@@ -152,12 +152,12 @@ And then, finding the right hierarchy is much harder.
 		<div class="en-notes">
 So, what do we gain with a hierarchy?
 
-First, <b style="color:red">sample efficiency</b>.
+<span style="color:blue">First, <b style="color:red">sample efficiency</b>.</span>
 The high level makes far fewer decisions per episode.
 So its <b style="color:red">effective horizon</b> is much shorter, and credit assignment becomes easier.
 And the subpolicies are reused again and again.
 
-Second, <b style="color:red">better exploration</b>.
+<span style="color:blue">Second, <b style="color:red">better exploration</b>.</span>
 With random primitive actions, the agent mostly stays near its starting point.
 With random subgoals, it travels far, to really new places.
 
@@ -331,7 +331,7 @@ On the left, <b style="color:red">primitive actions</b>: up, down, left, right.
 One cell at a time.
 On the right, an option: one single decision takes the agent all the way to the gray cell.
 
-Where an option is available, the agent can choose it, instead of a primitive action.
+<span style="color:blue">Where an option is available, the agent can choose it, instead of a primitive action.</span>
 Then it <b style="color:red">follows the subpolicy</b> until the option terminates, usually at the subgoal.
 
 Note: an option is <b style="color:red">not a fixed sequence</b> of actions.
@@ -505,7 +505,7 @@ Here is a nice summary, from Aske Plaat's book on deep reinforcement learning.
 
 <b style="color:red">Temporal abstraction</b> mixes actions of <b style="color:red">different granularities</b>.
 Short ones and long ones.
-Primitive actions, and subpolicies.
+<span style="color:blue">Primitive actions, and subpolicies.</span>
 
 A subpolicy lets the agent go from I to beta, that is, from a start state to a stop state.
 And this needs <b style="color:red">no additional learning</b>.
@@ -581,7 +581,7 @@ And planning and learning become much <b style="color:red">faster</b>.
 In the original options framework, the structure of the problem is <b style="color:red">given</b>.
 The <b style="color:red">subgoals</b> and the <b style="color:red">subpolicies</b> are designed by hand.
 
-Only the <b style="color:red">meta-policy</b> is learned.
+<span style="color:blue">Only the <b style="color:red">meta-policy</b> is learned.</span>
 And for that, we can use standard RL methods, like <b style="color:red">SMDP Q-learning</b>.
 SMDP means semi-Markov decision process.
 It's just Q-learning, where an option is treated like an action that lasts several time steps.
@@ -872,7 +872,7 @@ And it beat DQN on three of the four Atari games they tested.
 		</div>
 		<div class="en-notes">
 Today, Option-Critic is a <b style="color:red">foundational baseline</b> for hierarchical RL.
-Many later works extend it.
+<span style="color:blue">Many later works extend it.</span>
 For example, to discover better options, to regularize them, or to make them more diverse.
 
 Why regularize?
@@ -934,7 +934,7 @@ Each one is replaced by the goal that best explains the low-level actions actual
 
 It was tested on MuJoCo <b style="color:red">Ant</b> tasks: Ant Gather, Ant Maze, Ant Push and Ant Fall.
 It was much more sample-efficient than previous hierarchical methods.
-A flat agent makes almost no progress on these tasks.
+<span style="color:blue">A flat agent makes almost no progress on these tasks.</span>
 And HIRO learned complex <b style="color:red">long-horizon behaviors</b>, like pushing a block out of the way to reach the goal.
 		</div>
 	</aside>
@@ -1022,7 +1022,7 @@ The difficulty: all levels learn <b style="color:red">at the same time</b>.
 So, for a high level, the level below is non-stationary: its behavior keeps changing.
 
 HAC solves this with <b style="color:red">hindsight</b>, at every level.
-First, <b style="color:red">hindsight action transitions</b>.
+<span style="color:blue">First, <b style="color:red">hindsight action transitions</b>.</span>
 When a high level proposed a subgoal, we replace it by the state that was <b style="color:red">actually reached</b>.
 So, from the high level's point of view, the level below looks like an optimal and stable policy.
 Second, <b style="color:red">Hindsight Experience Replay</b>, against sparse rewards.
