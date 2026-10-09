@@ -52,12 +52,14 @@ So let's go through these stages, one by one.
 		</div>
 		<div class="en-notes">
 It all starts with a <b style="color:red">randomly initialized model</b>.
-If you say "Hello!" to it, it answers random garbage, like "the the bip bop boop".
+If you say "Hello!" to it, it answers random tokens.
 
 <span style="color:blue">So, the model is first trained using <b style="color:red">self-supervised learning</b> on a <b style="color:red">massive amount of text</b> data.</span>
+
 Its task is simple: it must <b style="color:red">predict the next token</b>.
 No labels are needed, because the text itself is the supervision.
-This stage is called <b style="color:red">pre-training</b>, and it is by far the most expensive one in compute.
+
+This stage is the <b style="color:red">pre-training</b>, and it is the most expensive one in compute.
 		</div>
 	</aside>
 </section>
