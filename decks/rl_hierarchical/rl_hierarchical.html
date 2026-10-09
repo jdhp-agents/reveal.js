@@ -13,23 +13,24 @@
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Let's start with something we do every day, without even thinking.
-Humans are very good at <b style="color:red">breaking down a complex task</b> into smaller subtasks.
-We solve them one by one, and together they solve the original problem.
-And these subtasks live at <b style="color:red">different levels of abstraction</b>.
+Let's start with something we all do every day, without even thinking about it.
 
-Look at this picture: a trip from your home to a hotel, in a distant city.
+As humans, we are good at <b style="color:red">breaking down a complex task</b> into smaller subtasks.
+We solve these subtasks one by one, and together, they solve the original problem.
+And what's interesting is that these subtasks live at <b style="color:red">different levels of abstraction</b>.
+
+For example, look at this picture: here we plan a trip from your home to a hotel, in a distant city.
+
 At the <b style="color:red">highest level</b>, you decide which flight to take, and which airport to land at.
-Then come <b style="color:red">mid-level</b> decisions: from the airport, do you take the train or the bus?
-Then <b style="color:red">lower-level</b> decisions, like taking a taxi for the last part of the trip.
-And at the very bottom, your steps and your body movements.
-You do them without even thinking about them.
+Then come the <b style="color:red">mid-level</b> decisions: from the airport, will you take the train or the bus?
+After that, there are <b style="color:red">lower-level</b> decisions, like taking a taxi for the last part of the trip.
+And at the very bottom, there are your steps and your body movements.
 
-Now, a classical RL agent has none of this structure.
+A classical RL agent, by contrast, has none of this structure.
 It would plan the whole trip <b style="color:red">one footstep at a time</b>.
-Over millions of time steps, that's hopeless.
+And over millions of time steps, that's hopeless.
 
-Structuring decisions on several levels: that's exactly what <b style="color:red">hierarchical reinforcement learning</b> tries to capture.
+Structuring decisions on several levels is exactly what <b style="color:red">hierarchical reinforcement learning</b> tries to capture.
 		</div>
 	</aside>
 </section>
@@ -47,20 +48,21 @@ Structuring decisions on several levels: that's exactly what <b style="color:red
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Here is the same idea, for a robot.
+Here is the same idea, this time for a robot.
 
-At the top, the <b style="color:red">high level</b>.
-It makes abstract decisions, like "go to the kitchen".
-It doesn't care about motors or wheels.
+At the top, we have the <b style="color:red">high level</b>.
+It makes abstract decisions, like "go to the kitchen",
+so it doesn't care about motors or wheels.
 
-At the bottom, the <b style="color:red">low level</b>.
-It deals with the details, like "avoid this obstacle" on the way.
-It doesn't need to know why the robot goes to the kitchen.
+At the bottom, we have the <b style="color:red">low level</b>.
+It deals with the details on the way, like "avoid this obstacle".
+But it doesn't need to know why the robot goes to the kitchen.
 
-Each level solves a <b style="color:red">simpler problem</b>.
-The high level thinks in rooms, over a long time.
-The low level thinks in small movements, over a short time.
-That's the core idea of a <b style="color:red">hierarchy</b>: different levels, different <b style="color:red">time scales</b>.
+This way, each level solves a <b style="color:red">simpler problem</b>.
+The high level thinks in rooms, over a long time,
+while the low level thinks in small movements, over a short time.
+
+And that's the core idea of a <b style="color:red">hierarchy</b>: different levels work at different <b style="color:red">time scales</b>.
 		</div>
 	</aside>
 </section>
@@ -70,30 +72,29 @@ That's the core idea of a <b style="color:red">hierarchy</b>: different levels, 
 	<h3>Hierarchical RL</h3>
 	<h4>What and Why?</h4>
 	<ul style="font-size: 0.8em;">
-		<li>Decompose complex tasks into simpler subtasks</li>
-		<li>Learn policies at multiple levels of abstraction</li>
-		<li>Motivation: scalability, efficiency, transferability</li>
+		<li><b>Decompose complex tasks</b> into simpler subtasks</li>
+		<li>Learn policies at <b>multiple levels of abstraction</b></li>
 	</ul>
+
+	<p style="font-size: 0.8em;">Motivation: scalability, efficiency, transferability</p>
 	<aside class="notes">
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-So, what is hierarchical RL?
-Three ideas on this slide.
+So, what exactly is hierarchical RL?
+This slide sums it up in three ideas.
 
 First, we <b style="color:red">decompose</b> a complex task into simpler <b style="color:red">subtasks</b>.
-Many sequential decision problems have some structure, and we exploit it.
+This works because many sequential decision problems have some structure, and we can exploit it.
 
 Second, we learn policies at <b style="color:red">multiple levels of abstraction</b>.
-A high-level policy chooses which subtask to do.
-Low-level policies solve each subtask, with primitive actions.
+A high-level policy chooses which subtask to do,
+and low-level policies solve each subtask with primitive actions.
 
-And why do we do this?
-Mainly for three reasons.
-<b style="color:red">Scalability</b>: we can solve longer and harder tasks.
-<b style="color:red">Efficiency</b>: we need fewer samples to learn.
-And <b style="color:red">transferability</b>: a skill learned for one task can be reused in another one.
-We'll come back to these advantages in a minute.
+So, there are mainly three reasons to do this:
+The first one is <b style="color:red">scalability</b>: we can solve longer and harder tasks.
+The second one is <b style="color:red">efficiency</b>: we need fewer samples to learn.
+And the third one is <b style="color:red">transferability</b>: a skill learned for one task can be reused in another one.
 		</div>
 		<!-- TODO: p.263 -->
 	</aside>
@@ -115,18 +116,17 @@ We'll come back to these advantages in a minute.
 			La HRL est utilisée en robotique, jeux, NLP, véhicules autonomes, etc.
 		</div>
 		<div class="en-notes">
-So, where is it useful?
-Some problems have a <b style="color:red">natural hierarchical structure</b>.
-And when the structure is clear, it's easy to exploit.
+So, where is it useful in practice?
 
-<b style="color:red">Navigation</b>: plan the route at a high level, and control the motors at a low level.
-<b style="color:red">Multi-agent systems</b>: like in a company, agents can be organized in teams, with leaders and members.
-<b style="color:red">Robotics</b>: plan the task, for example "pick up the cup, then put it in the sink".
-Then a low-level controller moves the arm.
-And <b style="color:red">games</b>: think of a strategy game.
-The player chooses a global strategy, and then executes it with many tactical actions.
+Well, <span style="color:blue">some problems have <b>natural hierarchical structure</b>.</span>
+And when this structure is clear, it's easy to exploit.
 
-On other problems, the structure is less obvious.
+- <b style="color:red">Navigation</b> is a good example: we plan the route at a high level, and we control the motors at a low level.
+- In <b style="color:red">multi-agent systems</b>, agents can be organized in teams, with leaders and members, like in a company.
+- In <b style="color:red">robotics</b>, we first plan the task, for example "pick up the cup, then put it in the sink". Then a low-level controller moves the arm.
+- Finally, in <b style="color:red">games</b>, a strategy game is a good example. The player chooses a global strategy, and then executes it with many tactical actions.
+
+On other problems, however, the structure is less obvious.
 And then, finding the right hierarchy is much harder.
 		</div>
 	</aside>
@@ -152,22 +152,20 @@ And then, finding the right hierarchy is much harder.
 		<div class="en-notes">
 So, what do we gain with a hierarchy?
 
-<span style="color:blue">First, <b style="color:red">sample efficiency</b>.</span>
-The high level makes far fewer decisions per episode.
+The first gain is <b style="color:blue">sample efficiency</b>.
+This is because the high level makes far fewer decisions per episode.
 So its <b style="color:red">effective horizon</b> is much shorter, and credit assignment becomes easier.
-And the subpolicies are reused again and again.
+On top of that, the subpolicies are reused again and again.
 
-<span style="color:blue">Second, <b style="color:red">better exploration</b>.</span>
+The second gain is <b style="color:blue">better exploration</b>.
 With random primitive actions, the agent mostly stays near its starting point.
-With random subgoals, it travels far, to really new places.
+But with random subgoals, it travels far, to really new places.
 
-Third, <b style="color:red">transfer</b>.
-A skill like "go through a door" can be reused in many tasks.
+The third gain is <b style="color:blue">transfer</b>: a skill like "go through a door" can be reused in many tasks.
 
-And finally, <b style="color:red">scalability</b>: we can tackle much larger problems.
-Look at this image: StarCraft, a real-time strategy game.
-A huge number of possible actions, and very long games.
-A <b style="color:red">hierarchy</b> of strategy, tactics and unit control is a natural way to handle it.
+Finally, a hierarchy brings <b style="color:blue">scalability</b>: we can tackle much larger problems.
+For instance, here in StarCraft, there is a huge number of possible actions, and games can be very long.
+So a <b style="color:red">hierarchy</b> of strategy, tactics and unit control is a natural way to handle it.
 		</div>
 		<!-- TODO: p.265 -->
 	</aside>
@@ -199,28 +197,28 @@ TODO: p.266
 	<h3>Hierarchical RL</h3>
 	<h4>Challenges</h4>
 	<ul style="font-size: 0.8em; padding-left: 1em; display: block; margin-left: 3em;">
-		<li>Find subgoals</li>
-		<li>Find a meta-policy over these subgoals</li>
-		<li>Find subpolicies for these subgoals</li>
+		<li>Find <b>subgoals</b></li>
+		<li>Find a <b>meta-policy</b> over these subgoals</li>
+		<li>Find <b>subpolicies</b> for these subgoals</li>
 	</ul>
 	<aside class="notes">
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-But there is a catch.
+So Hierarchical RL is powerful, but there is a catch.
 To build a hierarchy, we have to answer <b style="color:red">three questions</b>.
 
-First, what are the good <b style="color:red">subgoals</b>?
-For example, in a building, the doors are natural subgoals.
+The first question is: what are the good <b style="color:blue">subgoals</b>?
+In a building, for example, the doors are natural subgoals.
 
-Second, how do we choose between these subgoals?
-That's the <b style="color:red">meta-policy</b>: a policy over subgoals.
+The second question is: how do we choose between these subgoals?
+This is the role of the <b style="color:blue">meta-policy</b>, which is a policy over subgoals.
 
-Third, how do we reach each subgoal?
-That's the job of the <b style="color:red">subpolicies</b>.
+And the third question is: how do we reach each subgoal?
+This is the job of the <b style="color:blue">subpolicies</b>.
 
-Each of these three problems is hard.
-And ideally, we'd like to <b style="color:red">learn all three</b> from experience.
+Each of these three problems is hard on its own.
+And ideally, we would like to <b style="color:red">learn each of them from experience</b>.
 		</div>
 	</aside>
 </section>
@@ -242,16 +240,16 @@ And ideally, we'd like to <b style="color:red">learn all three</b> from experien
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-So, how do we describe a hierarchy formally?
-We need a framework where actions can <b style="color:red">last for different durations</b>.
+So, how can we describe a hierarchy formally?
+For that, we need a framework where actions can <b style="color:red">last for different durations</b>.
 
 The most famous one is the <b style="color:red">options framework</b>.
-It was introduced by Sutton, Precup and Singh, in 1999.
-Yes, the same Sutton as in the famous RL textbook.
+It was introduced by Sutton and collegues in 1999 <span style="color:gray">(nineteen ninety-nine)</span>.
 
-The idea: add <b style="color:red">temporally extended actions</b>, called <b style="color:red">options</b>, to the standard MDP.
+The idea is to add <b style="color:red">temporally extended actions</b>, called <b style="color:red">options</b>, to the standard MDP.
+
 An option is a subpolicy, with its own <b style="color:red">start and stop conditions</b>.
-So the agent can act at <b style="color:red">different time scales</b>.
+This way, the agent can act at <b style="color:red">different time scales</b>.
 		</div>
 	</aside>
 </section>
@@ -283,18 +281,16 @@ So the agent can act at <b style="color:red">different time scales</b>.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Why do we need it?
-In a standard MDP, the agent only has <b style="color:red">primitive actions</b>.
-One action, one time step.
-Move one cell, or apply one torque.
+So we need it because in a standard MDP, the agent only has <b style="color:red">primitive actions</b>.
+Each action lasts one time step, like moving one cell, or applying one torque.
 
-But we want to represent <b style="color:red">temporally extended behaviors</b>.
-Things like "walk to the door", which take many time steps.
+But we would like to represent <b style="color:red">temporally extended behaviors</b>,
+like "walk to the door", which takes many time steps.
 
-The goal is to add these <b style="color:red">temporal abstractions</b> to the RL framework.
-And to do it in a <b style="color:red">minimal way</b>, so that we can keep our usual tools, like Q-learning.
+So the goal is to add these <b style="color:red">temporal abstractions</b> to the RL framework.
+And we want to do it in a <b style="color:red">minimal way</b>, so that we can keep our usual tools, like Q-learning.
 
-The solution: extend the MDP with temporally extended actions, called <b style="color:red">options</b>.
+The solution is to extend the MDP with temporally extended actions, called <b style="color:red">options</b>.
 		</div>
 	</aside>
 </section>
@@ -306,36 +302,36 @@ The solution: extend the MDP with temporally extended actions, called <b style="
 	<h3>The options framework</h3>
 	<h4>What is an Option?</h4>
 
-	<ul style="font-size: 0.7em;">
+	<ul style="font-size: 0.65em;">
 		<li>Some states are designated as <b>subgoals</b> (e.g., doorways)</li>
 		<li>An <b>option</b> (macro-action) is a subpolicy that drives the agent towards a subgoal</li>
 		<li>Where an option is available, the agent can choose it instead of a <b>primitive action</b></li>
 		<li>Executing an option means following its subpolicy until it terminates (e.g., at the subgoal)</li>
 	</ul>
 
-	<img width="30%" src="assets/rl_hierarchical/mdp-smdp2.png" />
+	<img width="40%" src="assets/rl_hierarchical/mdp-smdp2.png" />
 
 	<aside class="notes">
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-The idea of options is simple.
+The idea of options is quite simple.
 
-Some states are chosen as <b style="color:red">subgoals</b>.
-For example, the doorways between rooms.
+First, some states are designated as <b style="color:red">subgoals</b>,
+for example the doorways between rooms.
 
-An <b style="color:red">option</b>, or macro-action, is a subpolicy that drives the agent to one of these subgoals.
+Then, an <b style="color:red">option</b>, or macro-action, is a subpolicy that drives the agent to one of these subgoals.
 
-Look at the figure.
-On the left, <b style="color:red">primitive actions</b>: up, down, left, right.
-One cell at a time.
-On the right, an option: one single decision takes the agent all the way to the gray cell.
+You can see the difference <span style="color:blue">on the figure</span>.
+- On the left, with <b style="color:red">primitive actions</b>, the agent moves up, down, left or right, one cell at a time.
+- On the right, with an option, one single decision takes the agent all the way to the gray cell.
 
-<span style="color:blue">Where an option is available, the agent can choose it, instead of a primitive action.</span>
-Then it <b style="color:red">follows the subpolicy</b> until the option terminates, usually at the subgoal.
+<span style="color:blue">Now, where an option is available, the agent can choose it, instead of a primitive action.</span>
+And <span style="color:blue">executing an option means <b style="color:red">following its subpolicy</b> until it terminates,</span>
+usually at the subgoal.
 
-Note: an option is <b style="color:red">not a fixed sequence</b> of actions.
-The subpolicy looks at the current state at each step, so it can react to what happens.
+Note that an option is <b style="color:red">not a fixed sequence</b> of actions.
+In fact, the subpolicy looks at the current state at each step, so it can react to what happens.
 		</div>
 	</aside>
 </section>
@@ -376,21 +372,21 @@ The subpolicy looks at the current state at each step, so it can react to what h
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-More formally, an option, omega, is defined by <b style="color:red">three elements</b>.
+More formally, an option, omega, is defined by <b style="color:blue">three elements</b>.
 
-First, the <b style="color:red">initiation set</b>, I omega.
-It's the set of states where the option can be started.
-For example, all the cells of one room.
+The first one is the <b style="color:red">initiation set</b>, I omega.
+It is the set of states where the option can be started,
+for example all the cells of one room.
 
-Second, the <b style="color:red">subpolicy</b>, pi omega.
+The second one is the <b style="color:red">subpolicy</b>, pi omega.
 It chooses the primitive actions while the option is running.
-Here, it's a stochastic policy: a probability for each action, in each state.
+Here, it's a stochastic policy, so it gives a probability for each action, in each state.
 
-Third, the <b style="color:red">termination condition</b>, beta omega.
+The third one is the <b style="color:red">termination condition</b>, beta omega.
 For each state, it gives the probability that the option stops there.
-For example, beta is one at the doorway, and zero everywhere else in the room.
+For example, beta can be one at the doorway, and zero everywhere else in the room.
 
-So: <b style="color:red">where to start</b>, <b style="color:red">how to act</b>, and <b style="color:red">when to stop</b>.
+So, in short, an option tells the agent <b style="color:red">where to start</b>, <b style="color:red">how to act</b>, and <b style="color:red">when to stop</b>.
 		</div>
 	</aside>
 </section>
@@ -411,12 +407,13 @@ So: <b style="color:red">where to start</b>, <b style="color:red">how to act</b>
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Now, an agent usually has <b style="color:red">several options</b>.
-For example, one option for each doorway.
+Now, an agent usually has <b style="color:red">several options</b>,
+for example one option for each doorway.
+
 We call the set of all options <b style="color:red">capital omega</b>.
 
-And note: a primitive action can be seen as a special option.
-An option that <b style="color:red">lasts exactly one step</b>.
+Note that a primitive action can also be seen as a special option:
+an option that <b style="color:red">lasts exactly one step</b>.
 So the agent can mix options and primitive actions <b style="color:red">in the same framework</b>.
 		</div>
 	</aside>
@@ -441,18 +438,18 @@ So the agent can mix options and primitive actions <b style="color:red">in the s
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-So, in the options framework, we have <b style="color:red">two kinds of policies</b>.
+<span style="color:blue">So, there are <b>two kinds of policies</b> in the options framework.</span>
 
-At the top, the <b style="color:red">meta-policy</b>, pi capital omega.
-It's a policy over options.
-Each time the current option terminates, it selects the next option to run.
-And it can only choose options whose <b style="color:red">initiation set</b> contains the current state.
+At the top, there is the <b style="color:blue">meta-policy</b>, pi capital omega.
+It is a policy over options:
+each time the current option terminates, it selects the next option to run.
+But it can only choose options whose <b style="color:red">initiation set</b> contains the current state.
 
-At the bottom, the <b style="color:red">subpolicy</b> of each option, pi omega.
+At the bottom, there is the <b style="color:blue">subpolicy</b> of each option, pi omega.
 It chooses the primitive actions while the option is running.
 
-So the meta-policy decides <b style="color:red">what to do</b>.
-And the subpolicy decides <b style="color:red">how to do it</b>.
+In other words, the meta-policy decides <b style="color:red">what to do</b>,
+and the subpolicy decides <b style="color:red">how to do it</b>.
 		</div>
 	</aside>
 </section>
@@ -474,13 +471,13 @@ And the subpolicy decides <b style="color:red">how to do it</b>.
 		</div>
 		<div class="en-notes">
 You can see the subpolicies as <b style="color:red">macros</b>.
-Like a macro in a text editor: one command, and many steps are executed.
+It's like a macro in a text editor: you run one command, and many steps are executed.
 
-A subpolicy starts in a state of its <b style="color:red">initiation set</b>.
-And it brings the agent to a state where the option <b style="color:red">terminates</b>, according to beta.
+Here, a subpolicy starts in a state of its <b style="color:red">initiation set</b>.
+Then it brings the agent to a state where the option <b style="color:red">terminates</b>, according to beta.
 
-For the meta-policy, this whole trip is <b style="color:red">one single decision</b>.
-So the top level makes <b style="color:red">far fewer decisions</b>, and each one is more meaningful.
+For the meta-policy, this whole trip counts as <b style="color:red">one single decision</b>.
+As a result, the top level makes <b style="color:red">far fewer decisions</b>, and each one is more meaningful.
 		</div>
 	</aside>
 </section>
@@ -497,19 +494,23 @@ So the top level makes <b style="color:red">far fewer decisions</b>, and each on
 		(Plaat, 2022)
 	</p>
 
+	<img width="25%" src="assets/rl_hierarchical/plaat_book.webp" />
+
 	<aside class="notes">
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Here is a nice summary, from Aske Plaat's book on deep reinforcement learning.
+Here is a nice summary, from <span style="color:blue">this book</span> on deep reinforcement learning.
 
-<b style="color:red">Temporal abstraction</b> mixes actions of <b style="color:red">different granularities</b>.
-Short ones and long ones.
-<span style="color:blue">Primitive actions, and subpolicies.</span>
+It says that <b style="color:red">temporal abstraction</b> mixes actions of <b style="color:red">different granularities</b>,
+short and long,
+primitive actions and subpolicies.
 
-A subpolicy lets the agent go from I to beta, that is, from a start state to a stop state.
-And this needs <b style="color:red">no additional learning</b>.
-It simply <b style="color:red">reuses</b> a subpolicy that was given, or learned before.
+In other words, a subpolicy lets the agent go from I to beta,
+that is, from a start state to a stop state.
+
+And this needs <b style="color:red">no additional learning</b>,
+because it simply <b style="color:red">reuses</b> a subpolicy that was <b style="color:red">given, or learned before</b>.
 		</div>
 	</aside>
 </section>
@@ -534,21 +535,21 @@ It simply <b style="color:red">reuses</b> a subpolicy that was given, or learned
 		<div class="en-notes">
 Here is the classic example from the options paper: the <b style="color:red">four rooms</b>.
 
-It's a gridworld: four rooms, connected by four <b style="color:red">hallways</b>.
-The agent has four primitive actions: up, down, left, right.
-And they are <b style="color:red">stochastic</b>: they fail one third of the time.
+It is a gridworld with four rooms, connected by four <b style="color:red">hallways</b>.
+In this world, the agent has four primitive actions: up, down, left and right.
+But these actions are <b style="color:red">stochastic</b>: they fail one third of the time.
 
-The hallways are <b style="color:red">bottleneck states</b>: to go from one room to another, you must go through them.
-So they are natural <b style="color:red">subgoals</b>.
+The hallways are <b style="color:red">bottleneck states</b>, because you must go through them to change rooms.
+That's why they are natural <b style="color:red">subgoals</b>.
 
-So we define <b style="color:red">eight hallway options</b>: in each room, one option for each of its two hallways.
-Look at the bottom-left room.
-Option o1 takes the agent from anywhere in this room to the hallway leading up, to the top-left room.
-Option o2 takes it to the other hallway, the one leading to the bottom-right room.
+So the authors define <b style="color:red">eight hallway options</b>: in each room, one option for each of its two hallways.
+<span style="color:blue">Two of the hallway options are suggested by the arrows labeled o1 and o2.</span>
+Option o1 takes the agent from anywhere in the bottom-left room to the hallway leading up.
+And option o2 takes it to the other hallway, the one leading to the bottom-right room.
 
-G1 and G2 are two goal locations, used in the experiments of the paper.
+Finally, <span style="color:blue">the labels G1 and G2 indicate two locations used as goals in the experiments of the paper.</span>
 With these options, the agent can plan <b style="color:red">room by room</b>, instead of cell by cell.
-And planning and learning become much <b style="color:red">faster</b>.
+As a result, planning and learning become much <b style="color:red">faster</b>.
 		</div>
 	</aside>
 </section>
@@ -578,18 +579,19 @@ And planning and learning become much <b style="color:red">faster</b>.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-In the original options framework, the structure of the problem is <b style="color:red">given</b>.
-The <b style="color:red">subgoals</b> and the <b style="color:red">subpolicies</b> are designed by hand.
+In the original options framework, the structure of the problem is <b style="color:red">given</b>:
+the <b style="color:red">subgoals</b> and the <b style="color:red">subpolicies</b> are designed by hand.
 
-<span style="color:blue">Only the <b style="color:red">meta-policy</b> is learned.</span>
-And for that, we can use standard RL methods, like <b style="color:red">SMDP Q-learning</b>.
-SMDP means semi-Markov decision process.
-It's just Q-learning, where an option is treated like an action that lasts several time steps.
-The only change is in the update.
-We use the rewards collected during the option, and we discount by gamma to the power k, where k is its duration.
+<span style="color:blue">So only the <b style="color:red">meta-policy</b> is learned.</span>
+For that, we can use standard RL methods,
+<span style="color:gray">like SMDP Q-learning.
+SMDP stands for semi-Markov decision process.
+It is just Q-learning, where an option is treated like an action that lasts several time steps.
+The only change is in the update:
+we use the rewards collected during the option, and we discount by gamma to the power k, where k is its duration.</span>
 
-But in real applications, nobody gives us the subgoals and the subpolicies.
-So they must be <b style="color:red">learned too</b>.
+<span style="color:blue">But, in practice, subgoals and subpolicies often need to be <b style="color:red">learned too</b>,</span>
+because, in real applications, nobody gives them to us.
 		</div>
 	</aside>
 </section>
@@ -608,8 +610,10 @@ So they must be <b style="color:red">learned too</b>.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-So we need algorithms that can <b style="color:red">find subgoals</b> and <b style="color:red">learn subpolicies</b>, automatically.
-Ideally, from experience only, with no hand-made structure.
+<span style="color:blue">So, we need algorithms that can <b style="color:red">find subgoals</b> and <b style="color:red">learn subpolicies</b>.</span>
+
+Ideally, they should do it automatically, from experience only.
+
 Let's look at some of them.
 		</div>
 	</aside>
@@ -633,16 +637,16 @@ Let's look at some of them.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Here are four important hierarchical RL algorithms.
-They all use <b style="color:red">deep neural networks</b>.
-So they work in <b style="color:red">large or continuous state spaces</b>, like images or robot sensors.
+<span style="color:blue">Here</span> are four important hierarchical RL algorithms.
+They all use <b style="color:red">deep neural networks</b>,
+so they work in <b style="color:red">large or continuous state spaces</b>, like images or robot sensors.
 
-<b style="color:red">Feudal Networks</b> and <b style="color:red">Option-Critic</b> were tested with discrete actions, for example on Atari games.
-<b style="color:red">HIRO</b> and <b style="color:red">HAC</b> also handle <b style="color:red">continuous actions</b>, for robot control.
+The first two, <b style="color:red">Feudal Networks</b> and <b style="color:red">Option-Critic</b> were tested with discrete actions, for example on Atari games,
+while the last two, <b style="color:red">HIRO</b> and <b style="color:red">HAC</b> also handle <b style="color:red">continuous actions</b>, for robot control.
 
 I'll give a very short overview of each one.
-And I'll spend a bit more time on <b style="color:red">Hierarchical Actor-Critic</b>.
-It shows clearly how a multi-level hierarchy of goal-conditioned policies can be learned.
+But I'll spend a bit more time on <b style="color:red">Hierarchical Actor-Critic</b>,
+since it is one of the most practical and effective methods.
 		</div>
 	</aside>
 </section>
@@ -710,21 +714,21 @@ It shows clearly how a multi-level hierarchy of goal-conditioned policies can be
 		</div>
 		<div class="en-notes">
 Let's start with <b style="color:red">Feudal Networks</b>.
-The idea comes from <b style="color:red">Feudal RL</b>, by Dayan and Hinton, in 1992.
-Like in the Middle Ages: a lord gives orders to a vassal.
-Here, a <b style="color:red">Manager</b> gives orders to a <b style="color:red">Worker</b>.
+The idea comes from <b style="color:red">Feudal RL</b>, proposed by Dayan and Hinton in 1992.
+As in the Middle Ages, where a lord gives orders to a vassal,
+here a <b style="color:red">Manager</b> gives orders to a <b style="color:red">Worker</b>.
 
 The Manager works at a slow time scale.
 It sets <b style="color:red">abstract goals</b>, as directions in a <b style="color:red">learned latent space</b>.
-The Worker acts at every time step.
-It chooses primitive actions to follow the Manager's current goal.
-It gets an intrinsic reward when the state moves in the direction asked by the Manager.
+The Worker, on the other hand, acts at every time step.
+It chooses primitive actions to follow the Manager's current goal,
+and it gets an intrinsic reward when the state moves in the direction asked by the Manager.
 
 In 2017, DeepMind tested this on Atari games, and on DeepMind Lab, a 3D environment.
 The agent learned useful <b style="color:red">temporal abstractions</b>.
-It learned faster than a flat baseline: an LSTM agent, trained with A3C.
-Especially on hard games with <b style="color:red">sparse rewards</b>, like Montezuma's Revenge.
-And no one told it what the subgoals should be.
+It also learned faster than a flat baseline, an LSTM agent trained with A3C,
+especially on hard games with <b style="color:red">sparse rewards</b>, like Montezuma's Revenge.
+And nobody told it what the subgoals should be.
 		</div>
 	</aside>
 </section>
@@ -776,17 +780,15 @@ And no one told it what the subgoals should be.
 		</div>
 		<div class="en-notes">
 So, where does it stand today?
-Feudal Networks <b style="color:red">popularized the goal-setting paradigm</b> in deep hierarchical RL.
-One level sets goals, and the level below tries to reach them.
+Feudal Networks <b style="color:red">popularized the goal-setting paradigm</b> in deep hierarchical RL:
+one level sets goals, and the level below tries to reach them.
 
-But it's <b style="color:red">rarely used in practice</b> now.
-Training is <b style="color:red">unstable</b>.
-And it doesn't scale well to very complex tasks.
+However, it is <b style="color:red">rarely used in practice</b> now,
+because training is <b style="color:red">unstable</b>, and it doesn't scale well to very complex tasks.
 
-Its main historical impact: <b style="color:red">goals in a learned latent space</b>.
-And the Manager and the Worker are <b style="color:red">trained separately</b>.
-No gradient flows from the Worker to the Manager.
-Each level has its own learning signal.
+Its main historical impact is the idea of <b style="color:red">goals in a learned latent space</b>.
+Also, the Manager and the Worker are <b style="color:red">trained separately</b>:
+no gradient flows from the Worker to the Manager, so each level has its own learning signal.
 This idea is still influential in modern hierarchical RL.
 
 The references are on the slide: Dayan and Hinton, 1992, and Vezhnevets and colleagues, 2017.
@@ -825,23 +827,23 @@ The references are on the slide: Dayan and Hinton, 1992, and Vezhnevets and coll
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Next, <b style="color:red">Option-Critic</b>, by Bacon, Harb and Precup, in 2017.
+Next comes <b style="color:red">Option-Critic</b>, by Bacon, Harb and Precup, in 2017.
 Doina Precup is also one of the authors of the options framework.
-It's a <b style="color:red">policy gradient</b> method.
+Technically, Option-Critic is a <b style="color:red">policy gradient</b> method.
 
-The key idea: learn <b style="color:red">everything at once</b>.
-The intra-option policies, the <b style="color:red">termination functions</b>, and the policy over options.
-All with policy gradients, <b style="color:red">end to end</b>.
-No need to define subgoals by hand.
+Its key idea is to learn <b style="color:red">everything at once</b>:
+the intra-option policies, the <b style="color:red">termination functions</b>, and the policy over options.
+All of them are learned with policy gradients, <b style="color:red">end to end</b>,
+so there is no need to define subgoals by hand.
 
-It was tested on the four-rooms domain, on Atari games, and on Pinball.
-Pinball has a continuous state space, with discrete actions.
+It was tested on the four-rooms domain, on Atari games, and on Pinball,
+which has a continuous state space, with discrete actions.
 
-The results?
+So, what were the results?
 It was the <b style="color:red">first fully differentiable framework</b> to learn options.
-It showed that options can <b style="color:red">emerge naturally</b>, with no hand-crafted subgoals.
+It also showed that options can <b style="color:red">emerge naturally</b>, with no hand-crafted subgoals.
 In the four rooms, when the goal moves, it recovers faster than flat agents.
-And it beat DQN on three of the four Atari games they tested.
+And on Atari, it beat DQN on three of the four games they tested.
 		</div>
 	</aside>
 </section>
@@ -872,17 +874,17 @@ And it beat DQN on three of the four Atari games they tested.
 		</div>
 		<div class="en-notes">
 Today, Option-Critic is a <b style="color:red">foundational baseline</b> for hierarchical RL.
-<span style="color:blue">Many later works extend it.</span>
-For example, to discover better options, to regularize them, or to make them more diverse.
+<span style="color:blue">And many later works extend it,</span>
+for example to discover better options, to regularize them, or to make them more diverse.
 
-Why regularize?
-A known problem: without constraints, the options tend to <b style="color:red">terminate at every step</b>, or one option does everything.
-And then, there is no real hierarchy anymore.
+Why do we need to regularize them?
+Because, without constraints, the options tend to <b style="color:red">terminate at every step</b>, or one option ends up doing everything.
+In both cases, there is no real hierarchy anymore.
 
-It's still very influential, as an idea.
+Still, Option-Critic remains very influential as an idea.
 But modern methods often prefer <b style="color:red">skill discovery</b>, like DIAYN or VALOR.
 These methods first learn a set of diverse skills, <b style="color:red">without any reward</b>.
-Or they use hierarchical RL with <b style="color:red">pretrained skills</b>.
+Other methods use hierarchical RL with <b style="color:red">pretrained skills</b>.
 		</div>
 	</aside>
 </section>
@@ -920,22 +922,22 @@ Or they use hierarchical RL with <b style="color:red">pretrained skills</b>.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Next, <b style="color:red">HIRO</b>, by Nachum and colleagues, at Google, in 2018.
-HIRO stands for HIerarchical Reinforcement learning with Off-policy correction.
-Two levels: a high-level policy proposes goals, and a low-level policy tries to reach them.
+Next comes <b style="color:red">HIRO</b>, by Nachum and colleagues, at Google, in 2018.
+The name stands for HIerarchical Reinforcement learning with Off-policy correction.
+It has two levels: a high-level policy proposes goals, and a low-level policy tries to reach them.
 
-The challenge: we want to train both levels <b style="color:red">off-policy</b>, with a replay buffer, to be <b style="color:red">sample-efficient</b>.
-But the low-level policy keeps changing.
+Here, the challenge is to train both levels <b style="color:red">off-policy</b>, with a replay buffer, to be <b style="color:red">sample-efficient</b>.
+The problem is that the low-level policy keeps changing.
 So an old high-level transition is <b style="color:red">no longer valid</b>: the same goal would now produce different actions.
 
-HIRO's trick: the <b style="color:red">off-policy correction</b>.
-It <b style="color:red">relabels</b> the old goals.
-Each one is replaced by the goal that best explains the low-level actions actually taken, under the <b style="color:red">current</b> low-level policy.
+To fix this, HIRO uses an <b style="color:red">off-policy correction</b>: it <b style="color:red">relabels</b> the old goals.
+Each old goal is replaced by the goal that best explains the low-level actions actually taken,
+<span style="color:blue">under the <b style="color:red">current</b> low-level policy.</span>
 
 It was tested on MuJoCo <b style="color:red">Ant</b> tasks: Ant Gather, Ant Maze, Ant Push and Ant Fall.
-It was much more sample-efficient than previous hierarchical methods.
-<span style="color:blue">A flat agent makes almost no progress on these tasks.</span>
-And HIRO learned complex <b style="color:red">long-horizon behaviors</b>, like pushing a block out of the way to reach the goal.
+There, it was much more sample-efficient than previous hierarchical methods.
+<span style="color:blue">By comparison, a flat agent makes almost no progress on these tasks.</span>
+Finally, HIRO learned complex <b style="color:red">long-horizon behaviors</b>, like pushing a block out of the way to reach the goal.
 		</div>
 	</aside>
 </section>
@@ -973,11 +975,9 @@ And HIRO learned complex <b style="color:red">long-horizon behaviors</b>, like p
 		<div class="en-notes">
 Today, HIRO is considered a <b style="color:red">foundational baseline</b> for hierarchical RL.
 
-Later methods refine it.
-For example HRAC, HIGL, or HiPPO.
+Since then, later methods have refined it, for example HRAC, HIGL, or HiPPO.
 They improve its <b style="color:red">stability</b>, its <b style="color:red">exploration</b>, or its <b style="color:red">scalability</b>.
-
-It's still cited as one of the most influential approaches for <b style="color:red">long-horizon continuous control</b>.
+Even so, HIRO is still cited as one of the most influential approaches for <b style="color:red">long-horizon continuous control</b>.
 
 The main paper is on the slide: "Data-efficient hierarchical reinforcement learning", from 2018.
 The same authors also published a related paper, on how to learn a good <b style="color:red">representation</b> for the goals.
@@ -1013,23 +1013,23 @@ The same authors also published a related paper, on how to learn a good <b style
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-Finally, <b style="color:red">Hierarchical Actor-Critic</b>, or HAC, by Levy and colleagues.
-The key idea: train <b style="color:red">several levels</b> of policies.
-Each level sets <b style="color:red">goals</b> for the level below.
-The lowest level outputs the actual actions.
+Finally, let's look at <b style="color:red">Hierarchical Actor-Critic</b>, or HAC, by Levy and colleagues.
+Its key idea is to train <b style="color:red">several levels</b> of policies,
+where each level sets <b style="color:red">goals</b> for the level below,
+and the lowest level outputs the actual actions.
 
-The difficulty: all levels learn <b style="color:red">at the same time</b>.
-So, for a high level, the level below is non-stationary: its behavior keeps changing.
+The difficulty is that all levels learn <b style="color:red">at the same time</b>.
+So, for a high level, the level below is non-stationary, because its behavior keeps changing.
 
 HAC solves this with <b style="color:red">hindsight</b>, at every level.
-<span style="color:blue">First, <b style="color:red">hindsight action transitions</b>.</span>
+The first trick is called <b style="color:red">hindsight action transitions</b>.
 When a high level proposed a subgoal, we replace it by the state that was <b style="color:red">actually reached</b>.
-So, from the high level's point of view, the level below looks like an optimal and stable policy.
-Second, <b style="color:red">Hindsight Experience Replay</b>, against sparse rewards.
-A failed attempt becomes a success, for the goal that was actually reached.
+This way, from the high level's point of view, the level below looks like an optimal and stable policy.
+The second trick is <b style="color:red">Hindsight Experience Replay</b>, against sparse rewards:
+a failed attempt becomes a success, for the goal that was actually reached.
 
-It was tested on MuJoCo tasks.
-And it can learn <b style="color:red">more than two levels</b>, all in parallel.
+HAC was tested on MuJoCo tasks,
+and it can learn <b style="color:red">more than two levels</b>, all in parallel.
 		</div>
 	</aside>
 </section>
@@ -1060,14 +1060,14 @@ And it can learn <b style="color:red">more than two levels</b>, all in parallel.
 		<div class="fr-notes">
 		</div>
 		<div class="en-notes">
-HAC is a <b style="color:red">pioneering work</b>.
-It was the first method to learn <b style="color:red">three-level hierarchies</b> in parallel, in tasks with <b style="color:red">continuous</b> states and actions.
+HAC is a <b style="color:red">pioneering work</b>:
+it was the first method to learn <b style="color:red">three-level hierarchies</b> in parallel, in tasks with <b style="color:red">continuous</b> states and actions.
 
-And it inspired many follow-ups in <b style="color:red">hierarchical goal-conditioned RL</b>.
-Goal-conditioned means that the policy takes the state as input, and also the goal to reach.
+It also inspired many follow-ups in <b style="color:red">hierarchical goal-conditioned RL</b>.
+Here, goal-conditioned means that the policy takes as input the state, and also the goal to reach.
 
 The reference is on the slide: Levy, Konidaris, Platt and Saenko.
-It was first posted on arXiv in 2017, and published at ICLR in 2019.
+It was first posted on arXiv in 2017, and then published at ICLR in 2019.
 		</div>
 	</aside>
 </section>
@@ -1088,16 +1088,16 @@ It was first posted on arXiv in 2017, and published at ICLR in 2019.
 		</div>
 		<div class="en-notes">
 Here is how it works, on a concrete task.
-An <b style="color:red">ant robot</b> must go through four rooms, to reach the <b style="color:red">yellow box</b>.
-The yellow box is the task goal.
+An <b style="color:red">ant robot</b> must go through four rooms, to reach the <b style="color:red">yellow box</b>,
+which is the task goal.
 
-On the left, the <b style="color:red">three levels</b>.
-Each policy takes the current state, the joint angles theta and their velocities theta dot, plus a goal.
+On the left, you can see the <b style="color:red">three levels</b>.
+Each policy takes as input the current state, that is, the joint angles theta and their velocities theta dot, plus a goal.
 The top level, pi two, gets the yellow goal, and outputs a subgoal: the <b style="color:red">green box</b>.
-The middle level, pi one, gets the green goal, and outputs a closer subgoal: the <b style="color:red">magenta box</b>.
-And the bottom level, pi zero, gets the magenta goal, and outputs the <b style="color:red">joint torques</b>.
+Then the middle level, pi one, gets the green goal, and outputs a closer subgoal: the <b style="color:red">magenta box</b>.
+Finally, the bottom level, pi zero, gets the magenta goal, and outputs the <b style="color:red">joint torques</b>.
 
-So each level only has to solve a <b style="color:red">short-horizon</b> problem: reach a goal that is close.
+This way, each level only has to solve a <b style="color:red">short-horizon</b> problem: reaching a goal that is close.
 And together, they solve a long task.
 		</div>
 	</aside>
@@ -1121,19 +1121,19 @@ And together, they solve a long task.
 Let's watch it in action, with the authors' video.
 
 <i style="color:gray">[play the video]</i>
-The colors are always the same.
-Yellow is the <b style="color:red">task goal</b>.
-Green and magenta are the subgoals set by the higher levels.
+The colors are always the same in this video.
+Yellow is the <b style="color:red">task goal</b>,
+while green and magenta are the subgoals set by the higher levels.
 
-First, a grid world, an inverted pendulum, and a robot arm.
-Each time, with a two-level agent, then a three-level agent.
+It starts with a grid world, then an inverted pendulum, and a robot arm.
+Each time, you first see a two-level agent, and then a three-level agent.
 
-Then, <b style="color:red">Ant Reacher</b>: the ant must reach the yellow box.
+Next comes <b style="color:red">Ant Reacher</b>, where the ant must reach the yellow box.
 At the end, look at the <b style="color:red">one-level agent</b>, the flat one: it barely moves.
 
-And finally, <b style="color:red">Ant Four Rooms</b>.
+And finally, there is <b style="color:red">Ant Four Rooms</b>.
 Look at the subgoals: they are often placed near the <b style="color:red">doorways</b>.
-Just like the hallway options of the four-rooms example, but here they are <b style="color:red">learned</b>, not given.
+It's just like the hallway options of the four-rooms example, except that here, they are <b style="color:red">learned</b>, not given.
 And again, at the end, the flat agent does not reach the goal.
 		</div>
 	</aside>

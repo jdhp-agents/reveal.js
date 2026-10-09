@@ -158,15 +158,14 @@ So, here is the plan for today.
 
 We will cover two parts.
 
-<span style="color:blue">The first one, is about <b>hierarchical reinforcement learning</b>.</span>
+<span style="color:blue">The first one, is about <b>hierarchical ("hi-rar-ki-cal") reinforcement learning</b>.</span>
 We will see how an agent can solve long and complex tasks, by breaking them into smaller subtasks.
 
 <span style="color:blue">The second part, is about <b>reinforcement learning and LLMs</b>.</span>
 Here we will see how RL is used to train large language models, like ChatGPT or DeepSeek-R1.
 
 As usual, my goal is to give you an <b style="color:red">overview</b>.
-For each method, I'll focus on the <b style="color:red">main idea</b>,
-and on what it brings in practice.
+For each method, I'll only focus on the <b style="color:red">main idea</b>.
 						</div>
 					</aside>
 				</section>
@@ -188,7 +187,7 @@ So, let's start with the first part: <b style="color:red">hierarchical RL</b>.
 
 Until now, our agents have picked one low-level action per time step.
 Humans, by contrast, plan over <b style="color:red">long horizons</b>.
-How can agents do the same?
+So how can agents do the same?
 						</div>
 					</aside>
 				</section>
@@ -209,9 +208,10 @@ How can agents do the same?
 						<div class="fr-notes"></div>
 						<div class="en-notes">
 OK, let's move on to the second part: <b style="color:red">RL and LLMs</b>.
+
 You all use chatbots like ChatGPT.
-What you may not know is that <b style="color:red">reinforcement learning</b> is a key step in their training.
-Let's see where, and how.
+But what you may not know is that <b style="color:red">reinforcement learning</b> is a key step in their training.
+So let's see where it comes in, and how it works.
 						</div>
 					</aside>
 				</section>
@@ -234,18 +234,18 @@ Let's see where, and how.
 OK, let's wrap up.
 Today, we looked at two advanced topics.
 
-First, <b style="color:red">hierarchical RL</b>.
-The idea is to <b style="color:red">decompose</b> a long task into subtasks, at several levels of abstraction.
-The <b style="color:red">options framework</b> gives the formal model: subpolicies with start and stop conditions.
-And deep methods like Feudal Networks, Option-Critic, HIRO and <b style="color:red">HAC</b> learn the subgoals and the subpolicies themselves.
+The first one was <b style="color:red">hierarchical RL</b>.
+Its idea is to <b style="color:red">decompose</b> a long task into subtasks, at several levels of abstraction.
+To formalize this, the <b style="color:red">options framework</b> defines subpolicies with start and stop conditions.
+Then, deep methods like Feudal Networks, Option-Critic, HIRO and <b style="color:red">HAC</b> learn the subgoals and the subpolicies themselves.
 
-Second, <b style="color:red">RL and LLMs</b>.
-After pre-training and supervised fine-tuning, RL is used in two more stages.
-<b style="color:red">RLHF</b>, with a reward model learned from human preferences, to align the model with what people want.
-And <b style="color:red">RLVR</b>, with GRPO and automatically checked answers, to improve <b style="color:red">reasoning</b>.
+The second topic was <b style="color:red">RL and LLMs</b>.
+We saw that, after pre-training and supervised fine-tuning, RL is used in two more stages.
+First comes <b style="color:red">RLHF</b>: it learns a reward model from human preferences, to align the model with what people want.
+Then comes <b style="color:red">RLVR</b>: it uses GRPO and automatically checked answers, to improve <b style="color:red">reasoning</b>.
 
 So, RL is not only for games and robots.
-It is now a key part of how the most advanced AI models are built.
+It has become a key part of how the most advanced AI models are built.
 						</div>
 					</aside>
 				</section>
